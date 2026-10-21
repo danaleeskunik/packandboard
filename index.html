@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pack &amp; Board · אפליקציה אישית לטיול</title>
+<meta name="description" content="לכל נסיעה אפליקציה אישית בעברית ובאנגלית: יום אחר יום עם מפות, הזמנות וטיסות, מזג אוויר, המרת מטבע, תרגום עם הקראה ועוד. נפתחת בלחיצה על קישור, בלי התקנה.">
+<meta property="og:title" content="Pack &amp; Board · אפליקציה אישית לטיול">
+<meta property="og:site_name" content="Pack &amp; Board">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta property="og:description" content="יום אחר יום עם מפות, הזמנות, מזג אוויר, המרת מטבע ותרגום, בעברית ובאנגלית ובצבעים של היעד.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://packandboard.com/assets/day-picker.jpg">
+<meta property="og:url" content="https://packandboard.com/">
+<link rel="canonical" href="https://packandboard.com/">
+<meta name="theme-color" content="#F7F2E8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&family=Miriam+Libre:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F7F2E8; --surface:#FFFFFF; --sunken:#EFE8D8; --line:#E2D9C4;
+  --ink:#1F2A24; --ink2:#4B5A51; --ink3:#7C877F;
+  --brand:#1F5E48; --brand-dark:#17352A; --brand-tint:#E3F0E8;
+  --th:#2F8F6B; --it:#3B7FBF; --jp:#D6293F;
+  --font-display:'Miriam Libre','Heebo',serif; --font-ui:'Heebo',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-ui);font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased}
+img{max-width:100%;height:auto;display:block}
+a{color:inherit}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:22px}
+section{padding-block:72px}
+h1,h2,h3{font-family:var(--font-display);color:var(--brand-dark);margin:0;text-wrap:balance}
+h1{font-size:clamp(38px,6vw,60px);line-height:1.1;letter-spacing:-.01em}
+h2{font-size:clamp(28px,4vw,38px);line-height:1.2;margin-bottom:14px}
+h3{font-size:21px;line-height:1.3;margin-bottom:6px}
+.eyebrow{font:700 13px/1 var(--font-ui);letter-spacing:.12em;color:var(--ink3);margin-bottom:16px}
+.lede{font-size:clamp(18px,2.2vw,21px);color:var(--ink2);max-width:46ch}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:50px;padding:0 26px;border-radius:999px;border:0;font:700 17px/1 var(--font-ui);text-decoration:none;cursor:pointer}
+.btn-primary{background:var(--brand);color:#fff}
+.btn-primary:hover{background:var(--brand-dark)}
+.btn-ghost{background:transparent;color:var(--brand-dark);box-shadow:inset 0 0 0 2px var(--line)}
+.btn-ghost:hover{box-shadow:inset 0 0 0 2px var(--brand)}
+.btn:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #7FB7A0;outline-offset:3px}
+
+/* hero */
+.hero{padding-top:56px;padding-bottom:40px}
+.hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center}
+.hero .lede{margin:22px 0 30px}
+.cta-row{display:flex;gap:12px;flex-wrap:wrap}
+.hero-shot{justify-self:center;width:min(100%,430px);border-radius:28px;box-shadow:0 40px 70px -30px rgba(23,53,42,.45),0 10px 24px -12px rgba(23,53,42,.25)}
+.hero-note{margin-top:18px;font-size:14px;color:var(--ink3)}
+
+/* gallery */
+.gallery-intro{max-width:56ch;margin-bottom:34px;color:var(--ink2)}
+.gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.shot{background:var(--surface);border-radius:22px;padding:14px 14px 18px;box-shadow:0 1px 2px rgba(31,42,36,.06),0 14px 30px -20px rgba(31,42,36,.35)}
+.shot img{width:100%;border-radius:14px;aspect-ratio:4/5;object-fit:cover;object-position:top}
+.shot figcaption{margin-top:14px;padding-inline:4px}
+.shot b{display:block;font-family:var(--font-display);font-size:19px;color:var(--brand-dark)}
+.shot span{font-size:15px;color:var(--ink2)}
+
+/* steps */
+.steps{background:var(--sunken)}
+.steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;margin-top:30px}
+.step{background:var(--surface);border-radius:20px;padding:26px 24px}
+.step .num{display:inline-flex;width:38px;height:38px;border-radius:50%;background:var(--brand-tint);color:var(--brand);font:800 17px/1 var(--font-ui);align-items:center;justify-content:center;margin-bottom:14px}
+.step p{margin:0;color:var(--ink2);font-size:16px}
+
+/* features */
+.features{display:grid;grid-template-columns:repeat(2,1fr);gap:14px 40px;margin-top:28px;padding:0;list-style:none}
+.features li{display:flex;gap:12px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--line)}
+.features svg{flex:0 0 22px;margin-top:4px;color:var(--brand)}
+.features b{display:block;font-weight:700}
+.features span{font-size:15px;color:var(--ink2)}
+
+/* demos */
+.demos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:28px}
+.demo{display:flex;flex-direction:column;gap:6px;background:var(--surface);border-radius:20px;padding:22px 22px 20px;text-decoration:none;box-shadow:0 1px 2px rgba(31,42,36,.06);border-top:6px solid var(--c)}
+.demo:hover{transform:translateY(-2px);box-shadow:0 14px 28px -18px rgba(31,42,36,.4)}
+.demo b{font-family:var(--font-display);font-size:23px;color:var(--brand-dark)}
+.demo span{color:var(--ink2);font-size:15px}
+.demo em{font-style:normal;font-weight:700;font-size:15px;color:var(--c);margin-top:8px}
+.demos-note{margin-top:16px;font-size:14px;color:var(--ink3)}
+
+/* audience */
+.aud-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:26px}
+.aud{background:var(--surface);border-radius:20px;padding:26px 26px 24px}
+.aud p{margin:0;color:var(--ink2)}
+
+/* faq */
+.faq{max-width:760px;margin-top:22px}
+details{border-bottom:1px solid var(--line);padding:18px 0}
+summary{cursor:pointer;font-weight:700;font-size:18px;list-style:none;display:flex;justify-content:space-between;gap:16px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";font-size:24px;line-height:1;color:var(--brand)}
+details[open] summary::after{content:"–"}
+details p{margin:12px 0 0;color:var(--ink2)}
+
+/* contact */
+.contact{background:var(--brand-dark);color:#EAF3EE}
+.contact h2{color:#fff}
+.contact p{color:#CFE0D6;max-width:50ch}
+.contact .btn-primary{background:#fff;color:var(--brand-dark)}
+.contact .btn-primary:hover{background:var(--brand-tint)}
+.contact .btn-ghost{color:#fff;box-shadow:inset 0 0 0 2px rgba(255,255,255,.35)}
+.contact-note{margin-top:14px;font-size:14px;color:#9DB8A9}
+@media(max-width:560px){.contact .cta-row{flex-direction:column}.contact .btn{width:100%}}
+footer{padding:28px 0 40px;font-size:14px;color:var(--ink3)}
+
+@media (max-width:860px){
+  section{padding-block:52px}
+  .hero-grid{grid-template-columns:1fr;gap:34px}
+  .hero-shot{order:-1;width:min(86%,360px)}
+  .gallery,.steps-grid,.demos-grid,.aud-grid,.features{grid-template-columns:1fr}
+  .gallery{gap:18px}
+}
+@media (min-width:600px) and (max-width:860px){ .gallery{grid-template-columns:repeat(2,1fr)} }
+@media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto} .demo:hover{transform:none} }
+
+.site-hdr{position:sticky;top:0;z-index:30;background:rgba(247,242,232,.9);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.hdr-in{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:11px}
+.brand{display:inline-flex;direction:ltr;line-height:0;text-decoration:none}
+.brand svg{display:block;height:30px;width:auto}
+.hdr-actions{display:flex;align-items:center;gap:8px}
+section[id]{scroll-margin-top:72px}
+.btn-sm{min-height:40px;padding:0 16px;font-size:15px}
+.btn-icon{min-height:40px;width:40px;padding:0;color:var(--brand-dark);box-shadow:inset 0 0 0 2px var(--line)}
+.btn-icon:hover{box-shadow:inset 0 0 0 2px var(--brand)}
+.btn-icon svg{width:19px;height:19px}
+.btn-wa{box-shadow:none;color:#fff;background:var(--brand)}
+.btn-wa:hover{background:var(--brand-dark)}
+.btn-wa svg{width:21px;height:21px}
+@media(max-width:480px){.brand svg{height:25px}}
+
+</style>
+</head>
+<body id="top">
+
+<header class="site-hdr">
+  <div class="wrap hdr-in">
+    <a class="brand" href="#top" aria-label="Pack &amp; Board"><svg viewBox="0 0 1100 262" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pack &amp; Board"><text x="0" y="190" font-family="Miriam Libre,serif" font-weight="700" font-size="150" letter-spacing="-3" style="fill:#17352A">Pack</text><g transform="translate(374 14) scale(1.9)"><text x="48" y="100" text-anchor="middle" font-family="Miriam Libre,serif" font-weight="700" font-size="100" style="fill:#2F7FC8">&amp;</text><path d="M72 44 L108 26 L92 62 L85 51 Z" style="fill:#17352A"/><path d="M85 51 L108 26" style="stroke:#F7F2E8" stroke-width="2.6" stroke-linecap="round" fill="none"/></g><text x="625" y="190" font-family="Miriam Libre,serif" font-weight="700" font-size="150" letter-spacing="-3" style="fill:#17352A">Board</text></svg></a>
+    <div class="hdr-actions">
+      <a class="btn btn-primary btn-icon btn-wa" id="hdr-wa" href="#contact" data-contact aria-label="שליחת הודעה בוואטסאפ" title="שליחת הודעה בוואטסאפ"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg></a>
+      <a class="btn btn-ghost btn-icon" id="hdr-mail" href="#contact" aria-label="שליחת מייל" title="שליחת מייל"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></a>
+    </div>
+  </div>
+</header>
+
+<main>
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="eyebrow">אפליקציה אישית לכל טיול</div>
+      <h1>הטיול שלכם, כל מה שצריך בכיס</h1>
+      <p class="lede">יום אחר יום עם מפות, הזמנות וטיסות, מזג אוויר, המרת מטבע, ותרגום עם הקראה. הכול בעברית ובאנגלית, בצבעים של היעד, ונפתח בלחיצה על קישור.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#contact" data-contact>רוצים אחת לטיול שלכם?</a>
+        <a class="btn btn-ghost" href="#demos">לראות דוגמה חיה</a>
+      </div>
+      <p class="hero-note">בלי התקנה ובלי הרשמה. אפשר להוסיף למסך הבית של הטלפון.</p>
+    </div>
+    <img class="hero-shot" src="assets/day-picker.jpg" width="1000" height="1250" alt="מסך יום אחר יום באפליקציה: בורר ימים ותוכנית של יום בפריז">
+  </div>
+</section>
+
+<section id="inside" style="padding-top:36px">
+  <div class="wrap">
+    <h2>מה יש בפנים</h2>
+    <p class="gallery-intro">כל טיול נבנה בשבילכם, עם התוכנית, ההזמנות והטיפים שלכם. כך זה נראה בטלפון:</p>
+    <div class="gallery">
+      <figure class="shot" style="margin:0"><img src="assets/home.jpg" loading="lazy" width="1000" height="1250" alt="מסך הבית עם ספירה לאחור וטיסות"><figcaption><b>ספירה לאחור וטיסות</b><span>כל הפרטים מהרגע שמתחילים לארוז.</span></figcaption></figure>
+      <figure class="shot" style="margin:0"><img src="assets/day-picker.jpg" loading="lazy" width="1000" height="1250" alt="בורר ימים ותוכנית של יום"><figcaption><b>יום אחר יום</b><span>בוחרים יום ורואים את התוכנית שלו.</span></figcaption></figure>
+      <figure class="shot" style="margin:0"><img src="assets/day-map.jpg" loading="lazy" width="1000" height="1250" alt="יום עם מפה של העיר"><figcaption><b>מפה לכל יום</b><span>מקומות וקישורים ישר לגוגל מפות.</span></figcaption></figure>
+      <figure class="shot" style="margin:0"><img src="assets/weather.jpg" loading="lazy" width="1000" height="1250" alt="תחזית מזג אוויר לכמה ערים"><figcaption><b>מזג אוויר לכל עיר</b><span>תחזית לימים של הטיול, בכל ערי המסלול.</span></figcaption></figure>
+      <figure class="shot" style="margin:0"><img src="assets/converter.jpg" loading="lazy" width="1000" height="1250" alt="מחשבון המרת מטבע"><figcaption><b>המרת מטבע</b><span>שער חי לשקל ולדולר, בלחיצה אחת.</span></figcaption></figure>
+      <figure class="shot" style="margin:0"><img src="assets/options.jpg" loading="lazy" width="1000" height="1250" alt="רשת האפשרויות באפליקציה"><figcaption><b>ועוד הרבה</b><span>אריזה, חירום, מסמכים, טיפים, מתרגם ועוד.</span></figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section class="steps">
+  <div class="wrap">
+    <h2>איך זה עובד</h2>
+    <div class="steps-grid">
+      <div class="step"><div class="num">1</div><h3>מספרים על הטיול</h3><p>יעד, תאריכים, מלונות, טיסות והתוכנית שיש לכם עד עכשיו.</p></div>
+      <div class="step"><div class="num">2</div><h3>האפליקציה נבנית בשבילכם</h3><p>עם הצבעים של היעד, ובדיוק עם הפרטים שלכם.</p></div>
+      <div class="step"><div class="num">3</div><h3>מקבלים קישור</h3><p>פותחים בטלפון, מוסיפים למסך הבית, ושולחים לכל מי שנוסע איתכם.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>כל מה שצריך בטיול, במקום אחד</h2>
+    <ul class="features">
+      <li><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><div><b>יום אחר יום</b><span>בורר ימים, תוכנית מפורטת ומפה.</span></div></li>
+      <li><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg><div><b>הזמנות וטיסות</b><span>מלונות, הסעות וספירה לאחור.</span></div></li>
+      <li><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3l4 4-4 4"/><path d="M21 7H7"/><path d="M7 13l-4 4 4 4"/><path d="M3 17h14"/></svg><div><b>המרת מטבע</b><span>גם לטיול בשתי מדינות.</span></div></li>
+      <li><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg><div><b>תרגום עם הקראה</b><span>הקלדה או צילום טקסט, והשמעה בשפת היעד.</span></div></li>
+      <li><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1A4 4 0 0 1 17 15H6z"/><path d="M8 18v2M12 18v2M16 18v2"/></svg><div><b>מזג אוויר</b><span>לכל עיר במסלול.</span></div></li>
+      <li><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><div><b>רשימת אריזה</b><span>אפשר לסמן ולהוסיף פריטים.</span></div></li>
+      <li><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg><div><b>מספרי חירום</b><span>משטרה, אמבולנס, שגרירות וביטוח.</span></div></li>
+      <li><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg><div><b>מסמכים ואישורים</b><span>כרטיסים וביטוח זמינים בטלפון.</span></div></li>
+    </ul>
+  </div>
+</section>
+
+<section id="demos" style="background:var(--sunken)">
+  <div class="wrap">
+    <h2>דוגמאות חיות</h2>
+    <p style="color:var(--ink2);max-width:56ch;margin:0">אפשר לפתוח כל אחת, ללחוץ ולנסות. כל יעד מקבל צבעים ואיור משלו.</p>
+    <div class="demos-grid">
+      <a class="demo" style="--c:var(--th)" href="thailand/"><b>תאילנד</b><span>בנגקוק, צ׳יאנג מאי, קו סמוי</span><em>פתיחה ←</em></a>
+      <a class="demo" style="--c:var(--it)" href="italy/"><b>איטליה</b><span>רומא, פירנצה, טוסקנה</span><em>פתיחה ←</em></a>
+      <a class="demo" style="--c:var(--jp)" href="japan/"><b>יפן</b><span>טוקיו, קיוטו, אוסקה</span><em>פתיחה ←</em></a>
+    </div>
+    <p class="demos-note">התוכן בדוגמאות הוא דוגמה בלבד, כולל מספרי ההזמנה.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>למי זה מתאים</h2>
+    <div class="aud-grid">
+      <div class="aud"><h3>משפחות, זוגות וקבוצות</h3><p>מארגנים טיול בעצמכם ורוצים שהכול יהיה מסודר במקום אחד, בלי לחפש במיילים ובצילומי מסך.</p></div>
+      <div class="aud"><h3>סוכנויות ומתכננות טיולים</h3><p>רוצות להעניק ללקוחות חוויה מסודרת על בסיס התוכנית שכבר כתבתן. כתבו לנו ונדבר.</p></div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:20px">
+  <div class="wrap">
+    <h2>שאלות נפוצות</h2>
+    <div class="faq">
+      <details><summary>צריך להתקין משהו?</summary><p>לא. האפליקציה נפתחת בדפדפן דרך קישור, ואפשר להוסיף אותה למסך הבית של הטלפון כדי שתיראה כמו אפליקציה.</p></details>
+      <details><summary>האם זה עובד בלי אינטרנט?</summary><p>חלק מהדברים, כמו מפות, מזג אוויר, שער המרה ותרגום, דורשים חיבור לאינטרנט. כדאי לבדוק איתנו מראש מה חשוב לכם שיעבוד גם בלי חיבור.</p></details>
+      <details><summary>מי יכול לראות את הפרטים שלנו?</summary><p>מי שיש לו את הקישור. אין הרשמה או סיסמה, ולכן כדאי לשלוח את הקישור רק למי שנוסע איתכם.</p></details>
+      <details><summary>כמה זה עולה?</summary><p>המחיר תלוי בהיקף הטיול ובמה שאתם רוצים בפנים. כתבו לנו ונתאים הצעה.</p></details>
+    </div>
+  </div>
+</section>
+
+<section id="contact" class="contact">
+  <div class="wrap">
+    <h2>רוצים אפליקציה לטיול הבא שלכם?</h2>
+    <p>ספרו לנו לאן אתם נוסעים ומתי, ונחזור אליכם.</p>
+    <div class="cta-row" style="margin-top:22px">
+      <a class="btn btn-primary" id="cta-wa" href="#contact">שליחת הודעה בוואטסאפ</a>
+      <a class="btn btn-ghost" id="cta-mail" href="#contact">שליחת מייל</a>
+    </div>
+    <p class="contact-note" id="contact-note"></p>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap"><b>Pack &amp; Board</b> · אפליקציות טיול בנויות בשבילכם<br>התמונות והדוגמאות באתר הן לצורך הדגמה. פרטים אישיים הוסתרו.<br>האתר משתמש ב-Google Analytics למדידת ביקורים באופן אנונימי. <a href="/privacy/">מדיניות פרטיות</a></div>
+</footer>
+
+<script>
+/* Contact details: fill in ONE or BOTH, then the buttons work. Leave empty to show a "coming soon" note instead.
+   Example: whatsapp: '972501234567' (international format, digits only), email: 'name@example.com' */
+var CONTACT = { whatsapp: '972537004934', email: 'office@packandboard.com' };
+(function(){
+  var msg = encodeURIComponent('היי, אני מעוניין/ת באפליקציה אישית לטיול. היעד: , תאריכים: ');
+  var wa = document.getElementById('cta-wa'), mail = document.getElementById('cta-mail'), note = document.getElementById('contact-note');
+  var waUrl = CONTACT.whatsapp ? 'https://wa.me/' + CONTACT.whatsapp + '?text=' + msg : '';
+  var mailUrl = CONTACT.email ? 'mailto:' + CONTACT.email + '?subject=' + encodeURIComponent('אפליקציה אישית לטיול') : '';
+  /* every WhatsApp button (header, hero, contact section) and every mail button share the same details */
+  [].forEach.call(document.querySelectorAll('[data-contact], #cta-wa'), function(a){
+    if(waUrl){ a.href = waUrl; a.target = '_blank'; a.rel = 'noopener'; } else { a.style.display = 'none'; }
+  });
+  [].forEach.call(document.querySelectorAll('#cta-mail, #hdr-mail'), function(a){
+    if(mailUrl){ a.href = mailUrl; } else { a.style.display = 'none'; }
+  });
+  if(!CONTACT.whatsapp && !CONTACT.email){ note.textContent = 'פרטי יצירת הקשר יתווספו בקרוב.'; }
+})();
+</script>
+<script>
+/* Google Analytics (GA4): loads in the background on the real domain only (never on local test addresses). */
+(function(){
+  var GA='G-7B8Y5VY6BH';
+  function track(name,params){ if(window.gtag) window.gtag('event',name,params||{}); }
+  if(/(^|\.)packandboard\.com$/.test(location.hostname)){
+    var s=document.createElement('script'); s.async=true; s.src='https://www.googletagmanager.com/gtag/js?id='+GA; document.head.appendChild(s);
+    window.dataLayer=window.dataLayer||[]; window.gtag=function(){window.dataLayer.push(arguments);};
+    window.gtag('js',new Date());
+    window.gtag('config',GA,{allow_google_signals:false,allow_ad_personalization_signals:false});
+  }
+  document.addEventListener('click',function(ev){
+    var a=ev.target.closest&&ev.target.closest('a'); if(!a) return;
+    if(a.matches('[data-contact],#cta-wa,#hdr-wa')) track('contact_whatsapp');
+    else if(a.matches('#cta-mail,#hdr-mail')) track('contact_email');
+    else if(a.matches('a.demo')) track('demo_open',{demo:a.getAttribute('href').replace(/\/$/,'')});
+  });
+})();
+</script>
+</body>
+</html>

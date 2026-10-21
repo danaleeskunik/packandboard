@@ -1,0 +1,33 @@
+{
+  "name": "ניהול טיולים · Pack & Board",
+  "short_name": "ניהול טיולים",
+  "lang": "he",
+  "dir": "rtl",
+  "start_url": "/dana/trips/",
+  "scope": "/dana/trips/",
+  "id": "/dana/trips/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F7F2E8",
+  "theme_color": "#17352A",
+  "icons": [
+    {
+      "src": "/assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

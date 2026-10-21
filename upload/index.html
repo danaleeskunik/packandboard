@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>תיבת הטיול · Pack &amp; Board</title>
+<meta name="theme-color" content="#F7F2E8">
+<meta name="color-scheme" content="light only">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&family=Miriam+Libre:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F7F2E8;--card:#fff;--line:#E2D9C4;--ink:#1F2A24;--ink2:#56655b;--brand:#17352A;--blue:#2F7FC8;--blue-soft:#E3EEF9;--good:#1F7A5C;--good-soft:#E1EEE6;--bad:#C0392B;--bad-soft:#FBE5E1;--shadow:0 1px 2px rgba(23,53,42,.06),0 10px 28px rgba(23,53,42,.07)}
+html{color-scheme:light}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.6 Heebo,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:720px;margin:0 auto;padding:26px 18px 90px;display:flex;flex-direction:column;gap:18px}
+.logo{direction:ltr;line-height:0}.logo svg{height:30px;width:auto}
+h1{font:700 clamp(30px,6vw,42px)/1.12 'Miriam Libre',serif;color:var(--brand);margin:8px 0 6px}
+h2{font:800 20px/1.3 Heebo,sans-serif;color:var(--brand);margin:0 0 4px}
+.lead{color:var(--ink2);margin:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:14px}
+.sub{color:var(--ink2);font-size:15px;margin:0}
+label{font:600 14px Heebo;color:var(--ink2);display:block;margin-bottom:5px}
+input[type=text],textarea{width:100%;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);font:500 16px/1.45 Heebo,system-ui,sans-serif;padding:11px 12px;direction:rtl}
+textarea{min-height:90px;resize:vertical}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:560px){.row2{grid-template-columns:1fr}}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.btn{border:0;border-radius:999px;background:var(--brand);color:var(--bg);font:800 16px Heebo;padding:13px 26px;cursor:pointer;align-self:flex-start}
+.btn.alt{background:transparent;color:var(--brand);border:1.5px solid var(--brand)}
+.btn:disabled{opacity:.45;cursor:default}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:transparent;color:var(--ink2);border-radius:999px;padding:7px 15px;font:500 15px Heebo;cursor:pointer}
+.chip[aria-pressed=true]{background:var(--blue-soft);color:var(--blue);border-color:transparent;font-weight:700}
+.drop{border:2px dashed var(--line);border-radius:16px;padding:26px 16px;text-align:center;color:var(--ink2);transition:background .15s,border-color .15s}
+.drop.over{background:var(--blue-soft);border-color:var(--blue)}
+.drop b{display:block;color:var(--brand);font:800 18px Heebo;margin-bottom:4px}
+.drop .acts{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.tips{margin:0;padding-inline-start:20px;color:var(--ink2);font-size:15px}
+.tips li{margin:4px 0}
+.items{display:flex;flex-direction:column;gap:8px}
+.item{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:9px 12px;background:var(--bg)}
+.item .nmw{flex:1;min-width:0;display:flex;align-items:center;gap:8px}
+.item .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;font-size:15.5px}
+.item .ext{flex:none;font:700 11px/1 Heebo;letter-spacing:.06em;color:var(--ink2);border:1px solid var(--line);border-radius:6px;padding:3px 6px;background:var(--card)}
+.item .sz{color:var(--ink2);font-size:13px;flex:none;direction:ltr;unicode-bidi:isolate}
+.item.up .nm{color:var(--ink2)}
+.rm{border:0;background:transparent;color:var(--ink2);cursor:pointer;padding:4px 8px;border-radius:8px;font-size:20px;line-height:1}
+.rm:hover{background:var(--line)}
+.msg{border-radius:12px;padding:11px 14px;font-size:15.5px}
+.msg.ok{background:var(--good-soft);color:var(--good)}
+.msg.err{background:var(--bad-soft);color:var(--bad)}
+.consent{background:var(--blue-soft);border-radius:14px;padding:14px 16px;font-size:15.5px}
+.consent ul{margin:8px 0 0;padding-inline-start:20px}
+.consent .more{margin:12px 0 0;font-size:16px;color:var(--ink)}
+.consent .more a{color:var(--brand);font-weight:800;text-decoration:underline;text-underline-offset:3px}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:16px}
+.check input{margin-top:6px;width:20px;height:20px;flex:none}
+.foot{font-size:13.5px;color:var(--ink2);text-align:center}
+.foot a{color:var(--blue)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo" aria-label="Pack &amp; Board"><svg viewBox="0 0 1100 262" xmlns="http://www.w3.org/2000/svg"><text x="0" y="190" font-family="Miriam Libre" font-weight="700" font-size="150" letter-spacing="-3" style="fill:var(--brand)">Pack</text><g transform="translate(374 14) scale(1.9)"><text x="48" y="100" text-anchor="middle" font-family="Miriam Libre" font-weight="700" font-size="100" style="fill:var(--blue)">&amp;</text><path d="M72 44 L108 26 L92 62 L85 51 Z" style="fill:var(--brand)"/><path d="M85 51 L108 26" style="stroke:var(--bg)" stroke-width="2.6" stroke-linecap="round" fill="none"/></g><text x="625" y="190" font-family="Miriam Libre" font-weight="700" font-size="150" letter-spacing="-3" style="fill:var(--brand)">Board</text></svg></div>
+
+  <header>
+    <h1 id="title">תיבת הטיול שלך</h1>
+    <p class="lead" id="lead">כאן מעבירים לנו את כל מה שיש לכם על הטיול, ואנחנו נבנה מזה אפליקציה אישית.</p>
+  </header>
+
+  <div class="msg err" id="fatal" hidden></div>
+
+  <section class="card" id="consent" hidden>
+    <h2>לפני שמתחילים</h2>
+    <div class="consent">
+      <b>מה קורה עם החומרים שלכם:</b>
+      <ul>
+        <li>הם נשמרים אצלנו באופן פרטי, ורק אנחנו רואים אותם.</li>
+        <li>אנחנו משתמשים בהם רק כדי לבנות את האפליקציה של הטיול שלכם. ייתכן שנשתמש בכלי בינה מלאכותית כדי לקרוא אותם.</li>
+        <li>נא לא להעלות מספרי כרטיס אשראי, דרכונים או סיסמאות. הם לא נחוצים.</li>
+        <li>אפשר למחוק כל קובץ בכל עת, ולבקש מחיקה מלאה. הקבצים יימחקו לאחר הטיול.</li>
+      </ul>
+      <p class="more">פרטים נוספים: <a href="/privacy/" target="_blank" rel="noopener">מדיניות הפרטיות</a></p>
+    </div>
+    <label class="check"><input type="checkbox" id="agree"><span>קראתי והסכמתי שהחומרים שאעלה ישמשו לבניית האפליקציה שלי.</span></label>
+    <button class="btn" id="agreeBtn" type="button" disabled>המשך</button>
+  </section>
+
+  <div id="main" hidden>
+    <section class="card">
+      <div><h2>ספרו לנו בקצרה</h2><p class="sub">אפשר לדלג על מה שלא ידוע. הכול נשמר אוטומטית.</p></div>
+      <div class="row2">
+        <div><label for="a_travelers">מי נוסע? (מבוגרים, ילדים וגילאים)</label><input type="text" id="a_travelers" data-k="travelers" maxlength="300"></div>
+        <div><label for="a_dates">לאן ומתי? (אם לא מופיע במסמכים)</label><input type="text" id="a_dates" data-k="where_when" maxlength="300"></div>
+      </div>
+      <div><label for="a_style">מה חשוב לכם בטיול? (סגנון, קצב, דברים שחייבים, דברים שלא)</label><textarea id="a_style" data-k="style" maxlength="1000"></textarea></div>
+      <div>
+        <label>שפת האפליקציה</label>
+        <div class="chips" id="langPick" role="group" aria-label="שפת האפליקציה"></div>
+      </div>
+    </section>
+
+    <section class="card" style="margin-top:18px">
+      <div><h2>הוסיפו חומרים</h2><p class="sub">כל מה שקשור לטיול: טיסות, מלונות, רכב, סיורים, ביטוח, תוכניות.</p></div>
+      <div class="drop" id="drop">
+        <b>גררו לכאן קבצים</b>
+        <span>או הדביקו צילום מסך (Cmd+V / Ctrl+V)</span>
+        <div class="acts">
+          <button class="btn alt" id="pick" type="button">בחירת קבצים</button>
+        </div>
+        <input type="file" id="file" multiple hidden>
+      </div>
+      <ul class="tips">
+        <li><b>אישורי טיסה והזמנות:</b> PDF או צילום מסך.</li>
+        <li><b>מיילים:</b> אפשר להדביק את הטקסט למטה, לשמור כ-PDF, או לגרור את המייל מתוך תוכנת המייל ישר לכאן.</li>
+        <li><b>תוכניות ורשימות:</b> Word, Excel או טקסט.</li>
+      </ul>
+      <div class="items" id="items"></div>
+      <div class="msg err" id="upErr" hidden></div>
+    </section>
+
+    <section class="card" style="margin-top:18px">
+      <div><h2>או הדביקו טקסט</h2><p class="sub">למשל גוף של מייל אישור הזמנה, או הערות שלכם.</p></div>
+      <div><label for="t_label">כותרת (לא חובה)</label><input type="text" id="t_label" maxlength="80" placeholder="למשל: מלון בברגמו"></div>
+      <div><label for="t_text">הטקסט</label><textarea id="t_text" maxlength="100000"></textarea></div>
+      <button class="btn alt" id="addText" type="button" disabled>הוספת הטקסט</button>
+      <p class="sub" id="addHint" style="margin:0">הטקסט נוסף לרשימה למעלה. אם תלחצו "סיימתי" בלי להוסיף, גם הוא יישלח.</p>
+    </section>
+
+    <section class="card" style="margin-top:18px">
+      <div><h2>סיימתם?</h2><p class="sub" id="submitSub">לחצו כשהעליתם את כל מה שיש. אפשר להוסיף עוד אחר כך, ונעדכן.</p></div>
+      <button class="btn" id="submit" type="button" disabled>סיימתי, שלחו</button>
+      <div class="msg ok" id="done" hidden></div>
+    </section>
+  </div>
+
+  <p class="foot">Pack &amp; Board · <a href="/privacy/" target="_blank" rel="noopener">מדיניות פרטיות</a></p>
+</div>
+<script>
+(function(){
+  var API='https://pab-intake.dana-lees.workers.dev';
+  var $=function(id){return document.getElementById(id);};
+  var m=/[#&]t=([a-z0-9]{10})\.([a-z0-9]{20,40})/.exec(location.hash||'');
+  var ERR={unauthorized:'הקישור לא תקין או שפג תוקפו. בקשו קישור חדש מדנה.',locked:'התיבה כבר בטיפול, ולכן אי אפשר להוסיף חומרים. אם חסר משהו, כתבו לדנה.',consent_required:'צריך לאשר את ההסכמה לפני העלאה.',file_type_not_allowed:'סוג הקובץ הזה לא נתמך. אפשר לשמור אותו כ-PDF או לצלם מסך.',file_too_big:'הקובץ גדול מדי (עד 20MB).',trip_full:'התיבה מלאה. מחקו קבצים או כתבו לדנה.',too_many_items:'הגעתם למספר הקבצים המרבי (40).',empty:'הקובץ ריק.',text_too_big:'הטקסט ארוך מדי.',nothing_to_submit:'עוד לא העליתם כלום.'};
+  var trip=null, busy=0;
+  function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e;}
+  function fatal(t){var f=$('fatal');f.textContent=t;f.hidden=false;$('consent').hidden=true;$('main').hidden=true;}
+  function size(n){return n>=1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB';}
+  function errText(code){return ERR[code]||'משהו השתבש. נסו שוב בעוד רגע.';}
+  async function api(method,path,body,raw,query){
+    var h={authorization:'Bearer '+m[2]}, init={method:method,headers:h};
+    if(raw){init.body=raw;} else if(body){h['content-type']='application/json';init.body=JSON.stringify(body);}
+    var r=await fetch(API+'/c/'+m[1]+path+(query||''),init), j={};
+    try{j=await r.json();}catch(e){}
+    if(!r.ok){var er=new Error(j.error||('HTTP '+r.status));er.code=j.error;throw er;}
+    return j;
+  }
+  /* file name without the extension, plus a small badge with the type (avoids the dot jumping around in right-to-left text) */
+  function nameEl(i){
+    var wrap=el('span','nmw');
+    if(i.kind==='text'){ wrap.appendChild(el('span','nm',i.label||'טקסט מודבק')); wrap.appendChild(el('span','ext','TEXT')); return wrap; }
+    var n=i.name, k=n.lastIndexOf('.');
+    wrap.appendChild(el('span','nm',k>0?n.slice(0,k):n));
+    if(k>0){ var x=el('span','ext',n.slice(k+1).toUpperCase().slice(0,5)); x.setAttribute('dir','ltr'); wrap.appendChild(x); }
+    return wrap;
+  }
+  function paintItems(){
+    var host=$('items');host.textContent='';
+    (trip.items||[]).forEach(function(i){
+      var d=el('div','item');d.appendChild(nameEl(i));d.appendChild(el('span','sz',size(i.size)));
+      if(trip.status==='open'||trip.status==='submitted'){var b=el('button','rm','×');b.type='button';b.setAttribute('aria-label','הסרה');b.addEventListener('click',function(){remove(i.id);});d.appendChild(b);}
+      host.appendChild(d);
+    });
+    submitState();
+  }
+  function submitState(){
+    var pending=!!($('t_text').value||'').trim();
+    $('submit').disabled=!((trip.items||[]).length||pending)||busy>0||!(trip.status==='open'||trip.status==='submitted');
+  }
+  function paintStatus(){
+    var s=trip.status, d=$('done');
+    if(s==='submitted'){d.textContent='קיבלנו. נחזור אליכם עם הקישור לאפליקציה. אפשר להוסיף עוד חומרים בכל עת.';d.hidden=false;$('submit').textContent='שליחה מחדש';}
+    else if(s==='processing'||s==='review'){d.textContent='התיבה בטיפול. נחזור אליכם בקרוב.';d.hidden=false;}
+    else if(s==='delivered'||s==='closed'){d.textContent='האפליקציה שלכם מוכנה. אם משהו חסר, כתבו לדנה.';d.hidden=false;}
+    else d.hidden=true;
+    var locked=!(s==='open'||s==='submitted');
+    ['pick','addText','agree'].forEach(function(id){var e=$(id);if(e)e.disabled=locked&&id!=='agree';});
+  }
+  function paintAnswers(){
+    var a=trip.answers||{};
+    [].forEach.call(document.querySelectorAll('[data-k]'),function(e){if(document.activeElement!==e)e.value=a[e.getAttribute('data-k')]||'';});
+    var cur=a.lang||'he_en';
+    var host=$('langPick');host.textContent='';
+    [['he','עברית'],['en','אנגלית'],['he_en','עברית ואנגלית']].forEach(function(o){
+      var b=el('button','chip',o[1]);b.type='button';b.setAttribute('aria-pressed',String(cur===o[0]));
+      b.addEventListener('click',function(){trip.answers=Object.assign({},trip.answers,{lang:o[0]});paintAnswers();saveAnswers();});host.appendChild(b);
+    });
+  }
+  var saveT=null;
+  function saveAnswers(){
+    clearTimeout(saveT);
+    saveT=setTimeout(function(){
+      var a=Object.assign({},trip.answers);
+      [].forEach.call(document.querySelectorAll('[data-k]'),function(e){a[e.getAttribute('data-k')]=e.value;});
+      trip.answers=a; api('POST','/answers',{answers:a}).catch(function(){});
+    },600);
+  }
+  function showErr(t){var e=$('upErr');e.textContent=t||'';e.hidden=!t;}
+  async function load(){
+    try{ trip=await api('GET',''); }catch(e){ fatal(errText(e.code)); return; }
+    $('title').textContent=trip.name?('תיבת הטיול של '+trip.name):'תיבת הטיול שלך';
+    if(!trip.consent){ $('consent').hidden=false; $('main').hidden=true; }
+    else { $('consent').hidden=true; $('main').hidden=false; }
+    paintAnswers();paintItems();paintStatus();
+  }
+  var mine={};   /* items added during this visit: shown even if the server's list is a moment behind, and named when sending */
+  async function refresh(){
+    try{
+      trip=await api('GET','');
+      var have={}; (trip.items||[]).forEach(function(i){have[i.id]=1;});
+      Object.keys(mine).forEach(function(k){ if(have[k]) delete mine[k]; else trip.items.push(mine[k]); });
+      paintItems();paintStatus();
+    }catch(e){}
+  }
+  async function uploadFiles(files){
+    showErr('');
+    var list=[].slice.call(files), ok=trip.limits.extensions;
+    for(var i=0;i<list.length;i++){
+      var f=list[i], ext=(f.name.split('.').pop()||'').toLowerCase();
+      if(!f.name||f.name==='image.png'&&false){}
+      if(ok.indexOf(ext)<0){ showErr('"'+f.name+'": '+ERR.file_type_not_allowed); continue; }
+      if(f.size>trip.limits.maxFile){ showErr('"'+f.name+'": '+ERR.file_too_big); continue; }
+      var row=el('div','item up');row.appendChild(el('span','nm','מעלה: '+f.name));row.appendChild(el('span','sz',size(f.size)));$('items').appendChild(row);
+      busy++;$('submit').disabled=true;
+      try{ var up=await api('PUT','/upload',null,f,'?name='+encodeURIComponent(f.name)); if(up.meta) mine[up.item]=up.meta; }
+      catch(e){ showErr('"'+f.name+'": '+errText(e.code)); }
+      busy--;
+      await refresh();
+    }
+  }
+  function pasteName(f,n){ if(f.name&&f.name!=='image.png') return f; var ext=(f.type.split('/')[1]||'png').replace('jpeg','jpg'); return new File([f],'screenshot-'+Date.now()+'-'+n+'.'+ext,{type:f.type}); }
+  async function remove(id){ delete mine[id]; try{ await api('POST','/remove',{item:id}); }catch(e){ showErr(errText(e.code)); } await refresh(); }
+
+  if(!m){ fatal('הקישור חסר. פתחו את הקישור האישי שקיבלתם מדנה.'); return; }
+  $('agree').addEventListener('change',function(){$('agreeBtn').disabled=!$('agree').checked;});
+  $('agreeBtn').addEventListener('click',async function(){
+    try{ await api('POST','/consent',{accept:true}); await load(); }catch(e){ fatal(errText(e.code)); }
+  });
+  $('pick').addEventListener('click',function(){$('file').click();});
+  $('file').addEventListener('change',function(){ if(this.files.length) uploadFiles(this.files).then(function(){$('file').value='';}); });
+  var drop=$('drop');
+  ['dragenter','dragover'].forEach(function(t){drop.addEventListener(t,function(e){e.preventDefault();drop.classList.add('over');});});
+  ['dragleave','drop'].forEach(function(t){drop.addEventListener(t,function(e){e.preventDefault();drop.classList.remove('over');});});
+  drop.addEventListener('drop',function(e){ var fs=e.dataTransfer&&e.dataTransfer.files; if(fs&&fs.length) uploadFiles(fs); });
+  document.addEventListener('paste',function(e){
+    if(!trip||!trip.consent||!(e.clipboardData&&e.clipboardData.files&&e.clipboardData.files.length)) return;
+    var files=[].map.call(e.clipboardData.files,function(f,i){return pasteName(f,i);});
+    e.preventDefault(); uploadFiles(files);
+  });
+  [].forEach.call(document.querySelectorAll('[data-k]'),function(e){e.addEventListener('input',saveAnswers);});
+  $('t_text').addEventListener('input',function(){$('addText').disabled=!this.value.trim();submitState();});
+  $('addText').addEventListener('click',async function(){
+    var b=this;b.disabled=true;showErr('');
+    try{ var tx=await api('POST','/text',{label:$('t_label').value,text:$('t_text').value}); if(tx.meta) mine[tx.item]=tx.meta; $('t_text').value='';$('t_label').value=''; await refresh(); }
+    catch(e){ showErr(errText(e.code)); b.disabled=false; }
+  });
+  $('submit').addEventListener('click',async function(){
+    this.disabled=true;
+    try{
+      var pend=($('t_text').value||'').trim();
+      if(pend){ var tp=await api('POST','/text',{label:$('t_label').value,text:$('t_text').value}); if(tp.meta) mine[tp.item]=tp.meta; $('t_text').value='';$('t_label').value='';$('addText').disabled=true; }
+      var ids=(trip.items||[]).map(function(i){return i.id;}).concat(Object.keys(mine));
+      await api('POST','/submit',{items:ids}); await refresh();
+    }catch(e){ showErr(errText(e.code)); this.disabled=false; }
+  });
+  load();
+})();
+</script>
+</body>
+</html>

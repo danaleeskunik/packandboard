@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#17352A">
+<title>Pack &amp; Board</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;800&family=Miriam+Libre:wght@700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icon-192.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<style>
+:root{--bg:#F7F2E8;--card:#fff;--line:#E2D9C4;--ink:#1F2A24;--ink2:#6b776f;--brand:#17352A;--amber:#D49A3A;--blue:#2F7FC8;--btn:#17352A;--btnink:#F7F2E8;--shadow:0 1px 2px rgba(23,53,42,.06),0 8px 24px rgba(23,53,42,.07)}
+@media(prefers-color-scheme:dark){:root{--blue:#5FA8E8;--bg:#101a15;--card:#1a2a22;--line:#2b3f34;--ink:#eef2ec;--ink2:#9fb0a5;--brand:#cfe6d8;--btn:#cfe6d8;--btnink:#101a15;--shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25)}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.55 Heebo,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:980px;margin:0 auto;padding:34px 20px 70px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:34px}
+.logo{direction:ltr;display:inline-block;line-height:0}
+.logo svg{display:block;height:36px;width:auto}
+.hero{margin:0 0 36px}
+.hero h1{font:700 clamp(30px,6vw,46px)/1.12 'Miriam Libre',serif;color:var(--brand);margin:0 0 10px;text-wrap:balance}
+.hero p{margin:0;max-width:46ch;color:var(--ink2);font-size:17px}
+.route{display:block;width:100%;max-width:360px;height:48px;margin-top:16px;overflow:visible}
+h2{font:600 12.5px/1 Heebo;letter-spacing:.09em;color:var(--ink2);margin:36px 0 6px}
+.hint{margin:0 0 14px;font-size:13.5px;color:var(--ink2)}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.demo{position:relative;display:flex;flex-direction:column;justify-content:space-between;min-height:190px;border-radius:22px;padding:20px 20px 18px;color:#fff;text-decoration:none;overflow:hidden;box-shadow:var(--shadow);transition:transform .18s ease,box-shadow .18s ease;background:var(--c)}
+.demo::before{content:"";position:absolute;inset:0;background:radial-gradient(120% 100% at 100% 0,rgba(255,255,255,.22),transparent 55%),linear-gradient(160deg,transparent 40%,rgba(0,0,0,.28));pointer-events:none}
+.demo::after{content:"";position:absolute;inset:auto -20px -26px auto;width:150px;height:150px;border-radius:50%;border:2px dashed rgba(255,255,255,.28)}
+.demo:hover{transform:translateY(-3px);box-shadow:0 14px 34px rgba(23,53,42,.18)}
+.stamp{position:relative;z-index:1;width:54px;height:54px;border-radius:50%;border:2px solid rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;font:700 17px 'Miriam Libre',serif;background:rgba(255,255,255,.12)}
+.demo .t{position:relative;z-index:1;font:700 26px/1.1 'Miriam Libre',serif;margin-top:16px}
+.demo .s{position:relative;z-index:1;font-size:14px;opacity:.9;margin-top:4px}
+.demo .open{position:relative;z-index:1;align-self:flex-start;margin-top:14px;font:600 13px Heebo;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.45);border-radius:999px;padding:6px 14px}
+.tool{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px 18px;text-decoration:none;color:inherit;box-shadow:var(--shadow);transition:transform .18s,border-color .18s}
+.tool:hover{transform:translateY(-2px);border-color:var(--brand)}
+.tool .ic{width:46px;height:46px;border-radius:13px;background:var(--brand);color:var(--btnink);display:flex;align-items:center;justify-content:center;flex:none}
+.tool .ic svg{width:24px;height:24px}
+.tool .tx{flex:1;min-width:0}.tool .t{font-weight:600;font-size:17px}.tool .s{font-size:13.5px;color:var(--ink2)}
+.tool .go,.row .go{color:var(--ink2);font-size:18px}
+.list{display:flex;flex-direction:column;gap:8px}
+.row{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 16px;text-decoration:none;color:inherit;transition:border-color .15s}
+.row:hover{border-color:var(--brand)}
+.row .dot{width:10px;height:10px;border-radius:50%;background:var(--c,var(--line));flex:none}
+.row .tx{flex:1;min-width:0}.row .t{font-weight:600}.row .s{font-size:13px;color:var(--ink2)}
+form{display:flex;flex-direction:column;gap:12px;margin-top:28px;max-width:420px}
+.lock h1{font:700 clamp(28px,5vw,38px)/1.15 'Miriam Libre',serif;color:var(--brand);margin:30px 0 4px}
+.lock p{margin:0;color:var(--ink2)}
+input[type=password]{font:inherit;padding:15px 16px;border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);width:100%}
+button.go-btn{font:600 16px Heebo,sans-serif;padding:15px;border:0;border-radius:14px;background:var(--btn);color:var(--btnink);cursor:pointer}
+label.rem{display:flex;gap:8px;align-items:center;color:var(--ink2);font-size:14px}
+#err{color:#c0392b;min-height:1.4em;font-size:14px}
+.quick{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 30px}
+.qbtn{display:inline-flex;align-items:center;gap:9px;font:600 15px Heebo,sans-serif;text-decoration:none;border-radius:999px;padding:12px 18px;border:1px solid var(--line);background:var(--card);color:var(--ink);box-shadow:var(--shadow);transition:transform .15s,border-color .15s}
+.qbtn:hover{transform:translateY(-2px);border-color:var(--brand)}
+.qbtn.main{background:var(--brand);color:var(--btnink);border-color:var(--brand)}
+.qbtn svg{width:19px;height:19px}
+.qbtn .live{width:8px;height:8px;border-radius:50%;background:#35c46b;box-shadow:0 0 0 0 rgba(53,196,107,.6);animation:pulse 2s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 8px rgba(53,196,107,0)}100%{box-shadow:0 0 0 0 rgba(53,196,107,0)}}
+@media(prefers-reduced-motion:reduce){.qbtn .live{animation:none}}
+.foot{margin-top:46px;font-size:12.5px;color:var(--ink2)}
+@media(max-width:560px){.top{margin-bottom:24px}.logo svg{height:30px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <span class="logo" aria-label="Pack &amp; Board"><svg viewBox="0 0 1100 262" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pack &amp; Board"><text x="0" y="190" font-family="Miriam Libre,serif" font-weight="700" font-size="150" letter-spacing="-3" style="fill:var(--brand)">Pack</text><g transform="translate(374 14) scale(1.9)"><text x="48" y="100" text-anchor="middle" font-family="Miriam Libre,serif" font-weight="700" font-size="100" style="fill:var(--blue)">&amp;</text><path d="M72 44 L108 26 L92 62 L85 51 Z" style="fill:var(--brand)"/><path d="M85 51 L108 26" style="stroke:var(--bg)" stroke-width="2.6" stroke-linecap="round" fill="none"/></g><text x="625" y="190" font-family="Miriam Libre,serif" font-weight="700" font-size="150" letter-spacing="-3" style="fill:var(--brand)">Board</text></svg></span>
+  </div>
+
+  <div id="lock" class="lock">
+    <h1>הכניסה פרטית</h1>
+    <p id="sub">הכניסי סיסמה כדי להמשיך.</p>
+    <form id="f" autocomplete="on">
+      <input type="text" name="username" value="packandboard" autocomplete="username" hidden>
+      <input type="password" id="pw" name="password" autocomplete="current-password" placeholder="סיסמה" required>
+      <label class="rem"><input type="checkbox" id="rem" checked> זכור במכשיר הזה</label>
+      <div id="err" role="alert"></div>
+      <button class="go-btn" type="submit">כניסה</button>
+    </form>
+  </div>
+  <div id="out"></div>
+</div>
+<script>
+(function(){
+  var BLOB='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', ITER=200000, MODE='links', KEY='pab.hub.pw';
+  var ICONS={upload:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>',
+         bell:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>',
+         grid:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M3 9h18M8 3v3M16 3v3M8 14l2.5 2.5L16 11"/></svg>',
+         home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>',
+         link:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>'};
+  function b64(s){var b=atob(s),a=new Uint8Array(b.length);for(var i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a;}
+  async function decrypt(pw){
+    var raw=b64(BLOB);
+    if(String.fromCharCode.apply(null,raw.slice(0,8))!=='Salted__') throw new Error('format');
+    var salt=raw.slice(8,16), ct=raw.slice(16);
+    var base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveBits']);
+    var bits=new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',salt:salt,iterations:ITER,hash:'SHA-256'},base,384));
+    var key=await crypto.subtle.importKey('raw',bits.slice(0,32),'AES-CBC',false,['decrypt']);
+    var plain=await crypto.subtle.decrypt({name:'AES-CBC',iv:bits.slice(32,48)},key,ct);
+    return new TextDecoder().decode(plain);
+  }
+  function el(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e;}
+  function isExt(u){return /^https?:/.test(u);}
+  function link(a,u){a.href=u;if(isExt(u)){a.target='_blank';a.rel='noopener';}return a;}
+  function demoCard(i){
+    var a=link(el('a','demo'),i[2]);a.style.setProperty('--c',i[3]||'#17352A');
+    a.appendChild(el('span','stamp',i[4]||''));a.appendChild(el('span','t',i[0]));a.appendChild(el('span','s',i[1]));a.appendChild(el('span','open','פתיחה ←'));return a;
+  }
+  function toolCard(i){
+    var a=link(el('a','tool'),i[2]);var ic=el('span','ic');ic.innerHTML=ICONS[i[4]]||ICONS.link;a.appendChild(ic);
+    var tx=el('span','tx');tx.appendChild(el('div','t',i[0]));tx.appendChild(el('div','s',i[1]));a.appendChild(tx);a.appendChild(el('span','go','←'));return a;
+  }
+  function rowCard(i){
+    var a=link(el('a','row'),i[2]);if(i[3])a.style.setProperty('--c',i[3]);a.appendChild(el('span','dot'));
+    var tx=el('span','tx');tx.appendChild(el('div','t',i[0]));tx.appendChild(el('div','s',i[1]));a.appendChild(tx);a.appendChild(el('span','go','←'));return a;
+  }
+  function render(groups){
+    document.getElementById('lock').remove();
+    var out=document.getElementById('out');
+    var hero=el('div','hero');
+    hero.appendChild(el('h1',null,'הטיול שלכם, מוכן ביד'));
+    hero.appendChild(el('p',null,'אפליקציית ליווי אישית לכל טיול: יום אחר יום, מפות, הזמנות, מזג אוויר, מתרגם, בעברית ובאנגלית.'));
+    hero.insertAdjacentHTML('beforeend','<svg class="route" viewBox="0 0 360 48" aria-hidden="true"><path d="M10 34 C70 2 120 46 180 28 S290 4 336 14" fill="none" stroke="var(--blue)" stroke-width="3.2" stroke-linecap="round" stroke-dasharray="0.1 9"/><circle cx="10" cy="34" r="6" fill="var(--blue)"/><circle cx="336" cy="14" r="6" fill="var(--blue)"/><g transform="translate(184 25) scale(.78) translate(-90 -44)"><path d="M72 44 L108 26 L92 62 L85 51 Z" style="fill:var(--brand)"/><path d="M85 51 L108 26" style="stroke:var(--bg)" stroke-width="2.6" stroke-linecap="round"/></g></svg>');
+    out.appendChild(hero);
+    var quick=el('div','quick');
+    var GA='https://analytics.google.com/analytics/web/#/a406945886p552788304/';
+    var q1=el('a','qbtn main');q1.href='/dana/analytics/';
+    q1.insertAdjacentHTML('beforeend','<span class="live" aria-hidden="true"></span>');q1.appendChild(el('span',null,'אנליטיקס עכשיו'));
+    var q2=el('a','qbtn');q2.href=GA+'reports/intelligenthome';q2.target='_blank';q2.rel='noopener';
+    q2.insertAdjacentHTML('beforeend','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>');q2.appendChild(el('span',null,'דוח מלא'));
+    quick.appendChild(q1);quick.appendChild(q2);
+    out.appendChild(quick);
+    groups.forEach(function(g){
+      var sec=el('section');
+      sec.appendChild(el('h2',null,g.title));
+      if(g.hint)sec.appendChild(el('p','hint',g.hint));
+      var box=el('div',g.kind==='hero'?'grid3':(g.kind==='tools'?'grid3':'list'));
+      g.items.forEach(function(i){box.appendChild(g.kind==='hero'?demoCard(i):(g.kind==='tools'?toolCard(i):rowCard(i)));});
+      sec.appendChild(box);out.appendChild(sec);
+    });
+    out.appendChild(el('p','foot','Pack & Board · אפליקציות טיול בנויות בשבילכם'));
+  }
+  async function unlock(pw,remember,silent){
+    try{
+      var g=await decrypt(pw);
+      try{ if(remember) localStorage.setItem(KEY,pw);}catch(e){}
+      if(MODE==='page'){ g=g.split("classList.add('present')").join('0'); document.open(); document.write(g); document.close(); } else { render(JSON.parse(g)); }
+      return true;
+    }catch(e){
+      if(!silent) document.getElementById('err').textContent='הסיסמה לא נכונה.';
+      try{localStorage.removeItem(KEY);}catch(x){}
+      return false;
+    }
+  }
+  document.getElementById('f').addEventListener('submit',function(ev){
+    ev.preventDefault(); unlock(document.getElementById('pw').value,document.getElementById('rem').checked,false);
+  });
+  try{
+    var hp=/[#&]p=([A-Za-z0-9_-]+)/.exec(location.hash||'');
+    if(hp){ unlock(hp[1],true,true).then(function(ok){ if(!ok){ try{ var s=localStorage.getItem(KEY); if(s) unlock(s,true,true); }catch(e){} } }); }
+    else { var saved=localStorage.getItem(KEY); if(saved) unlock(saved,true,true); }
+  }catch(e){}
+})();
+</script>
+</body>
+</html>
