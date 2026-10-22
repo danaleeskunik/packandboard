@@ -2642,10 +2642,19 @@ hydrateFromSupabase();
 <script>
 (function(){
   /* 1. place links in the day cards open directions (navigation), not an empty map */
+  function isMaps(h){ return /^https?:\/\/(www\.)?google\.[a-z.]+\/maps|^https?:\/\/maps\.google\.|^https?:\/\/maps\.app\.goo\.gl/.test(h||''); }
+  /* On a phone, a link with target=_blank opens a NEW tab and Chrome/Safari then hand it to the Google Maps app: the new tab stays
+     empty (about:blank) and that is what the visitor sees on coming back. So on phones a maps link opens in the SAME tab: the app
+     page stays where it was. (Desktop keeps the new tab.) */
+  function phone(){ var u=navigator.userAgent||''; return /iPhone|iPad|iPod|Android/i.test(u)||(navigator.maxTouchPoints>1&&/Mac/.test(navigator.platform||'')); }
   document.addEventListener('click',function(e){
-    var a=e.target.closest&&e.target.closest('a'); if(!a||!a.closest('[data-daycard]')||a.closest('.day-map-caption')) return;   /* the city-level "open in maps" under each day's map stays a map */
-    var m=/^https:\/\/www\.google\.com\/maps\/search\/\?api=1&query=([^&#]+)/.exec(a.getAttribute('href')||'');
-    if(m) a.setAttribute('href','https://www.google.com/maps/dir/?api=1&destination='+m[1]);
+    var a=e.target.closest&&e.target.closest('a'); if(!a) return;
+    var h=a.getAttribute('href')||'';
+    if(a.closest('[data-daycard]')&&!a.closest('.day-map-caption')){
+      var m=/^https:\/\/www\.google\.com\/maps\/search\/\?api=1&query=([^&#]+)/.exec(h);
+      if(m){ h='https://www.google.com/maps/dir/?api=1&destination='+m[1]; a.setAttribute('href',h); }   /* the city-level "open in maps" under each day's map stays a map */
+    }
+    if(isMaps(h)&&phone()){ e.preventDefault(); location.href=h; }
   },true);
 
   /* 1b. the small map of each day is an embedded Google map: tapping inside it opened a broken Google page (404 "/maps/undefined&q=...").
@@ -2653,7 +2662,8 @@ hydrateFromSupabase();
   var st=document.createElement('style'); st.textContent='.day-map-box iframe{pointer-events:none}.day-map-box{cursor:pointer}'; document.head.appendChild(st);
   document.addEventListener('click',function(e){
     var box=e.target.closest&&e.target.closest('.day-map-box'); if(!box||e.target.closest('a')) return;
-    var a=box.querySelector('.day-map-caption a'); if(a) window.open(a.getAttribute('href'),'_blank','noopener');
+    var a=box.querySelector('.day-map-caption a'); if(!a) return;
+    if(phone()) location.href=a.getAttribute('href'); else window.open(a.getAttribute('href'),'_blank','noopener');
   });
 
   /* 2. blank page after coming back from the map: reload once (never in a loop) */
