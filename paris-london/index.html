@@ -2639,6 +2639,14 @@ hydrateFromSupabase();
     if(m) a.setAttribute('href','https://www.google.com/maps/dir/?api=1&destination='+m[1]);
   },true);
 
+  /* 1b. the small map of each day is an embedded Google map: tapping inside it opened a broken Google page (404 "/maps/undefined&q=...").
+         The embed stays as a picture; a tap on it opens the real Google Maps (the same link as the "open in maps" button). */
+  var st=document.createElement('style'); st.textContent='.day-map-box iframe{pointer-events:none}.day-map-box{cursor:pointer}'; document.head.appendChild(st);
+  document.addEventListener('click',function(e){
+    var box=e.target.closest&&e.target.closest('.day-map-box'); if(!box||e.target.closest('a')) return;
+    var a=box.querySelector('.day-map-caption a'); if(a) window.open(a.getAttribute('href'),'_blank','noopener');
+  });
+
   /* 2. blank page after coming back from the map: reload once (never in a loop) */
   function blank(){ var b=document.body; return !b||(b.innerText||'').replace(/\s+/g,'').length<40; }
   function heal(){
