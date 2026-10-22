@@ -2762,5 +2762,71 @@ if(CURRENT_FAMILY && FAMILY_NAMES[CURRENT_FAMILY]){
 }
 hydrateFromSupabase();
 </script>
+<!-- pab-app-fixes -->
+<script>
+(function(){
+  /* 1. place links in the day cards open directions (navigation), not an empty map */
+  document.addEventListener('click',function(e){
+    var a=e.target.closest&&e.target.closest('a'); if(!a||!a.closest('[data-daycard]')) return;
+    var m=/^https:\/\/www\.google\.com\/maps\/search\/\?api=1&query=([^&#]+)/.exec(a.getAttribute('href')||'');
+    if(m) a.setAttribute('href','https://www.google.com/maps/dir/?api=1&destination='+m[1]);
+  },true);
+
+  /* 2. blank page after coming back from the map: reload once (never in a loop) */
+  function blank(){ var b=document.body; return !b||(b.innerText||'').replace(/\s+/g,'').length<40; }
+  function heal(){
+    setTimeout(function(){
+      if(!blank()) return;
+      try{ var t=+sessionStorage.getItem('pab.heal')||0; if(Date.now()-t<15000) return; sessionStorage.setItem('pab.heal',String(Date.now())); }catch(x){}
+      location.reload();
+    },500);
+  }
+  window.addEventListener('pageshow',function(e){ if(e.persisted||blank()) heal(); });
+  document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible') heal(); });
+
+  /* 3. emergency screen: Foreign Ministry situation room + the Israeli embassy of the destination */
+  var MFA={t:'חדר מצב משרד החוץ, 24/7',tel:'+97225303155',show:'+972-2-530-3155',note:'אפשר גם בוואטסאפ: +972-50-507-3969'};
+  var EMB={
+    portugal:[{t:'שגרירות ישראל בליסבון: חירום',tel:'+351934158450',show:'+351 934 158 450',note:'שיחה או וואטסאפ'},{t:'שגרירות ישראל בליסבון',tel:'+351210455500',show:'+351 210 455 500',note:'R. António Enes 16, ליסבון'}],
+    japan:[{t:'שגרירות ישראל בטוקיו',tel:'+81332640911',show:'+81 3 3264 0911',note:'3 Nibanchō, Chiyoda, טוקיו'}],
+    thailand:[{t:'שגרירות ישראל בבנגקוק: חירום',tel:'+6622049290',show:'+66 2 204 9290'},{t:'שגרירות ישראל בבנגקוק',tel:'+6622049200',show:'+66 2 204 9200',note:'Ocean Tower 2, Sukhumvit 19'}],
+    italy:[{t:'שגרירות ישראל ברומא: חירום',tel:'+393400580062',show:'+39 340 058 0062',note:'באיטליה קודם כל 112'},{t:'שגרירות ישראל ברומא',tel:'+390636198500',show:'+39 06 3619 8500',note:'Via Michele Mercati 14'}],
+    korea:[{t:'שגרירות ישראל בסיאול',tel:'+82232108500',show:'+82 2 3210 8500',note:'11 Cheonggyecheon-ro, Jongno-gu'}],
+    france:[{t:'שגרירות ישראל בפריז: חירום',tel:'+33659444461',show:'+33 6 59 44 44 61',note:'לשעות שאחרי הפעילות (17:30–09:00)'},{t:'שגרירות ישראל בפריז',tel:'+33140765500',show:'+33 1 40 76 55 00'}],
+    uk:[{t:'שגרירות ישראל בלונדון: חירום',tel:'+447511223617',show:'+44 7511 223617',note:'וואטסאפ, 24/7'},{t:'שגרירות ישראל בלונדון',tel:'+442079579500',show:'+44 20 7957 9500'}],
+    albania:[{t:'שגרירות ישראל בטירנה: חירום',tel:'+355697020501',show:'+355 69 702 0501'},{t:'שגרירות ישראל בטירנה',tel:'+35544508523',show:'+355 4 450 8523'}]
+  };
+  function keysFor(d){
+    d=String(d||'');
+    if(/^japan/.test(d)) return ['japan']; if(/^thailand/.test(d)) return ['thailand']; if(/^(italy|milano)/.test(d)) return ['italy'];
+    if(/^korea/.test(d)) return ['korea']; if(/^normandy/.test(d)) return ['france']; if(/^paris-london/.test(d)) return ['france','uk'];
+    if(/^albania/.test(d)) return ['albania']; if(/^portugal/.test(d)) return ['portugal']; return [];
+  }
+  function digits(s){ return String(s||'').replace(/\D/g,''); }
+  function addEmergency(){
+    var g=document.getElementById('emergency-grid'); if(!g) return;
+    [].forEach.call(g.querySelectorAll('.pab-emg'),function(n){ n.parentNode.removeChild(n); });
+    var list=[];
+    keysFor(typeof CURRENT_DESTINATION!=='undefined'?CURRENT_DESTINATION:'').forEach(function(k){ list=list.concat(EMB[k]||[]); });
+    /* the verified embassy numbers replace any older embassy / situation-room card the trip carries (some had outdated numbers) */
+    [].forEach.call(g.children,function(n){ var x=n.textContent||''; if((list.length&&x.indexOf('שגרירות')>-1)||x.indexOf('חדר מצב')>-1) n.setAttribute('data-pab-old','1'); });
+    [].forEach.call(g.querySelectorAll('[data-pab-old]'),function(n){ n.parentNode.removeChild(n); });
+    var have=digits(g.textContent);
+    list.push(MFA);
+    list.forEach(function(c){
+      var tail=digits(c.tel).slice(-8); if(tail&&have.indexOf(tail)>-1) return;   /* already listed by the trip itself */
+      var a=document.createElement('a'); a.className='pab-emg'; a.href='tel:'+c.tel;
+      a.style.cssText='background:var(--surface-card);border:1px solid var(--border-card);border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);padding:18px 20px;text-decoration:none;display:block';
+      var t=document.createElement('div'); t.style.cssText='font:var(--fw-heavy) var(--text-13-5)/1.2 var(--font-ui);letter-spacing:var(--track-eyebrow);color:var(--red-600)'; t.textContent=c.t;
+      var n=document.createElement('div'); n.setAttribute('dir','ltr'); n.style.cssText='margin-top:8px;font:var(--fw-black) var(--text-22)/1.2 var(--font-num);color:var(--navy-800);text-align:right'; n.textContent=c.show;
+      a.appendChild(t); a.appendChild(n);
+      if(c.note){ var s=document.createElement('div'); s.style.cssText='margin-top:6px;font:var(--fw-medium) var(--text-13)/1.4 var(--font-ui);color:var(--ink-6)'; s.textContent=c.note; a.appendChild(s); }
+      g.appendChild(a);
+    });
+  }
+  var ss=window.showScreen;
+  if(typeof ss==='function') window.showScreen=function(name){ var r=ss.apply(this,arguments); if(name==='emergency') addEmergency(); return r; };
+})();
+</script>
 </body>
 </html>
