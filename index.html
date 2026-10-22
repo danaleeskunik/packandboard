@@ -296,12 +296,20 @@ var CONTACT = { whatsapp: '972537004934', email: 'office@packandboard.com' };
     window.gtag('js',new Date());
     window.gtag('config',GA,{allow_google_signals:false,allow_ad_personalization_signals:false});
   }
+  /* where on the page a contact button sits (the event NAME carries it: cta_<place>_whatsapp / cta_<place>_email) */
+  function place(a){ return a.closest('.site-hdr')?'header':a.closest('.hero')?'hero':a.closest('#inside')?'gallery':a.closest('.steps')?'how':a.closest('#demos')?'demos':a.closest('#contact')?'contact':a.closest('footer')?'footer':'page'; }
   document.addEventListener('click',function(ev){
     var a=ev.target.closest&&ev.target.closest('a'); if(!a) return;
-    if(a.matches('[data-contact],#cta-wa,#hdr-wa')) track('contact_whatsapp');
-    else if(a.matches('#cta-mail,#hdr-mail')) track('contact_email');
-    else if(a.matches('a.demo')) track('demo_open',{demo:a.getAttribute('href').replace(/\/$/,'')});
+    if(a.matches('[data-contact],#cta-wa,#hdr-wa')){ track('contact_whatsapp'); track('cta_'+place(a)+'_whatsapp'); }
+    else if(a.matches('#cta-mail,#hdr-mail')){ track('contact_email'); track('cta_'+place(a)+'_email'); }
+    else if(a.matches('a.demo')){ var h=a.getAttribute('href').replace(/\/$/,''); track('demo_open',{demo:h}); track('demo_click_'+h.replace(/[^a-z0-9]+/gi,'')); }
   });
+  /* how far down the page visitors read (the event NAME carries the depth) */
+  var depth=0;
+  window.addEventListener('scroll',function(){
+    var el=document.documentElement, p=(window.scrollY+window.innerHeight)/Math.max(1,el.scrollHeight)*100;
+    [25,50,75,100].forEach(function(t){ if(depth<t && p>=t-(t===100?2:0)){ depth=t; track('landing_scroll_'+t); } });
+  },{passive:true});
 })();
 </script>
 </body>

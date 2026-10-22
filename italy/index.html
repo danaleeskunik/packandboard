@@ -340,10 +340,13 @@
   ['pointerdown','keydown','touchstart'].forEach(function(t){document.addEventListener(t,function(){touched=true;},true);});
   function ev(name){ if(touched){ try{window.gtag('event',name);}catch(e){} } }
   window.addEventListener('load',function(){
-    var ss=window.showScreen, sd=window.selectDay;
+    var ss=window.showScreen, sd=window.selectDay, al=window.applyLanguage;
     if(typeof ss==='function') window.showScreen=function(n){ ev('app_screen_'+n); return ss.apply(this,arguments); };
-    if(typeof sd==='function') window.selectDay=function(){ ev('app_day_open'); return sd.apply(this,arguments); };
+    if(typeof sd==='function') window.selectDay=function(btn){ ev('app_day_open'); try{ var n=btn&&btn.getAttribute&&btn.getAttribute('data-pill'); if(/^[0-9]+$/.test(n||'')) ev('app_day_'+n); }catch(e){} return sd.apply(this,arguments); };
+    if(typeof al==='function') window.applyLanguage=function(l){ if(l==='en') ev('app_lang_en'); return al.apply(this,arguments); };
+    try{ if((window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone) window.gtag('event','app_standalone'); }catch(e){}
   });
+  window.addEventListener('appinstalled',function(){ try{window.gtag('event','app_installed');}catch(e){} });
 })();
 </script>
 <!-- pab-demo-pwa -->
