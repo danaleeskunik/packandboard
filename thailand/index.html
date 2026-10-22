@@ -469,6 +469,7 @@ body:has(#pab-install.on) #pab-sheet{bottom:calc(156px + env(safe-area-inset-bot
 <script>
 (function(){
   if(!/(^|\.)packandboard\.com$/.test(location.hostname)) return;
+  try{ if(/[?&]me=1(&|$)/.test(location.search)) localStorage.setItem('pab.me','1'); if(/[?&]me=0(&|$)/.test(location.search)) localStorage.removeItem('pab.me'); if(localStorage.getItem('pab.me')==='1') return; }catch(e){}   /* "this is my device": no visit counting */
   var GA='G-7B8Y5VY6BH';
   var s=document.createElement('script'); s.async=true; s.src='https://www.googletagmanager.com/gtag/js?id='+GA; document.head.appendChild(s);
   window.dataLayer=window.dataLayer||[]; window.gtag=function(){window.dataLayer.push(arguments);};

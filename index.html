@@ -289,7 +289,8 @@ var CONTACT = { whatsapp: '972537004934', email: 'office@packandboard.com' };
 (function(){
   var GA='G-7B8Y5VY6BH';
   function track(name,params){ if(window.gtag) window.gtag('event',name,params||{}); }
-  if(/(^|\.)packandboard\.com$/.test(location.hostname)){
+  var mine=false; try{ if(/[?&]me=1(&|$)/.test(location.search)) localStorage.setItem('pab.me','1'); if(/[?&]me=0(&|$)/.test(location.search)) localStorage.removeItem('pab.me'); mine=localStorage.getItem('pab.me')==='1'; }catch(e){}   /* "this is my device": no visit counting */
+  if(/(^|\.)packandboard\.com$/.test(location.hostname) && !mine){
     var s=document.createElement('script'); s.async=true; s.src='https://www.googletagmanager.com/gtag/js?id='+GA; document.head.appendChild(s);
     window.dataLayer=window.dataLayer||[]; window.gtag=function(){window.dataLayer.push(arguments);};
     window.gtag('js',new Date());
