@@ -2643,7 +2643,7 @@ hydrateFromSupabase();
 (function(){
   /* 1. place links in the day cards open directions (navigation), not an empty map */
   document.addEventListener('click',function(e){
-    var a=e.target.closest&&e.target.closest('a'); if(!a||!a.closest('[data-daycard]')) return;
+    var a=e.target.closest&&e.target.closest('a'); if(!a||!a.closest('[data-daycard]')||a.closest('.day-map-caption')) return;   /* the city-level "open in maps" under each day's map stays a map */
     var m=/^https:\/\/www\.google\.com\/maps\/search\/\?api=1&query=([^&#]+)/.exec(a.getAttribute('href')||'');
     if(m) a.setAttribute('href','https://www.google.com/maps/dir/?api=1&destination='+m[1]);
   },true);
