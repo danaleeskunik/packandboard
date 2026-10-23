@@ -2632,7 +2632,7 @@ hydrateFromSupabase();
 <!-- pab-app-fixes -->
 <script>
 (function(){
-  /* 1. place links in the day cards open directions (navigation), not an empty map */
+  /* 1. place chips in the day cards: tap the name = the place in Google Maps (view); tap the arrow = navigation */
   function isMaps(h){ return /^https?:\/\/(www\.)?google\.[a-z.]+\/maps|^https?:\/\/maps\.google\.|^https?:\/\/maps\.app\.goo\.gl/.test(h||''); }
   /* On a phone, a link with target=_blank opens a NEW tab and Chrome/Safari then hand it to the Google Maps app: the new tab stays
      empty (about:blank) and that is what the visitor sees on coming back. So on phones a maps link opens in the SAME tab: the app
@@ -2641,12 +2641,37 @@ hydrateFromSupabase();
   document.addEventListener('click',function(e){
     var a=e.target.closest&&e.target.closest('a'); if(!a) return;
     var h=a.getAttribute('href')||'';
-    if(a.closest('[data-daycard]')&&!a.closest('.day-map-caption')){
-      var m=/^https:\/\/www\.google\.com\/maps\/search\/\?api=1&query=([^&#]+)/.exec(h);
-      if(m){ h='https://www.google.com/maps/dir/?api=1&destination='+m[1]; a.setAttribute('href',h); }   /* the city-level "open in maps" under each day's map stays a map */
-    }
     if(isMaps(h)&&phone()){ e.preventDefault(); location.href=h; }
   },true);
+  var NAV_SVG='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l19-9-9 19-2-8z"/></svg>';
+  var cst=document.createElement('style');
+  cst.textContent='.pab-chip{display:inline-flex;align-items:stretch;border-radius:999px;overflow:hidden}.pab-chip>a{display:inline-flex;align-items:center}'+
+    '.pab-chip>a.pab-nav{padding:0 11px;border-inline-start:1px solid color-mix(in srgb,currentColor 22%,transparent);text-decoration:none}'+
+    '.pab-chip-hint{flex-basis:100%;font-size:12px;font-weight:500;line-height:1.4;color:var(--ink-6,#6b776f);margin-top:-2px}';
+  document.head.appendChild(cst);
+  function decorate(){
+    [].forEach.call(document.querySelectorAll('[data-daycard] a[href*="google."]'),function(a){
+      if(a.getAttribute('data-pab-nav')||a.closest('.day-map-caption')||a.closest('.day-map-box')||a.closest('.pab-chip')) return;
+      var h=a.getAttribute('href')||'', m=/\/maps\/(?:search|dir)\/\?api=1&(?:amp;)?(?:query|destination)=([^&#]+)/.exec(h);
+      if(!m||!(a.style.background||a.style.backgroundColor||a.style.padding)) return;   /* chips only, never a link inside running text */
+      a.setAttribute('data-pab-nav','1');
+      a.setAttribute('href','https://www.google.com/maps/search/?api=1&query='+m[1]);
+      var w=document.createElement('span'); w.className='pab-chip';
+      w.style.background=a.style.background||a.style.backgroundColor||'var(--surface-muted)';
+      a.style.background='transparent'; a.style.borderRadius='0';
+      a.parentNode.insertBefore(w,a); w.appendChild(a);
+      var n=document.createElement('a'); n.className='pab-nav'; n.href='https://www.google.com/maps/dir/?api=1&destination='+m[1];
+      n.target='_blank'; n.rel='noopener'; n.style.color=a.style.color||'var(--blue-600)';
+      n.setAttribute('aria-label','ניווט אל '+(a.textContent||'').trim()); n.title='ניווט'; n.innerHTML=NAV_SVG;
+      w.appendChild(n);
+      var row=w.parentNode, card=a.closest('[data-daycard]');
+      if(card&&card===document.querySelector('[data-daycard]')&&row&&!row.querySelector('.pab-chip-hint')){
+        var t=document.createElement('div'); t.className='pab-chip-hint'; t.textContent='לחיצה על השם: המקום במפה · על החץ: ניווט'; row.insertBefore(t,row.firstChild);
+      }
+    });
+  }
+  decorate();
+  var dq=0; new MutationObserver(function(){ if(dq) return; dq=requestAnimationFrame(function(){ dq=0; decorate(); }); }).observe(document.body,{childList:true,subtree:true});
 
   /* 1b. the small map of each day is an embedded Google map: tapping inside it opened a broken Google page (404 "/maps/undefined&q=...").
          The embed stays as a picture; a tap on it opens the real Google Maps (the same link as the "open in maps" button). */
