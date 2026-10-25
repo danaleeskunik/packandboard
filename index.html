@@ -95,6 +95,19 @@ h3{font-size:21px;line-height:1.3;margin-bottom:6px}
 .aud{background:var(--surface);border-radius:20px;padding:26px 26px 24px}
 .aud p{margin:0;color:var(--ink2)}
 
+/* pricing */
+.price-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:26px}
+.plan{background:var(--surface);border-radius:20px;padding:28px 28px 26px;display:flex;flex-direction:column;box-shadow:inset 0 0 0 1px var(--line)}
+.plan h3{margin:0 0 6px}
+.plan .lead{margin:0;color:var(--ink2)}
+.plan .amount{display:flex;align-items:baseline;gap:8px;margin:18px 0 14px;font:800 44px/1 var(--font-ui);color:var(--brand-dark)}
+.plan .amount small{font:600 16px/1 var(--font-ui);color:var(--ink2)}
+.plan ul{list-style:none;margin:0 0 22px;padding:0;display:flex;flex-direction:column;gap:11px}
+.plan li{display:flex;gap:10px;align-items:flex-start}
+.plan li svg{flex:none;margin-top:3px;color:var(--brand)}
+.plan .btn{margin-top:auto;align-self:flex-start}
+.price-note{margin:22px 0 0;color:var(--ink2);max-width:62ch}
+
 /* faq */
 .faq{max-width:760px;margin-top:22px}
 details{border-bottom:1px solid var(--line);padding:18px 0}
@@ -119,7 +132,7 @@ footer{padding:28px 0 40px;font-size:14px;color:var(--ink3)}
   section{padding-block:52px}
   .hero-grid{grid-template-columns:1fr;gap:34px}
   .hero-shot{order:-1;width:min(86%,360px)}
-  .gallery,.steps-grid,.demos-grid,.aud-grid,.features{grid-template-columns:1fr}
+  .gallery,.steps-grid,.demos-grid,.aud-grid,.features,.price-grid{grid-template-columns:1fr}
   .gallery{gap:18px}
 }
 @media (min-width:600px) and (max-width:860px){ .gallery{grid-template-columns:repeat(2,1fr)} }
@@ -236,6 +249,38 @@ section[id]{scroll-margin-top:72px}
   </div>
 </section>
 
+<section id="pricing">
+  <div class="wrap">
+    <h2>כמה זה עולה</h2>
+    <p style="color:var(--ink2);max-width:56ch;margin:0">שתי דרכים להגיע לאפליקציה, לפי מה שכבר יש לכם. המחיר הוא לטיול אחד.</p>
+    <div class="price-grid">
+      <div class="plan">
+        <h3>אפליקציה בלבד</h3>
+        <p class="lead">כבר יש לכם מסלול מוכן? אנחנו הופכים אותו לאפליקציה אישית.</p>
+        <div class="amount">390 ₪</div>
+        <ul>
+          <li><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>אתם מביאים מסלול מוכן משלכם: מסמך, תוכנית שבניתם או תוכנית מסוכנות</span></li>
+          <li><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>האפליקציה נבנית ממנו: יום אחר יום, הזמנות, מפות ועוד</span></li>
+          <li><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>קישור אחד שאפשר לשלוח לכל מי שנוסע איתכם</span></li>
+        </ul>
+        <a class="btn btn-primary" href="#contact" data-contact data-msg="היי, אני מעוניין/ת באפליקציה אישית לטיול (חבילת &quot;אפליקציה בלבד&quot;). יש לי מסלול מוכן. היעד: , תאריכים: ">שליחת הודעה בוואטסאפ</a>
+      </div>
+      <div class="plan">
+        <h3>מהתכנון ועד האפליקציה</h3>
+        <p class="lead">עדיין אין מסלול? נכיר, נבנה אותו יחד איתכם, ונסיים באפליקציה.</p>
+        <div class="amount">790 ₪</div>
+        <ul>
+          <li><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>פגישה מקדימה: מכירים את הטיול, את הקצב ואת מה שחשוב לכם</span></li>
+          <li><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>בניית מסלול מותאם אישית</span></li>
+          <li><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>האפליקציה האישית שלכם, מוכנה לטיול</span></li>
+        </ul>
+        <a class="btn btn-primary" href="#contact" data-contact data-msg="היי, אני מעוניין/ת בחבילה &quot;פגישה מקדימה, מסלול מותאם אישית ואפליקציה&quot;. היעד: , תאריכים: ">שליחת הודעה בוואטסאפ</a>
+      </div>
+    </div>
+    <p class="price-note">סוכנויות ומתכננות טיולים: כתבו לנו ונתאים הצעה.</p>
+  </div>
+</section>
+
 <section style="padding-top:20px">
   <div class="wrap">
     <h2>שאלות נפוצות</h2>
@@ -243,7 +288,7 @@ section[id]{scroll-margin-top:72px}
       <details><summary>צריך להתקין משהו?</summary><p>לא. האפליקציה נפתחת בדפדפן דרך קישור, ואפשר להוסיף אותה למסך הבית של הטלפון כדי שתיראה כמו אפליקציה.</p></details>
       <details><summary>האם זה עובד בלי אינטרנט?</summary><p>חלק מהדברים, כמו מפות, מזג אוויר, שער המרה ותרגום, דורשים חיבור לאינטרנט. כדאי לבדוק איתנו מראש מה חשוב לכם שיעבוד גם בלי חיבור.</p></details>
       <details><summary>מי יכול לראות את הפרטים שלנו?</summary><p>מי שיש לו את הקישור. אין הרשמה או סיסמה, ולכן כדאי לשלוח את הקישור רק למי שנוסע איתכם.</p></details>
-      <details><summary>כמה זה עולה?</summary><p>המחיר תלוי בהיקף הטיול ובמה שאתם רוצים בפנים. כתבו לנו ונתאים הצעה.</p></details>
+      <details><summary>כמה זה עולה?</summary><p>אפליקציה בלבד, כשיש לכם כבר מסלול מוכן: 390 ₪. פגישה מקדימה, בניית מסלול מותאם אישית ואפליקציה: 790 ₪. המחיר הוא לטיול אחד. סוכנויות ומתכננות טיולים מוזמנות לכתוב לנו.</p></details>
     </div>
   </div>
 </section>
@@ -276,7 +321,8 @@ var CONTACT = { whatsapp: '972537004934', email: 'office@packandboard.com' };
   var mailUrl = CONTACT.email ? 'mailto:' + CONTACT.email + '?subject=' + encodeURIComponent('אפליקציה אישית לטיול') : '';
   /* every WhatsApp button (header, hero, contact section) and every mail button share the same details */
   [].forEach.call(document.querySelectorAll('[data-contact], #cta-wa'), function(a){
-    if(waUrl){ a.href = waUrl; a.target = '_blank'; a.rel = 'noopener'; } else { a.style.display = 'none'; }
+    var own = a.getAttribute('data-msg');
+    if(waUrl){ a.href = own ? 'https://wa.me/' + CONTACT.whatsapp + '?text=' + encodeURIComponent(own) : waUrl; a.target = '_blank'; a.rel = 'noopener'; } else { a.style.display = 'none'; }
   });
   [].forEach.call(document.querySelectorAll('#cta-mail, #hdr-mail'), function(a){
     if(mailUrl){ a.href = mailUrl; } else { a.style.display = 'none'; }
@@ -297,7 +343,7 @@ var CONTACT = { whatsapp: '972537004934', email: 'office@packandboard.com' };
     window.gtag('config',GA,{allow_google_signals:false,allow_ad_personalization_signals:false});
   }
   /* where on the page a contact button sits (the event NAME carries it: cta_<place>_whatsapp / cta_<place>_email) */
-  function place(a){ return a.closest('.site-hdr')?'header':a.closest('.hero')?'hero':a.closest('#inside')?'gallery':a.closest('.steps')?'how':a.closest('#demos')?'demos':a.closest('#contact')?'contact':a.closest('footer')?'footer':'page'; }
+  function place(a){ return a.closest('.site-hdr')?'header':a.closest('.hero')?'hero':a.closest('#inside')?'gallery':a.closest('.steps')?'how':a.closest('#demos')?'demos':a.closest('#pricing')?'pricing':a.closest('#contact')?'contact':a.closest('footer')?'footer':'page'; }
   document.addEventListener('click',function(ev){
     var a=ev.target.closest&&ev.target.closest('a'); if(!a) return;
     if(a.matches('[data-contact],#cta-wa,#hdr-wa')){ track('contact_whatsapp'); track('cta_'+place(a)+'_whatsapp'); }
