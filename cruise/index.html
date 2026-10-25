@@ -2982,7 +2982,14 @@ hydrateFromSupabase();
     loadLeaflet(function(){
       if(!box.isConnected||!box.offsetParent) return;
       map=L.map(box.querySelector('.pab-map'),{zoomControl:false,scrollWheelZoom:false,tap:false});
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(map);
+      /* map tiles: OpenStreetMap first. When OSM refuses (it blocks requests with no Referer, e.g. a page opened as a local file,
+         and answers with an "Access blocked" picture that the browser does not count as an error), switch to Esri's world street map (no key needed; CARTO now needs a key, checked 2026-10-25). */
+      var osm=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(map), backup=false;
+      function useBackup(){ if(backup) return; backup=true; map.removeLayer(osm);
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',{maxZoom:18,attribution:'Tiles © Esri'}).addTo(map); }
+      osm.on('tileerror',useBackup);
+      if(location.protocol==='file:') useBackup();
+      else try{ fetch('https://tile.openstreetmap.org/0/0/0.png',{cache:'no-store'}).then(function(r){ if(!r.ok) useBackup(); },useBackup); }catch(e){ useBackup(); }
       var pts=list.map(function(x){ return x.ll; });
       L.polyline(pts,{color:cssVar('--blue-600','#1F6FB8'),weight:3,dashArray:'6 6',opacity:.9}).addTo(map);
       var pins=[];   /* one pin per place: a city visited twice shows both numbers (e.g. 5·7) */
