@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>טיול סקי ואל טורנס · ינואר 2027</title>
+<meta name="robots" content="noindex">
+<meta property="og:title" content="טיול סקי ואל טורנס · ינואר 2027">
+<meta property="og:description" content="10–17 בינואר 2027 · אפליקציית קבוצה · Pack &amp; Board">
+<meta name="theme-color" content="#2A62A0">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/assets/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Miriam+Libre:wght@400;700&family=Heebo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+/* Pack & Board design tokens (same names and values as the trip apps), with the "Alps" destination theme applied */
+:root{
+  --navy-900:#14325A; --navy-800:#2A62A0; --navy-700:#5B9BD5;
+  --blue-600:#214F84; --blue-500:#2A62A0; --blue-300:#B9D6F0; --blue-120:#EAF2FB; --blue-100:#E6EFF9;
+  --red-600:#C23048; --red-500:#D4526A; --red-100:#FCE7EA;
+  --tip-bg:#E7F2FB; --tip-edge:#6FA8D9; --tip-ink:#1E4A73;
+  --whatsapp:#25D366; --whatsapp-ink:#0A2E17;
+  --ink-1:#121213; --ink-2:#2A2D30; --ink-4:#4A4D50; --ink-5:#585B5E; --ink-6:#6A6D70; --ink-7:#8D9296;
+  --surface-canvas:#EEF3F8; --surface-card:#FCFDFE; --surface-sunken:#E5EDF5; --surface-muted:#E3EBF4;
+  --border-card:#D5E0EB; --border-hair:#E1E9F2; --border-rule:#D2DDE9;
+  --illustration-bg-1:#F3F7FB; --illustration-bg-2:#E4EDF6;
+  --tile-1:#2A62A0; --tile-2:#4F7FA8; --tile-3:#3E6E8E; --tile-4:#2F5D4E;
+  --font-ui:"Heebo",system-ui,sans-serif; --font-num:"Heebo",sans-serif; --font-display:"Miriam Libre","Heebo",serif;
+  --type-section-title:700 19px/1.3 var(--font-display);
+  --type-card-title:700 17px/1.3 var(--font-display);
+  --type-body:500 14.5px/1.5 var(--font-ui);
+  --type-meta:500 13px/1.5 var(--font-ui);
+  --track-eyebrow:1.4px;
+  --shadow-card:0 2px 8px rgba(42,98,160,.07);
+  --shadow-card-hover:0 14px 30px rgba(42,98,160,.16);
+  --transition-card:transform 150ms ease, box-shadow 150ms ease;
+}
+html{scroll-behavior:smooth}
+*{box-sizing:border-box}
+body{margin:0;background:var(--surface-canvas);color:var(--ink-1);font-family:var(--font-ui);direction:rtl;-webkit-font-smoothing:antialiased}
+a{color:var(--blue-500)}
+button{font-family:var(--font-ui)}
+.shell{max-width:900px;margin:0 auto;padding:0 0 56px}
+.pad{padding:0 clamp(14px,4vw,24px)}
+
+/* hero (same build as the trip apps) */
+.hero{background:radial-gradient(120% 130% at 85% 0%, var(--navy-700), var(--navy-800) 60%, var(--navy-900));color:#fff;padding:44px 24px 40px;text-align:center;position:relative;overflow:hidden}
+.hero .dots{position:absolute;inset:0;opacity:.09;background-image:radial-gradient(#fff 1.4px, transparent 1.4px);background-size:24px 24px}
+.hero .wm{position:absolute;bottom:-6px;right:-8px;width:130px;opacity:.16;pointer-events:none}
+.dest-stamp{width:52px;height:52px;border-radius:50%;border:1.5px solid rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;position:absolute;top:20px;left:20px;z-index:2}
+.dest-stamp::before{content:"";position:absolute;inset:4px;border-radius:50%;border:1px solid rgba(255,255,255,.5)}
+.dest-stamp span{font:700 13px/1 var(--font-display);color:#fff}
+.me-switch{position:absolute;top:20px;right:20px;z-index:2;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.5);border-radius:999px;padding:7px 13px;cursor:pointer;color:#fff;font:700 12px/1 var(--font-ui)}
+.eyebrow{font:800 13.5px/1.2 var(--font-ui);letter-spacing:var(--track-eyebrow);color:var(--blue-300)}
+.hero h1{margin:10px 0 8px;font:700 clamp(26px,6vw,42px)/1.15 var(--font-display);letter-spacing:-1px}
+.hero .dates{margin:0;font:500 17px/1.5 var(--font-ui);color:var(--blue-120)}
+.hero .cities{margin:14px 0 0;font:700 14px/1.4 var(--font-ui);color:var(--blue-300)}
+@media (max-width:520px){.hero{padding-top:84px}}
+.hero .banner{display:inline-block;margin:12px 0 0;font:700 13px/1.4 var(--font-ui);color:#fff;background:rgba(255,255,255,.16);border-radius:999px;padding:5px 14px}
+
+/* cards */
+.card{background:var(--surface-card);border:1px solid var(--border-card);border-radius:18px;box-shadow:var(--shadow-card);padding:20px 22px;margin-top:14px}
+.label-eyebrow{font:800 13.5px/1.2 var(--font-ui);letter-spacing:var(--track-eyebrow);color:var(--navy-800);margin-bottom:16px}
+.sec-title{margin:0 0 14px;font:var(--type-section-title);color:var(--navy-800)}
+.muted-note{font:var(--type-meta);color:var(--ink-6)}
+
+/* countdown */
+.cd{display:flex;gap:8px;text-align:center;margin-bottom:18px;direction:ltr}
+.cd div{flex:1}
+.cd b{display:block;font:900 clamp(26px,7vw,38px)/1 var(--font-num);letter-spacing:-1px;color:var(--navy-800)}
+.cd span{display:block;font:700 12px/1.4 var(--font-ui);color:var(--ink-7);margin-top:6px}
+.fl{border-top:1px solid var(--border-hair);padding-top:16px;display:grid;gap:16px}
+.fl-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:8px}
+.fl-top span{font:700 13px/1.2 var(--font-ui);color:var(--ink-6)}
+.fl-top b{font:900 14.5px/1.2 var(--font-num)}
+.fl-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pill-num{background:var(--blue-100);color:var(--blue-600);border-radius:999px;padding:5px 12px;font:800 13px/1.2 var(--font-num);white-space:nowrap}
+.fl-route{font:500 15px/1.5 var(--font-ui);color:var(--ink-2)}
+.fl-land{margin-top:6px;font:500 13px/1.4 var(--font-ui);color:var(--ink-7)}
+
+/* mode switch + next up */
+.seg{display:flex;background:var(--surface-muted);border-radius:999px;padding:4px;margin-top:14px}
+.seg button{flex:1;border:none;background:none;padding:9px 8px;border-radius:999px;font:700 13px/1.2 var(--font-ui);color:var(--ink-6);cursor:pointer}
+.seg button.on{background:var(--navy-800);color:#fff;box-shadow:var(--shadow-card)}
+.next{display:flex;gap:16px;align-items:center;border-inline-start:5px solid var(--navy-800)}
+.next .t{min-width:70px;text-align:center}
+.next .t b{display:block;font:900 28px/1 var(--font-num);letter-spacing:-1px;color:var(--navy-800)}
+.next .t span{display:block;font:700 12px/1.4 var(--font-ui);color:var(--ink-7);margin-top:6px}
+.next .w{flex:1;min-width:0;border-inline-start:1px solid var(--border-hair);padding-inline-start:16px}
+.next .w h3{margin:0;font:var(--type-card-title)}
+.next .w p{margin:4px 0 0;font:var(--type-meta);color:var(--ink-6)}
+.next .w a{display:inline-block;margin-top:8px;font:700 13px/1.2 var(--font-ui);text-decoration:none;color:var(--blue-600)}
+
+/* updates */
+.upd{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--border-hair)}
+.upd:first-child{border-top:none;padding-top:0}
+.ico-sq{width:40px;height:40px;border-radius:13px;display:flex;align-items:center;justify-content:center;flex:none;background:var(--blue-100);color:var(--navy-800)}
+.ico-sq svg{width:20px;height:20px}
+.upd .tx{flex:1;min-width:0}
+.upd b{display:block;font:700 15px/1.4 var(--font-ui);color:var(--ink-1)}
+.upd p{margin:2px 0 0;font:500 14px/1.5 var(--font-ui);color:var(--ink-2)}
+.upd .meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px;font:500 12.5px/1.3 var(--font-ui);color:var(--ink-7)}
+.chip{display:inline-block;background:var(--surface-muted);color:var(--ink-6);border-radius:999px;padding:4px 10px;font:800 12px/1.2 var(--font-ui);white-space:nowrap}
+.chip.me{background:var(--blue-100);color:var(--blue-600)}
+.upd.fresh{animation:flash 2.4s ease}
+@keyframes flash{0%{background:var(--blue-100)}100%{background:transparent}}
+.text-btn{border:none;background:none;color:var(--blue-600);font:700 13.5px/1 var(--font-ui);cursor:pointer;padding:12px 0 0}
+.ghost-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:12px;background:var(--surface-muted);color:var(--navy-800);border:none;border-radius:999px;padding:12px 18px;font:700 14px/1 var(--font-ui);cursor:pointer}
+.ghost-btn svg{width:18px;height:18px}
+
+/* home tiles (same as the trip apps) */
+.home-nav{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:12px;margin:18px 0 8px}
+.home-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;border:1px solid transparent;border-radius:16px;box-shadow:var(--shadow-card);padding:20px 10px;cursor:pointer;text-align:center;min-height:104px;transition:var(--transition-card);color:#fff}
+.home-tile:hover{transform:translateY(-3px);box-shadow:var(--shadow-card-hover)}
+.tile-icon{width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(255,255,255,.22);color:#fff}
+.tile-icon svg{width:22px;height:22px}
+.tile-label{font:700 13.5px/1.3 var(--font-ui);color:#fff;min-height:36px;display:flex;align-items:center;justify-content:center}
+.home-tile.featured{grid-column:1/-1;filter:brightness(.82) saturate(1.08);flex-direction:row;justify-content:flex-start;text-align:start;gap:14px;padding:16px 20px;min-height:0}
+.home-tile.featured .tile-label{min-height:0;justify-content:flex-start}
+.home-tile.featured .sub{display:block;color:rgba(255,255,255,.85);font:500 12.5px/1.4 var(--font-ui);margin-top:2px}
+.home-tile.featured .arrow{margin-inline-start:auto;opacity:.8;font-size:20px}
+
+.home-illustration{margin:22px 0 4px;border-radius:18px;overflow:hidden;background:linear-gradient(180deg,var(--illustration-bg-1) 0%,var(--illustration-bg-2) 100%)}
+.home-illustration svg{display:block;width:100%;height:auto}
+.footer-note{text-align:center;font:500 13px/1.6 var(--font-ui);color:var(--ink-7);margin-top:28px}
+
+/* screens */
+.app-screen{display:none;padding-top:20px}
+.app-screen.on{display:block}
+.back-btn{display:inline-flex;align-items:center;gap:6px;background:var(--navy-800);color:#fff;border:none;border-radius:999px;padding:10px 18px;font:700 14px/1 var(--font-ui);cursor:pointer;box-shadow:var(--shadow-card);margin-bottom:14px}
+.screen-illustration{margin:0 0 16px;border-radius:16px;overflow:hidden;background:linear-gradient(180deg,var(--illustration-bg-1) 0%,var(--illustration-bg-2) 100%);height:70px}
+.screen-illustration svg{display:block;width:100%;height:70px}
+.screen-title{margin:0 0 6px;font:var(--type-section-title);color:var(--navy-800)}
+.screen-lede{margin:0 0 14px;font:var(--type-body);color:var(--ink-6)}
+
+/* days */
+.pillrow{display:flex;gap:9px;overflow-x:auto;padding:2px 2px 12px;direction:ltr;scrollbar-width:none}
+.pillrow::-webkit-scrollbar{display:none}
+.daypill{flex:0 0 58px;height:76px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border:none;border-radius:16px;background:var(--surface-muted);cursor:pointer}
+.daypill .wd{font:700 11px/1 var(--font-ui);color:var(--ink-7)}
+.daypill .dn{font:900 19px/1 var(--font-num);color:var(--ink-1)}
+.daypill .dt{width:6px;height:6px;border-radius:50%}
+.daypill.on{background:var(--navy-800)}
+.daypill.on .wd{color:rgba(255,255,255,.75)}
+.daypill.on .dn{color:#fff}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--border-hair)}
+.legend span{display:flex;align-items:center;gap:6px;font:var(--type-meta);color:var(--ink-6)}
+.legend i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.daycard{background:var(--surface-card);border:1px solid var(--border-card);border-radius:14px;box-shadow:var(--shadow-card);padding:18px 22px;margin-top:16px;position:relative;z-index:0;overflow:hidden}
+.day-watermark{position:absolute;top:-20px;right:6px;z-index:-1;font:700 88px/1 var(--font-display);color:rgba(42,98,160,.10);pointer-events:none;user-select:none}
+.day-head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.day-head h3{margin:0;font:var(--type-card-title);color:var(--ink-1)}
+.date-pill{border-radius:999px;padding:5px 12px;font:800 13px/1.2 var(--font-num);white-space:nowrap}
+.ev{display:flex;gap:11px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--border-hair)}
+.ev .tm{flex:0 0 52px;font:700 13.5px/1.6 var(--font-num);color:var(--ink-6)}
+.ev .bd{flex:1;min-width:0;font:500 15.5px/1.6 var(--font-ui);color:var(--ink-2)}
+.ev .bd b{font-weight:700;color:var(--navy-800)}
+.ev .bd .small{display:block;font:500 14px/1.5 var(--font-ui);color:var(--ink-6)}
+.ev .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.ev.mine{background:linear-gradient(270deg,transparent,var(--blue-100));margin:0 -22px;padding-inline:22px}
+.ev.now .tm{color:var(--navy-800);font-weight:900}
+.tip{display:flex;gap:11px;padding:13px 15px;border-radius:10px;background:var(--tip-bg);border-inline-start:4px solid var(--tip-edge);margin-top:10px}
+.tip .k{font:800 14px/1.5 var(--font-ui);color:var(--navy-800);white-space:nowrap}
+.tip .v{font:600 15px/1.5 var(--font-ui);color:var(--tip-ink)}
+.place-chip{display:inline-flex;align-items:center;min-height:32px;padding:6px 13px;background:var(--surface-muted);color:var(--blue-600);border-radius:999px;font:700 13px/1.2 var(--font-ui);text-decoration:none;border:none;cursor:pointer}
+
+/* map */
+#map{height:62vh;min-height:340px;border-radius:14px;border:1px solid var(--border-card);overflow:hidden;z-index:1}
+.map-legend{display:flex;gap:14px;flex-wrap:wrap;font:600 12.5px/1 var(--font-ui);color:var(--ink-6);margin:12px 0 0}
+.map-legend i{display:inline-block;width:18px;height:4px;border-radius:2px;vertical-align:middle;margin-inline-end:5px}
+.row{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--border-hair)}
+.sec-title + .row{border-top:none;padding-top:0}
+.row:last-child{padding-bottom:0}
+.row .rt{flex:1;min-width:0}
+.row .rt b{display:block;font:700 15px/1.35 var(--font-ui);color:var(--ink-1)}
+.row .rt span{font:500 13px/1.45 var(--font-ui);color:var(--ink-6)}
+.row.click{cursor:pointer}
+.pin{width:30px;height:30px;border-radius:50%;border:2.5px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;color:#fff}
+.pin svg{width:15px;height:15px}
+.leaflet-container{font-family:var(--font-ui)}
+
+/* weather */
+.wnow{display:flex;align-items:center;gap:16px}
+.wnow .wi svg{width:56px;height:56px;display:block}
+.wnow .big{font:900 46px/1 var(--font-num);letter-spacing:-1px;color:var(--navy-800)}
+.wnow .txt{font:600 14px/1.5 var(--font-ui);color:var(--ink-6);margin-top:4px}
+.wstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
+.wstat{background:var(--surface-muted);border-radius:12px;padding:12px 8px;text-align:center}
+.wstat b{display:block;font:900 18px/1.2 var(--font-num);color:var(--navy-800)}
+.wstat span{font:700 12px/1.3 var(--font-ui);color:var(--ink-6)}
+.wday{display:grid;grid-template-columns:72px 30px 1fr auto;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--border-hair);font:500 14px/1.3 var(--font-ui)}
+.sec-title + div .wday:first-child{border-top:none;padding-top:0}
+.wday .n{font-weight:700;color:var(--ink-2)}
+.wday .i svg{width:26px;height:26px;display:block}
+.wday .snow{font:700 13px/1.2 var(--font-ui);color:var(--navy-800)}
+.wday .tt{font:900 14.5px/1.2 var(--font-num);white-space:nowrap}
+.wday .tt small{color:var(--ink-7);font-weight:500}
+.src{font:500 12.5px/1.5 var(--font-ui);color:var(--ink-7);margin-top:12px}
+
+/* lists */
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}
+.chips::-webkit-scrollbar{display:none}
+.filter{border:none;background:var(--surface-muted);border-radius:999px;padding:9px 15px;font:700 13.5px/1 var(--font-ui);white-space:nowrap;cursor:pointer;color:var(--ink-5)}
+.filter.on{background:var(--navy-800);color:#fff}
+.rec{display:flex;gap:14px}
+.rec h3{margin:0;font:var(--type-card-title);color:var(--ink-1)}
+.rec p{margin:4px 0 0;font:500 14.5px/1.55 var(--font-ui);color:var(--ink-2)}
+.rec .tags{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap}
+.act{border:none;border-radius:999px;padding:9px 14px;font:700 13px/1 var(--font-ui);cursor:pointer;text-decoration:none;white-space:nowrap}
+.act.wa{background:var(--whatsapp);color:var(--whatsapp-ink)}
+.act.soft{background:var(--surface-muted);color:var(--blue-600)}
+.act.sos{background:var(--red-600);color:#fff}
+.chk{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--border-hair);cursor:pointer;font:500 15px/1.4 var(--font-ui);color:var(--ink-2)}
+.sec-title + .chk{border-top:none;padding-top:0}
+.chk input{accent-color:var(--navy-800);width:22px;height:22px;flex:0 0 22px;margin:0}
+.chk.done span{color:var(--ink-7);text-decoration:line-through}
+.prog{height:8px;border-radius:4px;background:var(--surface-muted);overflow:hidden;margin:10px 0 0}
+.prog i{display:block;height:100%;background:var(--navy-800);border-radius:4px;transition:width .3s}
+.faq summary{font:700 15px/1.4 var(--font-ui);cursor:pointer;padding:12px 0;list-style:none;display:flex;justify-content:space-between;gap:10px;color:var(--ink-1)}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:'+';font-weight:800;color:var(--navy-800)}
+.faq[open] summary::after{content:'–'}
+.faq + .faq{border-top:1px solid var(--border-hair)}
+.faq p{margin:0 0 12px;font:500 14.5px/1.6 var(--font-ui);color:var(--ink-2)}
+
+/* sheets */
+.scrim{position:fixed;inset:0;background:rgba(15,25,40,.45);z-index:50;display:none}
+.scrim.on{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:60;background:var(--surface-card);border-radius:20px 20px 0 0;max-width:620px;margin:0 auto;padding:12px 22px calc(22px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .2s ease;max-height:88vh;overflow:auto}
+.sheet.on{transform:none}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--border-card);margin:0 auto 14px}
+.opt-lbl{font:700 13.5px/1 var(--font-ui);color:var(--ink-6);margin:18px 0 9px}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opt{border:none;background:var(--surface-muted);border-radius:999px;padding:10px 16px;font:700 14px/1 var(--font-ui);cursor:pointer;color:var(--ink-4)}
+.opt.on{background:var(--navy-800);color:#fff}
+.btn{display:block;width:100%;border:none;border-radius:999px;padding:14px;font:700 15px/1 var(--font-ui);cursor:pointer;margin-top:20px;background:var(--navy-800);color:#fff;box-shadow:var(--shadow-card)}
+.btn.sec{background:var(--surface-muted);color:var(--ink-4);margin-top:10px;box-shadow:none}
+textarea{width:100%;border:2px solid var(--border-card);border-radius:10px;padding:12px;font:500 15px/1.5 var(--font-ui);resize:vertical;direction:rtl;background:#fff}
+textarea:focus{outline:none;border-color:var(--navy-700)}
+.toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));transform:translate(-50%,20px);background:var(--navy-900);color:#fff;font:600 14px/1.45 var(--font-ui);padding:12px 18px;border-radius:16px;z-index:70;opacity:0;transition:.2s;max-width:calc(100% - 32px);box-shadow:0 10px 30px rgba(0,0,0,.28);pointer-events:none;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<header class="hero">
+  <div class="dots"></div>
+  <div class="wm" aria-hidden="true"><svg viewBox="0 0 130 90" xmlns="http://www.w3.org/2000/svg"><path d="M0 90 L38 30 L56 52 L80 14 L130 90 Z" fill="#fff"/><g stroke="#fff" stroke-width="2.5" fill="none"><line x1="0" y1="20" x2="130" y2="4"/><line x1="60" y1="12" x2="60" y2="24"/></g><rect x="52" y="24" width="16" height="11" rx="3" fill="#fff"/></svg></div>
+  <div class="dest-stamp" aria-hidden="true"><span>Alpes</span></div>
+  <button type="button" class="me-switch" id="meChip" onclick="openSheet('profile')"></button>
+  <div style="position:relative">
+    <div class="eyebrow">אפליקציית קבוצה</div>
+    <h1>טיול סקי ואל טורנס</h1>
+    <p class="dates">10–17 בינואר 2027 · 8 ימים</p>
+    <p class="cities">שאמברי · ואל טורנס (Val Thorens) · 3 העמקים</p>
+    <p class="banner">שם החברה שלכם · קבוצת ינואר · 280 נוסעים</p>
+  </div>
+</header>
+
+<div class="pad">
+
+<!-- ================= HOME ================= -->
+<main class="app-screen on" id="s-home" style="padding-top:0">
+
+  <div class="card">
+    <div class="label-eyebrow" id="cdLabel">ספירה לאחור להמראה (הלוך)</div>
+    <div class="cd"><div><b id="cd-d">--</b><span>ימים</span></div><div><b id="cd-h">--</b><span>שעות</span></div><div><b id="cd-m">--</b><span>דק׳</span></div><div><b id="cd-s">--</b><span>שנ׳</span></div></div>
+    <div class="fl">
+      <div><div class="fl-top"><span>הלוך</span><b>א׳ 10.1 · 06:00</b></div>
+        <div class="fl-row"><span class="pill-num">טיסת שכר</span><span class="fl-route">תל אביב (TLV) ← שאמברי (CMF)</span></div>
+        <div class="fl-land">נחיתה: א׳ 10.1 · 09:30 (שעון צרפת)</div></div>
+      <div><div class="fl-top"><span>חזור</span><b>א׳ 17.1 · 13:30</b></div>
+        <div class="fl-row"><span class="pill-num">טיסת שכר</span><span class="fl-route">שאמברי (CMF) ← תל אביב (TLV)</span></div>
+        <div class="fl-land">נחיתה: א׳ 17.1 · 18:45</div></div>
+    </div>
+  </div>
+
+  <div class="seg" role="tablist" aria-label="תצוגה לדוגמה">
+    <button id="m-before" onclick="setMode('before')">לפני הטיול</button>
+    <button id="m-during" onclick="setMode('during')">במהלך הטיול (יום ג׳)</button>
+  </div>
+
+  <div class="card next" id="nextCard"></div>
+
+  <div class="card">
+    <h2 class="sec-title">עדכונים מהמנהל</h2>
+    <div id="updList"></div>
+    <button class="text-btn" id="updMore" onclick="toggleAllUpdates()"></button>
+    <button class="ghost-btn" onclick="openSheet('admin')"><span data-ic="send"></span>מצב מנהל: שליחת עדכון לקבוצה</button>
+  </div>
+
+  <div class="home-nav">
+    <button type="button" class="home-tile featured" style="background:var(--tile-1)" onclick="showScreen('days')">
+      <span class="tile-icon" data-ic="calendar"></span>
+      <span><span class="tile-label">יום אחר יום</span><span class="sub" id="daysSub"></span></span>
+      <span class="arrow">←</span>
+    </button>
+    <button type="button" class="home-tile" style="background:var(--tile-2)" onclick="showScreen('map')"><span class="tile-icon" data-ic="map"></span><span class="tile-label">מפת האתר</span></button>
+    <button type="button" class="home-tile" style="background:var(--tile-3)" onclick="showScreen('weather')"><span class="tile-icon" data-ic="snow"></span><span class="tile-label">מזג אוויר ושלג</span></button>
+    <button type="button" class="home-tile" style="background:var(--tile-4)" onclick="showScreen('bus')"><span class="tile-icon" data-ic="bus"></span><span class="tile-label">הסעות ונקודות מפגש</span></button>
+    <button type="button" class="home-tile" style="background:var(--tile-1)" onclick="showScreen('evening')"><span class="tile-icon" data-ic="moon"></span><span class="tile-label">מה עושים בערב</span></button>
+    <button type="button" class="home-tile" style="background:var(--tile-2)" onclick="showScreen('packing')"><span class="tile-icon" data-ic="check"></span><span class="tile-label">רשימת אריזה</span></button>
+    <button type="button" class="home-tile" style="background:var(--tile-3)" onclick="showScreen('contacts')"><span class="tile-icon" data-ic="phone"></span><span class="tile-label">אנשי קשר וחירום</span></button>
+    <button type="button" class="home-tile" style="background:var(--tile-4)" onclick="showScreen('tips')"><span class="tile-icon" data-ic="bulb"></span><span class="tile-label">טיפים ושאלות נפוצות</span></button>
+    <button type="button" class="home-tile" style="background:var(--tile-1)" onclick="showScreen('pass')"><span class="tile-icon" data-ic="ticket"></span><span class="tile-label">סקי פס וציוד</span></button>
+  </div>
+
+  <div class="home-illustration" aria-hidden="true">
+    <svg viewBox="0 0 400 130" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="112" cy="36" r="22" fill="var(--navy-800)" opacity=".85"/>
+      <polygon points="0,130 60,64 110,90 175,30 235,84 290,56 350,82 400,62 400,130" fill="#A9C4DE" opacity=".8"/>
+      <polygon points="160,47 175,30 190,46 183,43 176,49 168,44" fill="#fff"/>
+      <polygon points="50,75 60,64 70,75 64,72 58,77" fill="#fff"/>
+      <polygon points="0,130 50,98 120,112 190,82 262,110 330,90 400,104 400,130" fill="#6F97BD"/>
+      <path d="M0 130 L0 118 Q100 104 200 116 T400 112 L400 130 Z" fill="#fff"/>
+      <line x1="70" y1="112" x2="340" y2="40" stroke="#3F4F63" stroke-width="1.4"/>
+      <g fill="#3F4F63"><rect x="128" y="96" width="10" height="7" rx="2"/><rect x="200" y="77" width="10" height="7" rx="2"/><rect x="272" y="58" width="10" height="7" rx="2"/></g>
+      <g stroke="#3F4F63" stroke-width="1.2"><line x1="133" y1="92" x2="133" y2="96"/><line x1="205" y1="73" x2="205" y2="77"/><line x1="277" y1="54" x2="277" y2="58"/></g>
+      <g fill="var(--tile-4)"><polygon points="18,122 28,96 38,122"/><polygon points="42,124 50,104 58,124"/><polygon points="356,120 366,92 376,120"/><polygon points="378,124 386,104 394,124"/></g>
+    </svg>
+  </div>
+
+  <div class="footer-note">אפליקציה לדוגמה · השמות, השעות והמספרים בדויים, חוץ ממזג האוויר ומפת המסלולים שמתעדכנים בזמן אמת</div>
+
+  <!-- pab-app-brand -->
+    <div id="pab-brand" data-i18n-skip style="display:flex;justify-content:center;margin-top:36px;padding-bottom:8px">
+      <a href="https://packandboard.com/" target="_blank" rel="noopener" aria-label="Pack &amp; Board" style="display:block;line-height:0">
+        <img src="/assets/pab-wordmark.png" width="112" height="27" alt="Pack &amp; Board" style="display:block;opacity:.6">
+      </a>
+    </div>
+</main>
+
+<!-- ================= DAYS ================= -->
+<section class="app-screen" id="s-days">
+  <button type="button" class="back-btn" onclick="showHome()">→ חזרה לתפריט</button>
+  <div class="screen-illustration" aria-hidden="true"><svg viewBox="0 0 400 90" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"><circle id="dayMarker" cx="20" cy="40" r="16" fill="var(--navy-800)" opacity=".8" style="transition:transform .5s ease"/><path d="M20 68 Q120 18 200 58 T380 38" fill="none" stroke="#6FA8D9" stroke-width="4" stroke-linecap="round" stroke-dasharray="2 11"/><circle cx="20" cy="68" r="6" fill="#6FA8D9"/><circle cx="200" cy="58" r="6" fill="#6FA8D9"/><circle cx="380" cy="38" r="6" fill="#6FA8D9"/></svg></div>
+  <div class="card" style="margin-top:0">
+    <h2 class="sec-title" style="text-align:center">יום אחר יום</h2>
+    <div class="pillrow" id="pills"></div>
+    <div class="muted-note" id="schedFor" style="text-align:center"></div>
+    <div class="legend">
+      <span><i style="background:#6E8FD9"></i>יום נסיעה</span>
+      <span><i style="background:#4FB8AE"></i>יום סקי</span>
+      <span><i style="background:#B87FC2"></i>אירוע קבוצתי</span>
+      <span><i style="background:#D4526A"></i>סוף שבוע</span>
+    </div>
+  </div>
+  <div id="dayCard"></div>
+</section>
+
+<!-- ================= MAP ================= -->
+<section class="app-screen" id="s-map">
+  <button type="button" class="back-btn" onclick="showHome()">→ חזרה לתפריט</button>
+  <h2 class="screen-title">מפת האתר</h2>
+  <p class="screen-lede">המסלולים והרכבלים של ואל טורנס, והנקודות של הקבוצה.</p>
+  <div id="map"></div>
+  <div class="map-legend">
+    <span><i style="background:#2E9B62"></i>ירוק</span>
+    <span><i style="background:#2F6FD6"></i>כחול</span>
+    <span><i style="background:#D23A3A"></i>אדום</span>
+    <span><i style="background:#1A1A1A"></i>שחור</span>
+    <span><i style="background:repeating-linear-gradient(90deg,#585B5E 0 4px,transparent 4px 7px)"></i>רכבלים</span>
+  </div>
+  <div class="src" id="mapStatus"></div>
+  <div class="card" id="poiList"></div>
+</section>
+
+<!-- ================= WEATHER ================= -->
+<section class="app-screen" id="s-weather">
+  <button type="button" class="back-btn" onclick="showHome()">→ חזרה לתפריט</button>
+  <div class="screen-illustration" aria-hidden="true"><svg viewBox="0 0 400 90" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"><circle cx="140" cy="38" r="20" fill="var(--navy-800)" opacity=".8"/><ellipse cx="225" cy="50" rx="46" ry="19" fill="#A9C4DE"/><ellipse cx="190" cy="44" rx="30" ry="16" fill="#CFE0F0"/><g fill="#6FA8D9"><circle cx="205" cy="78" r="3"/><circle cx="225" cy="82" r="3"/><circle cx="245" cy="77" r="3"/></g></svg></div>
+  <h2 class="screen-title">מזג אוויר ושלג</h2>
+  <div class="seg" style="margin:8px 0 0">
+    <button id="e-village" class="on" onclick="setElev('village')">בכפר · 2,300 מ׳</button>
+    <button id="e-top" onclick="setElev('top')">בפסגה · 3,200 מ׳</button>
+  </div>
+  <div class="card" id="wNow"><span class="muted-note">טוען תחזית…</span></div>
+  <div id="wAlerts"></div>
+  <div class="card">
+    <h2 class="sec-title">7 הימים הקרובים</h2>
+    <div id="wDays"></div>
+  </div>
+  <div class="src">התחזית מתעדכנת אוטומטית מ-Open-Meteo. בזמן הטיול היא מתחלפת בתחזית לימי הטיול עצמם.</div>
+</section>
+
+<!-- ================= BUS ================= -->
+<section class="app-screen" id="s-bus">
+  <button type="button" class="back-btn" onclick="showHome()">→ חזרה לתפריט</button>
+  <h2 class="screen-title">הסעות ונקודות מפגש</h2>
+  <p class="screen-lede" id="busFor"></p>
+  <div id="busCards"></div>
+</section>
+
+<!-- ================= EVENING ================= -->
+<section class="app-screen" id="s-evening">
+  <button type="button" class="back-btn" onclick="showHome()">→ חזרה לתפריט</button>
+  <h2 class="screen-title">מה עושים בערב</h2>
+  <p class="screen-lede">המלצות של צוות הקבוצה, לפי מצב רוח.</p>
+  <div class="chips" id="eveChips"></div>
+  <div id="eveList"></div>
+</section>
+
+<!-- ================= PACKING ================= -->
+<section class="app-screen" id="s-packing">
+  <button type="button" class="back-btn" onclick="showHome()">→ חזרה לתפריט</button>
+  <h2 class="screen-title">רשימת אריזה</h2>
+  <p class="screen-lede" id="packCount"></p>
+  <div class="prog"><i id="packBar" style="width:0"></i></div>
+  <div id="packList"></div>
+</section>
+
+<!-- ================= CONTACTS ================= -->
+<section class="app-screen" id="s-contacts">
+  <button type="button" class="back-btn" onclick="showHome()">→ חזרה לתפריט</button>
+  <h2 class="screen-title">אנשי קשר וחירום</h2>
+  <div class="card">
+    <h2 class="sec-title">צוות הקבוצה</h2>
+    <div class="row"><span class="ico-sq" data-ic="user"></span><div class="rt"><b>יואב · מנהל הקבוצה</b><span>זמין 24/7 לאורך הטיול</span></div><a class="act wa" href="#" onclick="demoTap(event)">וואטסאפ</a></div>
+    <div class="row"><span class="ico-sq" data-ic="ski"></span><div class="rt"><b>מיכל · רכזת בית הספר לסקי</b><span>שיבוץ לקבוצות והחלפת רמה</span></div><a class="act wa" href="#" onclick="demoTap(event)">וואטסאפ</a></div>
+    <div class="row"><span class="ico-sq" data-ic="bus"></span><div class="rt"><b>מוקד ההסעות</b><span>איחור לאוטובוס, שינוי נקודת איסוף</span></div><a class="act soft" href="#" onclick="demoTap(event)">חיוג</a></div>
+    <div class="row"><span class="ico-sq" data-ic="bed"></span><div class="rt"><b>קבלה במלון</b><span>פתוחה 24 שעות</span></div><a class="act soft" href="#" onclick="demoTap(event)">חיוג</a></div>
+  </div>
+  <div class="card">
+    <h2 class="sec-title">חירום</h2>
+    <div class="row"><span class="ico-sq" style="background:var(--red-100);color:var(--red-600)" data-ic="alert"></span><div class="rt"><b>חירום באירופה</b><span>משטרה, אמבולנס, כיבוי אש</span></div><a class="act sos" href="tel:112">112</a></div>
+    <div class="row"><span class="ico-sq" style="background:var(--red-100);color:var(--red-600)" data-ic="cross"></span><div class="rt"><b>הצלה במסלולים</b><span>נפילה או פציעה במסלול: מוסרים את מספר העמוד הקרוב</span></div><a class="act soft" href="#" onclick="demoTap(event)">חיוג</a></div>
+    <div class="row click" onclick="showScreen('map');setTimeout(()=>flyTo('clinic'),400)"><span class="ico-sq" style="background:var(--red-100);color:var(--red-600)" data-ic="pin"></span><div class="rt"><b>מרפאה בכפר</b><span>רופא ספורט וצילום רנטגן</span></div><span class="act soft">למפה</span></div>
+  </div>
+</section>
+
+<!-- ================= TIPS ================= -->
+<section class="app-screen" id="s-tips">
+  <button type="button" class="back-btn" onclick="showHome()">→ חזרה לתפריט</button>
+  <h2 class="screen-title">טיפים ושאלות נפוצות</h2>
+  <div class="tip"><span class="k">טיפ</span><span class="v">בגובה 2,300 מטר השמש חזקה מאוד גם כשמעונן. מורחים קרם הגנה כל בוקר ושותים הרבה מים.</span></div>
+  <div class="tip"><span class="k">טיפ</span><span class="v">ביום הראשון לא כדאי להגזים. השרירים והגובה צריכים יום להתרגל.</span></div>
+  <div class="card" style="padding-top:8px;padding-bottom:8px">
+    <details class="faq"><summary>מה עושים אם רוצים להחליף קבוצה בבית הספר?</summary><p>שולחים הודעה למיכל עד 18:00 ומקבלים שיבוץ חדש למחרת בבוקר. השינוי יופיע גם כאן ב"יום אחר יום".</p></details>
+    <details class="faq"><summary>איך מחזירים את הציוד?</summary><p>בשבת 16.1 מ-16:00, לפי אוטובוסים, בחנות ההשכרה ליד המלון. השעה של כל אוטובוס מופיעה ב"יום אחר יום".</p></details>
+    <details class="faq"><summary>ביטוח</summary><p>ביטוח הנסיעות צריך לכלול הרחבה לספורט חורף, כולל חילוץ מהמסלולים. בלי ההרחבה חילוץ במסוק יכול לעלות אלפי יורו.</p></details>
+    <details class="faq"><summary>מה עם מי שלא גולש?</summary><p>יש תוכנית יומית בלי סקי: סיור בכפר, הליכה בשלג עם נעלי שלג, רכבל נוף ובריכה. בוחרים "לא גולשים" בכפתור שבראש המסך וכל השעות מתאימות את עצמן.</p></details>
+  </div>
+</section>
+
+<!-- ================= PASS ================= -->
+<section class="app-screen" id="s-pass">
+  <button type="button" class="back-btn" onclick="showHome()">→ חזרה לתפריט</button>
+  <h2 class="screen-title">סקי פס וציוד</h2>
+  <div class="card">
+    <div class="row" style="border-top:none;padding-top:0"><span class="ico-sq" data-ic="ticket"></span><div class="rt"><b>סקי פס 3 העמקים · 6 ימים</b><span>מחולק בלובי ביום ההגעה ב-18:00, לפי אוטובוסים</span></div></div>
+    <div class="row"><span class="ico-sq" data-ic="ski"></span><div class="rt"><b id="rentLine"></b><span>מגפיים, מגלשיים וקסדה. מגיעים עם גרבי סקי למדידה</span></div></div>
+    <div class="row"><span class="ico-sq" data-ic="clock"></span><div class="rt"><b id="returnLine"></b><span>בחנות ההשכרה ליד המלון</span></div></div>
+  </div>
+  <div class="tip"><span class="k">טיפ</span><span class="v">את הסקי פס שומרים בכיס נפרד מהטלפון. הטלפון עלול לשבש את הקריאה בשער.</span></div>
+</section>
+
+</div>
+</div>
+
+<div class="scrim" id="scrim" onclick="closeSheets()"></div>
+
+<div class="sheet" id="sh-profile">
+  <div class="grab"></div>
+  <h2 class="sec-title">מי אתם בקבוצה</h2>
+  <p class="screen-lede" style="margin:0">אפליקציה אחת לכל 280 הנוסעים. הבחירה כאן מתאימה לכם את השעות, נקודות האיסוף והשיעורים.</p>
+  <div class="opt-lbl">מספר האוטובוס</div>
+  <div class="opts" id="optBus"></div>
+  <div class="opt-lbl">הקבוצה בבית הספר לסקי</div>
+  <div class="opts" id="optLevel"></div>
+  <button class="btn" onclick="closeSheets()">שמירה</button>
+</div>
+
+<div class="sheet" id="sh-admin">
+  <div class="grab"></div>
+  <h2 class="sec-title">עדכון לקבוצה</h2>
+  <p class="screen-lede" style="margin:0">ככה מנהל הקבוצה מעדכן את כולם מהטלפון. העדכון מופיע מיד אצל מי שבחר את הקהל הזה, ובגרסה המלאה נשלחת גם התראה לטלפון.</p>
+  <div class="opt-lbl">למי</div>
+  <div class="opts" id="optTarget"></div>
+  <div class="opt-lbl">ההודעה</div>
+  <textarea id="admMsg" rows="3" placeholder="למשל: אוטובוס 4 יוצא מחר ב-07:15 מהכניסה הצדדית"></textarea>
+  <div class="opts" style="margin-top:10px">
+    <button class="place-chip" onclick="fillAdm('אוטובוס 4: נקודת האיסוף מחר זזה לכניסה הצדדית של המלון, 07:15 במקום 07:30.','b4')">הסעה זזה</button>
+    <button class="place-chip" onclick="fillAdm('בגלל שלג כבד הבוקר, בית הספר לסקי מתחיל ב-09:30 במקום 09:00.','all')">דחייה בגלל שלג</button>
+    <button class="place-chip" onclick="fillAdm('הערב מסיבת אפטר־סקי של הקבוצה בבר המלון ב-17:00. השתייה הראשונה עלינו!','all')">מסיבה</button>
+  </div>
+  <button class="btn" onclick="sendUpdate()">שליחה</button>
+  <button class="btn sec" onclick="closeSheets()">ביטול</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+/* ---------- line icons (same stroke style as the trip apps) ---------- */
+const IC={
+ calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/>',
+ map:'<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/>',
+ snow:'<path d="M12 2v20M4.2 7l15.6 10M4.2 17 19.8 7"/><path d="m9 4 3 2 3-2M9 20l3-2 3 2"/>',
+ bus:'<rect x="4" y="3" width="16" height="15" rx="2"/><path d="M4 10h16M8 21v-3M16 21v-3"/><circle cx="8" cy="14" r=".6"/><circle cx="16" cy="14" r=".6"/>',
+ moon:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+ check:'<rect x="4" y="4" width="16" height="16" rx="3"/><path d="m8.5 12 2.5 2.5 4.5-5"/>',
+ phone:'<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/>',
+ bulb:'<path d="M9 18h6M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/>',
+ ticket:'<path d="M3 8a2 2 0 0 0 2-2h14a2 2 0 0 0 2 2v8a2 2 0 0 0-2 2H5a2 2 0 0 0-2-2z"/><path d="M13 6v12" stroke-dasharray="2 2"/>',
+ user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+ ski:'<path d="M3 20 21 6"/><path d="M6 21 21 9"/><circle cx="15" cy="4" r="1.6"/>',
+ bed:'<path d="M3 18V7M3 13h18v5M21 13a4 4 0 0 0-4-4h-6v4"/><circle cx="7" cy="10.5" r="1.5"/>',
+ alert:'<path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17v.5"/>',
+ cross:'<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/>',
+ pin:'<path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+ clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+ food:'<path d="M7 2v20M4 2v6a3 3 0 0 0 6 0V2M17 2c-2 2-3 5-3 8h3v12"/>',
+ music:'<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+ glass:'<path d="M8 22h8M12 15v7M5 3h14l-1 6a6 6 0 0 1-12 0z"/>',
+ star:'<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+ drop:'<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',
+ sled:'<path d="M3 15h15a3 3 0 0 0 3-3M6 15l-1 4h14"/><path d="M8 15V9h8v6"/>',
+ bag:'<rect x="4" y="7" width="16" height="13" rx="2"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/>',
+ bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
+ send:'<path d="M3 11l18-8-8 18-2-8-8-2z"/>'
+};
+const svg=(k,w)=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="'+(w||1.8)+'" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(IC[k]||'')+'</svg>';
+function paintIcons(){document.querySelectorAll('[data-ic]').forEach(el=>{if(!el.firstChild)el.innerHTML=svg(el.dataset.ic)})}
+
+/* ---------- per-viewer storage ---------- */
+const SK='packandboard.skiDemo.';
+function load(k,d){try{const v=localStorage.getItem(SK+k);return v?JSON.parse(v):d}catch(e){return d}}
+function save(k,v){try{localStorage.setItem(SK+k,JSON.stringify(v))}catch(e){}}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+const pad2=n=>String(n).padStart(2,'0');
+
+const LEVELS={beg:'מתחילים',mid:'בינוניים',adv:'מתקדמים',none:'לא גולשים'};
+let profile=load('profile',{bus:3,level:'mid'});
+let mode=load('mode','before');
+let elev='village';
+const DEPART=new Date('2027-01-10T06:00:00+02:00');
+const DEMO_NOW={day:2,min:8*60+40}; // "during" mode pretends it is Tuesday 12.1, 08:40
+
+/* ---------- places ---------- */
+const POI={
+  hotel:{n:'מלון הקבוצה',d:'Hôtel des Neiges (שם לדוגמה)',ll:[45.2989,6.5819],ic:'bed',c:'#14325A'},
+  bus:{n:'נקודת האיסוף של האוטובוסים',d:'חניון האוטובוסים בכניסה לכפר',ll:[45.3008,6.5853],ic:'bus',c:'#2A62A0'},
+  school:{n:'מפגש בית הספר לסקי',d:'ליד תחנת הרכבל המרכזית, דגל כחול של הקבוצה',ll:[45.2969,6.5797],ic:'ski',c:'#3E6E8E'},
+  rental:{n:'חנות השכרת הציוד',d:'השכרה והחזרה לפי אוטובוסים',ll:[45.2981,6.5832],ic:'ticket',c:'#8A5CC2'},
+  clinic:{n:'מרפאה',d:'רופא ספורט וצילום רנטגן',ll:[45.2974,6.5812],ic:'cross',c:'#C23048'},
+  apres:{n:'אפטר־סקי על המסלול',d:'מוזיקה וריקודים בסוף יום הסקי',ll:[45.2931,6.5776],ic:'music',c:'#2F5D4E'}
+};
+
+/* ---------- schedule ---------- */
+const WD=['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'];
+const DAYS=[
+ {t:'הגעה להר',c:'#6E8FD9',bg:'#E8EDFB'},
+ {t:'יום סקי ראשון',c:'#4FB8AE',bg:'#E3F5F2'},
+ {t:'יום סקי · ערב מזחלות',c:'#4FB8AE',bg:'#E3F5F2'},
+ {t:'יום סקי · מסיבת הקבוצה',c:'#B87FC2',bg:'#F3E9F6'},
+ {t:'יום סקי · קריוקי',c:'#4FB8AE',bg:'#E3F5F2'},
+ {t:'יום סקי · קבלת שבת',c:'#D4526A',bg:'#FCE7EA'},
+ {t:'יום סקי חופשי',c:'#D4526A',bg:'#FCE7EA'},
+ {t:'חוזרים הביתה',c:'#6E8FD9',bg:'#E8EDFB'}
+];
+const rentalTime=b=>['15:00','15:00','16:00','16:00','17:00','17:00'][b-1];
+const returnTime=b=>['16:00','16:00','16:45','16:45','17:30','17:30'][b-1];
+const homeBus=b=>b<=3?'07:30':'08:00';
+const arrBus=b=>['10:15','10:25','10:35','10:45','10:55','11:05'][b-1];
+const NONSKI=['','סיור בכפר וספא במלון','הליכה בשלג עם מדריך (נעלי שלג)','רכבל נוף לפסגה ובית קפה למעלה','בוקר חופשי וצהריים עם הקבוצה בהר','שיעור צילום בשלג','יום חופשי'];
+
+function events(day,p){
+  const L=p.level,B=p.bus,ev=[];
+  const add=(tm,b,txt,o={})=>ev.push(Object.assign({tm,b,txt},o));
+  if(day===0){
+    add('03:00','מפגש בנתב״ג','טרמינל 3, דלפק החברה ליד כניסה 2. מגיעים עם הדרכון.');
+    add('06:00','המראה לשאמברי','כ-4.5 שעות טיסה. מכאן השעות בשעון צרפת (שעה פחות מישראל).');
+    add('09:30','נחיתה ואיסוף מזוודות','');
+    add(arrBus(B),'אוטובוס '+B+' יוצא להר','רציף '+'ABCDEF'[B-1]+' ביציאה מהטרמינל. כ-2.5 שעות נסיעה.',{mine:1});
+    add('13:30','הגעה למלון וארוחת צהריים קלה','החדרים מוכנים מ-15:00. אפשר להשאיר מזוודות בחדר הציוד.',{poi:'hotel'});
+    if(L!=='none') add(rentalTime(B),'השכרת ציוד · אוטובוס '+B,'מגפיים, מגלשיים וקסדה.',{mine:1,poi:'rental'});
+    add('18:00','חלוקת סקי פס','בלובי המלון, לפי אוטובוסים.',{poi:'hotel'});
+    add('19:30','ארוחת ערב ותדריך','מנהל הקבוצה מסביר על השבוע, בית הספר והכללים במסלולים.');
+  } else if(day>=1&&day<=5){
+    add('07:00','ארוחת בוקר','עד 08:45.');
+    if(L==='beg') add('09:00','שיעור מתחילים','מפגש ליד הדגל הכחול של הקבוצה. עד 12:00.',{mine:1,poi:'school'});
+    if(L==='mid') add('09:00','שיעור בינוניים','מפגש ליד הדגל הכחול של הקבוצה. עד 12:30.',{mine:1,poi:'school'});
+    if(L==='adv') add('08:45','יציאה עם מדריך למתקדמים','מהלובי. גלישה מחוץ למסלולים רק עם המדריך.',{mine:1,poi:'hotel'});
+    if(L==='none') add('10:00',NONSKI[day],'מפגש בלובי המלון.',{mine:1,poi:'hotel'});
+    add('12:30','ארוחת צהריים בהר','המדריכים ימליצו על מסעדה לפי המיקום.');
+    if(day===1&&L==='beg') add('14:00','תרגול חופשי במסלול הירוק','המדריכה במסלול עד 15:30.',{mine:1});
+    if(day===3) add('16:00','מסיבת אפטר־סקי של הקבוצה','על המסלול, ליד תחנת הרכבל.',{poi:'apres',hl:1});
+    if(day!==5) add('19:30','ארוחת ערב במלון','');
+    if(day===2) add('20:30','ערב מזחלות (לא חובה)','מסלול מזחלות מואר. נרשמים מראש אצל יואב, 25 יורו.',{hl:1});
+    if(day===4) add('21:00','קריוקי בבר המלון','');
+    if(day===5) add('18:00','קבלת שבת בלובי','ואחריה ארוחת שבת חגיגית ב-19:00.',{hl:1});
+  } else if(day===6){
+    add('07:00','ארוחת בוקר','');
+    add('09:30','יום סקי חופשי','אין שיעורים. המדריכים יוצאים מהלובי עם מי שרוצה.');
+    if(L!=='none') add(returnTime(B),'החזרת ציוד · אוטובוס '+B,'כולל קסדה ומגפיים.',{mine:1,poi:'rental'});
+    add('20:00','ארוחת פרידה','');
+  } else {
+    add('06:30','ארוחת בוקר','');
+    add('07:00','מזוודות בלובי','עם תג האוטובוס. מחזירים את כרטיס החדר בקבלה.');
+    add(homeBus(B),'אוטובוס '+B+' יוצא לשדה','מנקודת האיסוף בכניסה לכפר.',{mine:1,poi:'bus'});
+    add('13:30','המראה לישראל','');
+    add('18:45','נחיתה בנתב״ג','שעון ישראל.');
+  }
+  return ev;
+}
+const TIPS=['מגיעים להשכרה עם גרבי סקי, אחרת המגף לא ייצא במידה הנכונה.','ביום הראשון לא כדאי להגזים. השרירים והגובה צריכים יום להתרגל.','אחרי שלג טרי המסלולים העליונים נפתחים מאוחר יותר. כדאי לבדוק עדכונים בבוקר.','מהאפטר־סקי יורדים לכפר לפני החושך. המסלול הכחול הוא הדרך הקלה.','כפפות רטובות לא תמיד מתייבשות בלילה. כדאי זוג רזרבי.','ביום שישי אחה"צ המסלולים מתרוקנים מוקדם. זמן טוב לסיבוב אחרון לפני קבלת השבת.','ביום האחרון בודקים שהסקי פס והציוד הוחזרו.','בנחיתה ההודעות של הקבוצה מחכות כאן. אין צורך לחפש בוואטסאפ.'];
+const toMin=s=>{const[a,b]=s.split(':');return +a*60+ +b};
+
+/* ---------- updates ---------- */
+const SEED=[
+ {ic:'bus',b:'שינוי באיסוף של אוטובוס 4',p:'מחר בבוקר האיסוף מהכניסה הצדדית של המלון, 07:15 במקום 07:30.',to:'b4',ago:'לפני 20 דק׳'},
+ {ic:'snow',b:'שלג טרי בלילה',p:'ירדו 25 ס״מ. המסלולים העליונים נפתחים ב-09:30. שיעורי המתחילים כרגיל.',to:'all',ago:'לפני שעתיים'},
+ {ic:'ski',b:'השכרת ציוד: לזכור גרביים',p:'מגיעים למדידה עם גרבי סקי, אחרת המגף לא ייצא במידה הנכונה.',to:'all',ago:'אתמול'},
+ {ic:'food',b:'ארוחת ערב צמחונית',p:'מי שביקש מנה צמחונית או ללא גלוטן, היא מחכה בשולחן 4.',to:'all',ago:'אתמול'}
+];
+let custom=load('updates',[]),showAll=false;
+const TARGETS={all:'כולם',b1:'אוטובוס 1',b2:'אוטובוס 2',b3:'אוטובוס 3',b4:'אוטובוס 4',b5:'אוטובוס 5',b6:'אוטובוס 6',beg:'מתחילים',mid:'בינוניים',adv:'מתקדמים'};
+const forMe=u=>u.to==='all'||u.to==='b'+profile.bus||u.to===profile.level;
+
+/* ---------- home ---------- */
+function renderChip(){document.getElementById('meChip').innerHTML='אוטובוס '+profile.bus+' · '+LEVELS[profile.level]+' <span style="opacity:.75">▾</span>'}
+function tickCountdown(){
+  const ms=DEPART-Date.now();
+  if(ms<=0){document.getElementById('cdLabel').textContent='נוסעים!';return}
+  const s=Math.floor(ms/1000);
+  document.getElementById('cd-d').textContent=Math.floor(s/86400);
+  document.getElementById('cd-h').textContent=pad2(Math.floor(s%86400/3600));
+  document.getElementById('cd-m').textContent=pad2(Math.floor(s%3600/60));
+  document.getElementById('cd-s').textContent=pad2(s%60);
+}
+const goPoi=k=>"showScreen('map');setTimeout(()=>flyTo('"+k+"'),400)";
+function renderNext(){
+  let e;
+  if(mode==='during'){const l=events(DEMO_NOW.day,profile);e=l.find(x=>toMin(x.tm)>=DEMO_NOW.min)||l[l.length-1]}
+  else e=events(0,profile)[0];
+  document.getElementById('nextCard').innerHTML='<div class="t"><b>'+e.tm+'</b><span>'+(mode==='during'?'היום':'א׳ 10.1')+'</span></div><div class="w"><div class="label-eyebrow" style="margin-bottom:6px">'+(mode==='during'?'הבא בתור':'מתחילים כאן')+'</div><h3>'+esc(e.b)+'</h3>'+(e.txt?'<p>'+esc(e.txt)+'</p>':'')+(e.poi?'<a href="#" onclick="event.preventDefault();'+goPoi(e.poi)+'">איפה זה? ←</a>':'')+'</div>';
+  document.getElementById('daysSub').textContent=mode==='during'?'היום: ג׳ 12.1 · '+DAYS[2].t:'8 ימים, מותאם לאוטובוס '+profile.bus+' · '+LEVELS[profile.level];
+}
+function renderUpdates(flash){
+  const all=custom.concat(SEED).filter(forMe),list=showAll?all:all.slice(0,3);
+  document.getElementById('updList').innerHTML=list.map((u,i)=>'<div class="upd'+(flash&&i===0?' fresh':'')+'"><span class="ico-sq">'+svg(u.ic)+'</span><div class="tx"><b>'+esc(u.b)+'</b>'+(u.p?'<p>'+esc(u.p)+'</p>':'')+'<div class="meta"><span>'+u.ago+'</span><span class="chip'+(u.to!=='all'?' me':'')+'">'+(u.to==='all'?'לכל הקבוצה':'ל'+TARGETS[u.to])+'</span></div></div></div>').join('')||'<p class="muted-note">אין עדכונים חדשים.</p>';
+  const m=document.getElementById('updMore');m.style.display=all.length>3?'':'none';m.textContent=showAll?'פחות עדכונים':'כל העדכונים ('+all.length+')';
+}
+function toggleAllUpdates(){showAll=!showAll;renderUpdates()}
+
+/* ---------- days ---------- */
+let selDay=0;
+function renderPills(){
+  document.getElementById('pills').innerHTML=DAYS.map((d,i)=>{const dt=new Date(2027,0,10+i);
+    return '<button class="daypill'+(i===selDay?' on':'')+'" onclick="selectDay('+i+')"><span class="wd">'+WD[dt.getDay()]+'</span><span class="dn">'+dt.getDate()+'</span><span class="dt" style="background:'+d.c+'"></span></button>'}).join('');
+  document.getElementById('schedFor').textContent='מותאם לאוטובוס '+profile.bus+' · '+LEVELS[profile.level]+'. השעות שלכם מסומנות.';
+}
+function selectDay(i){selDay=i;renderPills();renderDay();document.getElementById('dayMarker').style.transform='translateX('+(i/7*360)+'px)'}
+function renderDay(){
+  const d=DAYS[selDay],dt=new Date(2027,0,10+selDay),list=events(selDay,profile);
+  let nowIdx=-1;if(mode==='during'&&selDay===DEMO_NOW.day)nowIdx=list.findIndex(x=>toMin(x.tm)>=DEMO_NOW.min);
+  const rows=list.map((e,i)=>{const tags=[];
+    if(e.mine)tags.push('<span class="chip me">בשבילכם</span>');
+    if(e.hl)tags.push('<span class="chip" style="background:#F3E9F6;color:#7A4C86">אירוע קבוצתי</span>');
+    if(i===nowIdx)tags.push('<span class="chip" style="background:var(--navy-800);color:#fff">הבא בתור</span>');
+    return '<div class="ev'+(e.mine?' mine':'')+(i===nowIdx?' now':'')+'"><div class="tm">'+e.tm+'</div><div class="bd"><b>'+esc(e.b)+'</b>'+(e.txt?'<span class="small">'+esc(e.txt)+'</span>':'')+(tags.length?'<div class="tags">'+tags.join('')+'</div>':'')+'</div></div>'}).join('');
+  const pois=[...new Set(list.filter(e=>e.poi).map(e=>e.poi))];
+  document.getElementById('dayCard').innerHTML='<div class="daycard" style="border-inline-start:5px solid '+d.c+'"><span class="day-watermark" aria-hidden="true">'+pad2(selDay+1)+'</span>'+
+    '<div class="day-head"><h3>יום '+(selDay+1)+' · '+d.t+'</h3><span class="date-pill" style="background:'+d.bg+';color:'+d.c+'">'+WD[dt.getDay()]+' '+dt.getDate()+'.1</span></div>'+rows+
+    '<div class="tip"><span class="k">טיפ</span><span class="v">'+TIPS[selDay]+'</span></div>'+
+    (pois.length?'<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px">'+pois.map(k=>'<button class="place-chip" onclick="'+goPoi(k)+'">'+POI[k].n+'</button>').join('')+'</div>':'')+'</div>';
+}
+
+/* ---------- bus ---------- */
+function renderBus(){
+  const B=profile.bus,gm=k=>'https://www.google.com/maps/search/?api=1&query='+POI[k].ll.join(',');
+  document.getElementById('busFor').textContent='מוצג לאוטובוס '+B+'. משנים בכפתור שבראש המסך.';
+  document.getElementById('busCards').innerHTML=
+   '<div class="card"><div class="day-head"><h3>הלוך · א׳ 10.1</h3><span class="pill-num">אוטובוס '+B+'</span></div>'+
+   '<div class="row"><span class="ico-sq">'+svg('user')+'</span><div class="rt"><b>03:00 · נתב״ג, טרמינל 3</b><span>דלפק החברה ליד כניסה 2. נציג עם שלט כחול.</span></div></div>'+
+   '<div class="row"><span class="ico-sq">'+svg('bus')+'</span><div class="rt"><b>'+arrBus(B)+' · רציף '+'ABCDEF'[B-1]+', שדה התעופה שאמברי</b><span>יוצאים מהטרמינל ופונים שמאלה. על השמשה שלט גדול עם המספר '+B+'.</span></div></div></div>'+
+   '<div class="card"><div class="day-head"><h3>חזור · א׳ 17.1</h3><span class="pill-num">אוטובוס '+B+'</span></div>'+
+   '<div class="row"><span class="ico-sq">'+svg('bag')+'</span><div class="rt"><b>07:00 · מזוודות בלובי</b><span>עם תג האוטובוס שמקבלים בהגעה.</span></div></div>'+
+   '<div class="row"><span class="ico-sq">'+svg('bus')+'</span><div class="rt"><b>'+homeBus(B)+' · חניון האוטובוסים בכניסה לכפר</b><span>5 דקות הליכה מהמלון, בירידה מהכביש הראשי.</span></div><a class="act soft" href="'+gm('bus')+'" target="_blank" rel="noopener">ניווט</a></div></div>'+
+   '<div class="tip"><span class="k">טיפ</span><span class="v">אם שעה או מקום משתנים, זה מופיע כאן ובעדכונים, וכל מי שבאוטובוס מקבל התראה. לא צריך לחפש בקבוצת הוואטסאפ.</span></div>'+
+   '<div class="card"><h2 class="sec-title">איפה נפגשים בבוקר</h2><div class="row click" onclick="'+goPoi('school')+'"><span class="ico-sq">'+svg('ski')+'</span><div class="rt"><b>'+POI.school.n+'</b><span>'+POI.school.d+'. כל קבוצה עומדת ליד שלט עם הרמה שלה.</span></div><span class="act soft">למפה</span></div></div>';
+}
+
+/* ---------- evening ---------- */
+const EVE=[
+ {c:'apres',ic:'music',b:'אפטר־סקי על המסלול',p:'הבר הכי מפורסם באזור: די־ג׳יי והופעות חיות מ-15:00. יורדים לכפר במסלול הכחול לפני החושך.',m:['15:00–17:30','€€','גולשים עד הדלת']},
+ {c:'apres',ic:'glass',b:'בר המלון, שעה שמחה',p:'הנחה למשתתפי הקבוצה בין 16:30 ל-18:00. שולחן שמור לקבוצה ליד האח.',m:['16:30–18:00','€','במלון']},
+ {c:'food',ic:'food',b:'ערב פונדו וראקלט',p:'מנות גבינה מסורתיות של אזור סבויה. כדאי להזמין מקום מראש, במיוחד בסוף השבוע.',m:['19:00–22:30','€€€','8 דק׳ הליכה']},
+ {c:'food',ic:'food',b:'פיצרייה בכיכר הכפר',p:'מהירה, לא יקרה ומתאימה לילדים. אפשר גם לקחת לחדר.',m:['12:00–23:00','€','5 דק׳ הליכה']},
+ {c:'family',ic:'sled',b:'מזחלות בערב',p:'מסלול מזחלות מואר שיורד לכפר. הקבוצה יוצאת ביום ג׳ ב-20:30, נרשמים אצל יואב.',m:['ג׳ 20:30','€€','מגיל 8']},
+ {c:'family',ic:'star',b:'החלקה על הקרח ובאולינג',p:'במרכז הספורט של הכפר. מתאים לערב שאחרי יום סקי ארוך.',m:['15:00–20:00','€€','10 דק׳ הליכה']},
+ {c:'night',ic:'moon',b:'מועדון הלילה של הכפר',p:'מועדון מתחת לאדמה שפתוח עד מאוחר. רק מגיל 18, מביאים תעודה מזהה.',m:['23:00–04:00','€€','18+']},
+ {c:'rest',ic:'drop',b:'ספא ובריכה מחוממת במלון',p:'ג׳קוזי, סאונה וחדר אדים. 20% הנחה לקבוצה על עיסויים.',m:['15:00–21:00','€€','במלון']}
+];
+const ECAT={all:'הכול',apres:'אפטר־סקי',food:'אוכל',family:'משפחות',night:'לילה',rest:'מנוחה'};
+let eveCat='all';
+function renderEve(){
+  document.getElementById('eveChips').innerHTML=Object.keys(ECAT).map(k=>'<button class="filter'+(k===eveCat?' on':'')+'" onclick="eveCat=\''+k+'\';renderEve()">'+ECAT[k]+'</button>').join('');
+  document.getElementById('eveList').innerHTML=EVE.filter(e=>eveCat==='all'||e.c===eveCat).map(e=>'<div class="card rec"><span class="ico-sq">'+svg(e.ic)+'</span><div><h3>'+e.b+'</h3><p>'+e.p+'</p><div class="tags">'+e.m.map(x=>'<span class="chip">'+x+'</span>').join('')+'</div></div></div>').join('');
+}
+
+/* ---------- packing ---------- */
+const PACK=[
+ ['ביגוד',['שכבה תרמית עליונה ותחתונה (2 סטים)','פליז או סוודר דק','מעיל סקי עמיד במים','מכנסי סקי','כפפות סקי וזוג רזרבי','3 זוגות גרבי סקי','כובע צמר וחם־צוואר']],
+ ['ציוד',['משקפת סקי','קסדה (אפשר גם לשכור)','קרם הגנה SPF 50','שפתון עם הגנה','משקפי שמש','תיק גב קטן ליום הסקי']],
+ ['מסמכים',['דרכון','ביטוח עם הרחבה לספורט חורף','כרטיס אשראי ומעט יורו במזומן','צילום של הדרכון בטלפון']],
+ ['עוד',['מטען נייד (הקור מרוקן סוללות)','מתאם לשקע אירופאי','בגד ים לבריכה ולספא','נעליים עם סוליה טובה לשלג','בגדים לערב שבת']]
+];
+let packed=load('pack',{});
+function renderPack(){
+  let tot=0,done=0;
+  document.getElementById('packList').innerHTML=PACK.map(([cat,items],ci)=>'<div class="card"><h2 class="sec-title">'+cat+'</h2>'+items.map((it,ii)=>{const k=ci+'-'+ii;tot++;if(packed[k])done++;
+    return '<label class="chk'+(packed[k]?' done':'')+'"><input type="checkbox"'+(packed[k]?' checked':'')+' onchange="togglePack(\''+k+'\')"><span>'+it+'</span></label>'}).join('')+'</div>').join('');
+  document.getElementById('packCount').textContent=done+' מתוך '+tot+' ארוזים. הרשימה נשמרת בטלפון.';
+  document.getElementById('packBar').style.width=(tot?done/tot*100:0)+'%';
+}
+function togglePack(k){packed[k]=!packed[k];save('pack',packed);renderPack()}
+
+/* ---------- weather ---------- */
+const LOC={village:{lat:45.2981,lon:6.58,el:2300},top:{lat:45.27,lon:6.585,el:3200}};
+const wcache={};
+const WI={
+ sun:'<circle cx="16" cy="16" r="6" fill="var(--navy-800)"/><g stroke="var(--navy-800)" stroke-width="2" stroke-linecap="round"><path d="M16 3v3M16 26v3M3 16h3M26 16h3M6.8 6.8l2.1 2.1M23.1 23.1l2.1 2.1M6.8 25.2l2.1-2.1M23.1 8.9l2.1-2.1"/></g>',
+ part:'<circle cx="12" cy="12" r="5" fill="var(--navy-800)"/><path d="M10 25h14a5 5 0 0 0 0-10 7 7 0 0 0-13 2 4 4 0 0 0-1 8z" fill="#A9C4DE"/>',
+ cloud:'<path d="M8 24h16a6 6 0 0 0 0-12 8 8 0 0 0-15 2 5 5 0 0 0-1 10z" fill="#A9C4DE"/>',
+ fog:'<path d="M8 18h16a6 6 0 0 0 0-12 8 8 0 0 0-15 2 5 5 0 0 0-1 10z" fill="#C8D7E6"/><g stroke="#8FA9C4" stroke-width="2" stroke-linecap="round"><path d="M6 23h20M9 27h14"/></g>',
+ rain:'<path d="M8 19h16a6 6 0 0 0 0-12 8 8 0 0 0-15 2 5 5 0 0 0-1 10z" fill="#A9C4DE"/><g stroke="var(--navy-800)" stroke-width="2" stroke-linecap="round"><path d="M11 23l-1 4M17 23l-1 4M23 23l-1 4"/></g>',
+ snow:'<path d="M8 19h16a6 6 0 0 0 0-12 8 8 0 0 0-15 2 5 5 0 0 0-1 10z" fill="#A9C4DE"/><g fill="var(--navy-800)"><circle cx="11" cy="24" r="1.7"/><circle cx="17" cy="27" r="1.7"/><circle cx="23" cy="24" r="1.7"/></g>',
+ storm:'<path d="M8 19h16a6 6 0 0 0 0-12 8 8 0 0 0-15 2 5 5 0 0 0-1 10z" fill="#8FA9C4"/><path d="M17 20l-4 6h4l-2 5 6-7h-4l2-4z" fill="var(--navy-800)"/>'
+};
+function wInfo(c){
+  if(c===0)return['sun','בהיר'];if(c<=2)return['part','מעונן חלקית'];if(c===3)return['cloud','מעונן'];
+  if(c===45||c===48)return['fog','ערפל'];if(c>=51&&c<=67)return['rain',c<=57?'טפטוף':'גשם'];
+  if(c>=71&&c<=77)return['snow','שלג'];if(c>=80&&c<=82)return['rain','ממטרים'];if(c===85||c===86)return['snow','ממטרי שלג'];return['storm','סופה'];
+}
+const wsvg=k=>'<svg viewBox="0 0 32 32" aria-hidden="true">'+WI[k]+'</svg>';
+async function getWeather(w){
+  if(wcache[w])return wcache[w];const L=LOC[w];
+  const u='https://api.open-meteo.com/v1/forecast?latitude='+L.lat+'&longitude='+L.lon+'&elevation='+L.el+'&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m&hourly=snow_depth,freezing_level_height&daily=weather_code,temperature_2m_max,temperature_2m_min,snowfall_sum,wind_speed_10m_max&forecast_days=7&timezone=Europe%2FParis';
+  try{const r=await fetch(u);if(!r.ok)throw 0;wcache[w]=await r.json()}catch(e){wcache[w]=fakeWeather(w)}
+  return wcache[w];
+}
+function fakeWeather(w){
+  const off=w==='top'?-7:0,t=[];for(let i=0;i<7;i++){const d=new Date();d.setDate(d.getDate()+i);t.push(d.toISOString().slice(0,10))}
+  return{fake:1,current:{temperature_2m:-4+off,apparent_temperature:-9+off,weather_code:73,wind_speed_10m:18},hourly:{snow_depth:[1.35],freezing_level_height:[1400]},
+   daily:{time:t,weather_code:[73,71,3,0,0,2,75],temperature_2m_max:[-2,-1,0,2,3,1,-3].map(x=>x+off),temperature_2m_min:[-8,-9,-10,-7,-6,-7,-11].map(x=>x+off),snowfall_sum:[12,6,0,0,0,1,22],wind_speed_10m_max:[30,22,15,10,12,20,55]}};
+}
+function hourIdx(w){if(!w.hourly||!w.hourly.time||!w.current||!w.current.time)return 0;const i=w.hourly.time.findIndex(t=>t.slice(0,13)===w.current.time.slice(0,13));return i<0?0:i}
+async function renderWeather(){
+  const w=await getWeather(elev),c=w.current,[ik,tx]=wInfo(c.weather_code),hi=hourIdx(w);
+  const depth=w.hourly&&w.hourly.snow_depth?w.hourly.snow_depth[hi]:null,fl=w.hourly&&w.hourly.freezing_level_height?w.hourly.freezing_level_height[hi]:null;
+  document.getElementById('wNow').innerHTML='<div class="label-eyebrow" style="margin-bottom:12px">עכשיו '+(elev==='top'?'בפסגה':'בכפר')+'</div><div class="wnow"><span class="wi">'+wsvg(ik)+'</span><div><div class="big">'+Math.round(c.temperature_2m)+'°</div><div class="txt">'+tx+' · מרגיש כמו '+Math.round(c.apparent_temperature)+'°</div></div></div>'+
+   '<div class="wstats"><div class="wstat"><b>'+Math.round(c.wind_speed_10m)+'</b><span>רוח קמ״ש</span></div><div class="wstat"><b>'+(depth!=null?Math.round(depth*100)+' ס״מ':'–')+'</b><span>עומק שלג</span></div><div class="wstat"><b>'+(fl!=null?Math.round(fl).toLocaleString('he-IL')+' מ׳':'–')+'</b><span>קו הקיפאון</span></div></div>'+
+   (w.fake?'<div class="src">אין חיבור לתחזית כרגע, מוצגים נתונים לדוגמה.</div>':'');
+  const D=w.daily;
+  document.getElementById('wDays').innerHTML=D.time.map((t,i)=>{const d=new Date(t+'T12:00:00'),[dk]=wInfo(D.weather_code[i]),s=D.snowfall_sum[i];
+    return '<div class="wday"><span class="n">'+(i===0?'היום':WD[d.getDay()]+' '+d.getDate()+'.'+(d.getMonth()+1))+'</span><span class="i">'+wsvg(dk)+'</span><span class="snow">'+(s>=0.5?'שלג '+Math.round(s)+' ס״מ':'')+'</span><span class="tt">'+Math.round(D.temperature_2m_max[i])+'° <small>/ '+Math.round(D.temperature_2m_min[i])+'°</small></span></div>'}).join('');
+  const al=[],wind=Math.max(...D.wind_speed_10m_max.slice(0,2)),fresh=D.snowfall_sum.slice(0,2).reduce((a,b)=>a+b,0);
+  if(wind>=50)al.push('רוח חזקה ('+Math.round(wind)+' קמ״ש) ביומיים הקרובים. הרכבלים העליונים עלולים להיסגר, והמדריכים יעדכנו כאן בבוקר.');
+  if(fresh>=10)al.push('צפויים '+Math.round(fresh)+' ס״מ שלג טרי. יום מעולה לגלישה, אבל כדאי לצאת קצת יותר מאוחר עד שיפנו את המסלולים.');
+  if(Math.min(...D.temperature_2m_min.slice(0,2))<=-12)al.push('קר מאוד בבוקר. שכבה תרמית כפולה וחם־צוואר על הפנים.');
+  if(!al.length)al.push('תנאים נוחים ליומיים הקרובים. לא לשכוח קרם הגנה.');
+  document.getElementById('wAlerts').innerHTML=al.map(a=>'<div class="tip"><span class="k">טיפ</span><span class="v">'+a+'</span></div>').join('');
+}
+function setElev(e){elev=e;document.getElementById('e-village').classList.toggle('on',e==='village');document.getElementById('e-top').classList.toggle('on',e==='top');renderWeather()}
+
+/* ---------- map ---------- */
+let map,markers={},pistesLoaded=false;
+const PCOL={novice:'#2E9B62',easy:'#2F6FD6',intermediate:'#D23A3A',advanced:'#1A1A1A',expert:'#1A1A1A',freeride:'#1A1A1A'};
+function initMap(){
+  if(map){setTimeout(()=>map.invalidateSize(),50);return}
+  if(!window.L){document.getElementById('mapStatus').textContent='המפה לא נטענה (אין חיבור).';return}
+  map=L.map('map').setView([45.2955,6.58],14);
+  L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{maxZoom:17,attribution:'© OpenStreetMap contributors · OpenTopoMap'}).addTo(map);
+  for(const k in POI){const p=POI[k];
+    markers[k]=L.marker(p.ll,{zIndexOffset:1000,icon:L.divIcon({className:'',html:'<div class="pin" style="background:'+p.c+'">'+svg(p.ic,2.2)+'</div>',iconSize:[30,30],iconAnchor:[15,15]})}).addTo(map).bindPopup('<b>'+p.n+'</b><br>'+p.d);}
+  document.getElementById('poiList').innerHTML='<h2 class="sec-title">הנקודות של הקבוצה</h2>'+Object.keys(POI).map(k=>'<div class="row click" onclick="flyTo(\''+k+'\');document.getElementById(\'map\').scrollIntoView({behavior:\'smooth\',block:\'center\'})"><span class="ico-sq" style="background:'+POI[k].c+';color:#fff">'+svg(POI[k].ic)+'</span><div class="rt"><b>'+POI[k].n+'</b><span>'+POI[k].d+'</span></div></div>').join('');
+  setTimeout(()=>map.invalidateSize(),60);
+  loadPistes();
+}
+async function loadPistes(){
+  if(pistesLoaded)return;pistesLoaded=true;
+  const st=document.getElementById('mapStatus');st.textContent='טוען מסלולים ורכבלים…';
+  try{
+    const r=await fetch('pistes.json');if(!r.ok)throw 0;const data=await r.json();
+    data.ways.forEach(([k,diff,name,ll])=>{
+      if(k==='L')L.polyline(ll,{color:'#585B5E',weight:2,dashArray:'5 5'}).addTo(map).bindPopup('<b>רכבל</b>'+(name?'<br>'+esc(name):''));
+      else L.polyline(ll,{color:PCOL[diff]||'#2F6FD6',weight:3,opacity:.85}).addTo(map).bindPopup('<b>מסלול</b>'+(name?'<br>'+esc(name):''));
+    });
+    st.textContent='המסלולים והרכבלים מנתוני OpenStreetMap. לחיצה על קו מציגה את השם.';
+  }catch(e){st.textContent='לא הצלחנו לטעון את המסלולים כרגע. הנקודות של הקבוצה מוצגות.';pistesLoaded=false}
+}
+function flyTo(k){if(!map)initMap();if(!map)return;map.flyTo(POI[k].ll,16,{duration:.6});markers[k].openPopup()}
+
+/* ---------- navigation ---------- */
+function showScreen(s){
+  document.querySelectorAll('.app-screen').forEach(el=>el.classList.toggle('on',el.id==='s-'+s));
+  window.scrollTo(0,document.querySelector('.hero').offsetHeight-8);
+  if(s==='days'){if(mode==='during')selDay=DEMO_NOW.day;selectDay(selDay);setTimeout(()=>{const on=document.querySelector('.daypill.on');on&&on.scrollIntoView({inline:'center',block:'nearest'})},30)}
+  if(s==='map')initMap();
+  if(s==='weather')renderWeather();
+  if(s==='bus')renderBus();
+  if(s==='evening')renderEve();
+  if(s==='packing')renderPack();
+  if(s==='pass')renderPass();
+}
+function showHome(){document.querySelectorAll('.app-screen').forEach(el=>el.classList.toggle('on',el.id==='s-home'));window.scrollTo(0,0)}
+function renderPass(){
+  const B=profile.bus,none=profile.level==='none';
+  document.getElementById('rentLine').textContent=none?'השכרת ציוד: לא צריך (בחרתם "לא גולשים")':'השכרת ציוד · א׳ 10.1 · '+rentalTime(B)+' (אוטובוס '+B+')';
+  document.getElementById('returnLine').textContent=none?'החזרת ציוד: לא צריך':'החזרת ציוד · ש׳ 16.1 · '+returnTime(B)+' (אוטובוס '+B+')';
+}
+
+/* ---------- sheets ---------- */
+function openSheet(n){if(n==='profile')renderProfileOpts();if(n==='admin')renderTargetOpts();document.getElementById('scrim').classList.add('on');document.getElementById('sh-'+n).classList.add('on')}
+function closeSheets(){document.getElementById('scrim').classList.remove('on');document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('on'))}
+function renderProfileOpts(){
+  document.getElementById('optBus').innerHTML=[1,2,3,4,5,6].map(b=>'<button class="opt'+(b===profile.bus?' on':'')+'" onclick="setProfile(\'bus\','+b+')">'+b+'</button>').join('');
+  document.getElementById('optLevel').innerHTML=Object.keys(LEVELS).map(l=>'<button class="opt'+(l===profile.level?' on':'')+'" onclick="setProfile(\'level\',\''+l+'\')">'+LEVELS[l]+'</button>').join('');
+}
+function setProfile(k,v){profile[k]=v;save('profile',profile);renderProfileOpts();refresh()}
+let admTarget='all';
+function renderTargetOpts(){document.getElementById('optTarget').innerHTML=Object.keys(TARGETS).map(t=>'<button class="opt'+(t===admTarget?' on':'')+'" style="padding:9px 13px;font-size:13.5px" onclick="admTarget=\''+t+'\';renderTargetOpts()">'+TARGETS[t]+'</button>').join('')}
+function fillAdm(t,to){document.getElementById('admMsg').value=t;admTarget=to;renderTargetOpts()}
+function sendUpdate(){
+  const v=document.getElementById('admMsg').value.trim();if(!v){document.getElementById('admMsg').focus();return}
+  custom.unshift({ic:'bell',b:v,p:'',to:admTarget,ago:'עכשיו'});save('updates',custom.slice(0,20));
+  document.getElementById('admMsg').value='';closeSheets();showHome();renderUpdates(true);
+  const reach=admTarget==='all'?'כל 280 הנוסעים':admTarget[0]==='b'?'כ-47 הנוסעים ב'+TARGETS[admTarget]:'כל ה'+TARGETS[admTarget];
+  toast(forMe({to:admTarget})?'נשלח ל'+reach+'. בגרסה המלאה כולם מקבלים התראה לטלפון.':'נשלח ל'+reach+'. אצלכם הוא לא מופיע, כי בחרתם קבוצה אחרת.');
+  setTimeout(()=>document.getElementById('updList').scrollIntoView({block:'center',behavior:'smooth'}),100);
+}
+function toast(t){const el=document.getElementById('toast');el.textContent=t;el.classList.add('on');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('on'),3800)}
+function demoTap(e){e.preventDefault();toast('בדמו הכפתור לא מחייג. באפליקציה של הקבוצה הוא פותח שיחה או וואטסאפ.')}
+
+function setMode(m){mode=m;save('mode',m);document.getElementById('m-before').classList.toggle('on',m==='before');document.getElementById('m-during').classList.toggle('on',m==='during');renderNext()}
+function refresh(){renderChip();renderNext();renderUpdates();
+  if(document.getElementById('s-days').classList.contains('on')){renderPills();renderDay()}
+  if(document.getElementById('s-bus').classList.contains('on'))renderBus();
+  if(document.getElementById('s-pass').classList.contains('on'))renderPass();}
+
+paintIcons();setMode(mode);refresh();tickCountdown();setInterval(tickCountdown,1000);
+</script>
+</body>
+</html>
