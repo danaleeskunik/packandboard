@@ -1558,7 +1558,7 @@ function sbHeaders(extra){
   if(extra) for(var k in extra) h[k] = extra[k];
   return h;
 }
-function tripKey(){ return CURRENT_DESTINATION; }
+function tripKey(){ return 'japan-demo'; }
 function sbGetTripData(){
   return fetch(SUPABASE_URL + '/rest/v1/trip_data?trip_key=eq.' + encodeURIComponent(tripKey()) + '&select=*', {headers: sbHeaders()})
     .then(function(r){ return r.ok ? r.json() : []; })
