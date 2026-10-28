@@ -334,7 +334,7 @@
 .scroll-fade-start{left:0;background:linear-gradient(to right, var(--surface-card), transparent)}
 .scroll-fade-end{right:0;background:linear-gradient(to left, var(--surface-card), transparent)}
 </style>
-<style>#lang-switch{display:none !important}.day-map-box{display:none !important}:root{--orange-50:#E3EEF8;--orange-100:#EEF4FA;--orange-500:#2A7F9E;--orange-600:#164A7A;--orange-700:#0B2742}</style>
+<style>#lang-switch{display:none !important}:root{--orange-50:#E3EEF8;--orange-100:#EEF4FA;--orange-500:#2A7F9E;--orange-600:#164A7A;--orange-700:#0B2742}</style>
 <!-- pab-demo-tracking -->
 <script>
 (function(){
@@ -1242,7 +1242,7 @@ function sbDeleteFile(path){
   return fetch(SUPABASE_URL + '/storage/v1/object/trip-documents/' + path, {method:'DELETE', headers: sbHeaders()});
 }
 var FAMILY_NAMES = {};
-var DAY_CITIES = { "cruise-med": {"1": "Barcelona, Spain", "2": "Marseille, France", "3": "Genoa, Italy", "4": "La Spezia, Italy", "5": "Civitavecchia, Italy", "6": "Naples, Italy", "7": "", "8": "Barcelona, Spain"}};
+var DAY_CITIES = { "cruise-med": {"1": "Barcelona, Spain", "2": "Marseille, France", "3": "Genoa, Italy", "4": "La Spezia, Italy", "5": "Rome, Italy", "6": "Naples, Italy", "7": "", "8": "Barcelona, Spain"}};
 var JAPAN_DAY_CITIES = {"1": "Akasaka, Tokyo, Japan", "2": "Tsukiji, Tokyo, Japan", "3": "Asakusa, Tokyo, Japan", "4": "Kyoto Station, Kyoto, Japan", "5": "Higashiyama, Kyoto, Japan", "6": "Arashiyama, Kyoto, Japan", "7": "Fushimi Inari Taisha, Kyoto, Japan", "8": "Demachiyanagi, Kyoto, Japan", "9": "Osaka Castle, Osaka, Japan", "10": "Ginza, Tokyo, Japan", "11": "Toyosu, Tokyo, Japan", "12": "Ueno, Tokyo, Japan", "13": "Ginza, Tokyo, Japan"};
 function updatePillrowFade(){
   var row = document.getElementById('days-pillrow');
@@ -2730,7 +2730,7 @@ hydrateFromSupabase();
 <!-- pab-route-maps -->
 <script>
 (function(){
-  var GEO={"Akasaka, Tokyo, Japan":[35.67168,139.73562,"טוקיו","Tokyo"],"Arashiyama, Kyoto, Japan":[35.00905,135.6745,"קיוטו","Kyoto"],"Asakusa, Tokyo, Japan":[35.7176,139.79756,"טוקיו","Tokyo"],"Barcelona, Spain":[41.38258,2.17707,"ברצלונה","Barcelona"],"Civitavecchia, Italy":[42.09375,11.79225,"צ'יוויטווקיה","Civitavecchia"],"Demachiyanagi, Kyoto, Japan":[35.0305,135.77324,"קיוטו","Kyoto"],"Fushimi Inari Taisha, Kyoto, Japan":[34.96752,135.77971,"קיוטו","Kyoto"],"Genoa, Italy":[44.40726,8.93386,"ג'נובה","Genoa"],"Ginza, Tokyo, Japan":[35.67201,139.76472,"טוקיו","Tokyo"],"Higashiyama, Kyoto, Japan":[34.99709,135.77646,"קיוטו","Kyoto"],"Kyoto Station, Kyoto, Japan":[34.98698,135.75831,"קיוטו","Kyoto"],"La Spezia, Italy":[44.23837,9.69123,"לה ספציה","La Spezia"],"Marseille, France":[43.2964,5.37779,"מרסיי","Marseille"],"Naples, Italy":[40.83588,14.24877,"נאפולי","Naples"],"Osaka Castle, Osaka, Japan":[34.68718,135.5254,"אוסקה","Osaka"],"Toyosu, Tokyo, Japan":[35.65014,139.79312,"טוקיו","Tokyo"],"Tsukiji, Tokyo, Japan":[35.66509,139.77083,"טוקיו","Tokyo"],"Ueno, Tokyo, Japan":[35.71182,139.77757,"טוקיו","Tokyo"]};
+  var GEO={"Akasaka, Tokyo, Japan":[35.67168,139.73562,"טוקיו","Tokyo"],"Arashiyama, Kyoto, Japan":[35.00905,135.6745,"קיוטו","Kyoto"],"Asakusa, Tokyo, Japan":[35.7176,139.79756,"טוקיו","Tokyo"],"Barcelona, Spain":[41.38258,2.17707,"ברצלונה","Barcelona"],"Demachiyanagi, Kyoto, Japan":[35.0305,135.77324,"קיוטו","Kyoto"],"Fushimi Inari Taisha, Kyoto, Japan":[34.96752,135.77971,"קיוטו","Kyoto"],"Genoa, Italy":[44.40726,8.93386,"ג'נובה","Genoa"],"Ginza, Tokyo, Japan":[35.67201,139.76472,"טוקיו","Tokyo"],"Higashiyama, Kyoto, Japan":[34.99709,135.77646,"קיוטו","Kyoto"],"Kyoto Station, Kyoto, Japan":[34.98698,135.75831,"קיוטו","Kyoto"],"La Spezia, Italy":[44.23837,9.69123,"לה ספציה","La Spezia"],"Marseille, France":[43.2964,5.37779,"מרסיי","Marseille"],"Naples, Italy":[40.83588,14.24877,"נאפולי","Naples"],"Osaka Castle, Osaka, Japan":[34.68718,135.5254,"אוסקה","Osaka"],"Rome, Italy":[41.89332,12.48293,"רומא","Rome"],"Toyosu, Tokyo, Japan":[35.65014,139.79312,"טוקיו","Tokyo"],"Tsukiji, Tokyo, Japan":[35.66509,139.77083,"טוקיו","Tokyo"],"Ueno, Tokyo, Japan":[35.71182,139.77757,"טוקיו","Tokyo"]};
   function en(){ return typeof CURRENT_LANG!=='undefined'&&CURRENT_LANG==='en'; }
   function T(he,e){ return en()?e:he; }
   function cssVar(n,f){ try{ return getComputedStyle(document.documentElement).getPropertyValue(n).trim()||f; }catch(e){ return f; } }
