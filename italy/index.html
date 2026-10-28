@@ -1806,7 +1806,7 @@ function applyI18nDom(lang){
 function applyLanguage(lang){
   if(lang !== 'he' && lang !== 'en') lang = 'he';
   CURRENT_LANG = lang;
-  try{ localStorage.setItem('kunikTrips.lang', lang); }catch(e){}
+  if(!window.__pabLangUrl){ try{ localStorage.setItem('kunikTrips.lang', lang); }catch(e){} }
   var isEn = lang === 'en';
   applyI18nDom(lang);
   var cdWrap = document.getElementById('cd-label-wrap');
@@ -1826,10 +1826,11 @@ function applyLanguage(lang){
   }
   if(typeof updateDaysFeaturedTile === 'function') updateDaysFeaturedTile();
 }
-function toggleLanguage(){
+function toggleLanguage(){ window.__pabLangUrl = false;
   applyLanguage(CURRENT_LANG === 'he' ? 'en' : 'he');
 }
 var CURRENT_LANG = (function(){
+  try{ var q = new URLSearchParams(window.location.search).get('lang'); if(q === 'en' || q === 'he'){ window.__pabLangUrl = true; return q; } }catch(e){}
   try{
     var saved = localStorage.getItem('kunikTrips.lang');
     if(saved === 'he' || saved === 'en') return saved;
@@ -2916,6 +2917,88 @@ hydrateFromSupabase();
   }
   var ss=window.showScreen;
   if(typeof ss==='function') window.showScreen=function(name){ var r=ss.apply(this,arguments); if(name==='emergency') addEmergency(); return r; };
+})();
+</script>
+
+<!-- pab-en-overlay -->
+<script>
+(function(){
+  var EN = {"מזומן אירו להתחלה": "Euro cash to start", "קוד לבוש בכנסיות": "Dress code in churches", "Italo — רכבת מהירה חלופית": "Italo — an alternative high-speed train", "השמעה": "Play", "מספר המוקד הרפואי מופיע על גב הכרטיס ובאפליקציה. כדאי לצלם את הכרטיס לפני היציאה.": "The medical hotline number is on the back of the card and in the app. Photograph the card before you leave.", "אישורי טיסה מודפסים": "Printed flight confirmations", "צהריים": "Lunch", "השמעה לאט": "Play slowly", "אוזניות": "Headphones", "8–11.12.2026 (3 לילות)Via de' Cerretani, Florence": "Dec 8–11, 2026 (3 nights)<br><span dir=\"ltr\">Via de' Cerretani, Florence</span>", "דרכונים / תעודות זהות בתוקף": "Valid passports / ID cards", "חירום כללי (משטרה/אמבולנס/כיבוי אש)": "General emergency (police / ambulance / fire)", "שגרירות ישראל ברומא": "Embassy of Israel in Rome", "שעות סייסטה": "Siesta hours", "לדוגמה: €10 ≈ $11.15 ≈ 34.00 ₪": "Example: €10 ≈ $11.15 ≈ 34.00 ₪", "רכב שכור לטוסקנה": "A rental car for Tuscany", "מתאם חשמל אירופי (Type C/F, 230V)": "European power adapter (Type C/F, 230V)", "רוב המסעדות גובות coperto (דמי כיסוי קבועים לשולחן) — זה נורמלי, לא תוספת טעות. תשר של 5-10% מספיק ולא חובה.": "Most restaurants charge a coperto (a fixed cover charge per table) — it's normal, not a mistake on the bill. A tip of 5–10% is enough and isn't required.", "תל אביב (TLV) ← רומא (FCO)": "Tel Aviv (TLV) → Rome (FCO)", "רכבות מהירות בין ערים": "High-speed trains between cities", "יקבים רבים דורשים הזמנה מראש, גם באמצע שבוע — לתאם לפני היציאה מפירנצה.": "Many wineries require a reservation, even midweek — arrange it before leaving Florence.", "10.12.2026, יום אחדאיסוף והחזרה בפירנצה": "Dec 10, 2026, one day<br>Pickup and return in Florence", "פונטה וקיו (Ponte Vecchio), ועלייה לפיאצלה מיקלאנג'לו (Piazzale Michelangelo) לנוף על העיר בשקיעה.": "<b>Ponte Vecchio</b>, then up to Piazzale Michelangelo for a view over the city at sunset.", "יום 1 · נחיתה והקולוסיאום": "Day 1 · Landing and the Colosseum", "גלריית אופיצי (Uffizi Gallery) — כדאי הזמנת כניסה מראש, התור יכול להיות ארוך גם במאי.": "The <b>Uffizi Gallery</b> — book your entry in advance, the line can be long even in May.", "תחבורה ציבורית ברומא ובפירנצה": "Public transport in Rome and Florence", "תיק יום קטן": "A small day bag", "הדרך הכי נוחה להגיע לסיינה/סן ג'ימיניאנו/יקבים — כבישים צרים ומתפתלים, לנהוג לאט. שימו לב לאזורי ZTL (מרכזי ערים אסורים לרכב לא מורשה) בערים ההיסטוריות.": "The most convenient way to reach Siena / San Gimignano / wineries — the roads are narrow and winding, so drive slowly. Watch out for ZTL zones (city centers closed to unauthorized cars) in the historic cities.", "חזרה ל-Pack & Board": "Back to Pack &amp; Board", "כבישי טוסקנה צרים ומתפתלים — אם שוכרים רכב, כדאי ביטוח מקיף ולא למהר.": "Tuscan roads are narrow and winding — if you rent a car, take full insurance and don't rush.", "Coperto ותשר": "Coperto and tipping", "6–12 בדצמבר 2026 · 7 ימים": "Dec 6–12, 2026 · 7 Days", "בגד צנוע לכניסה לכנסיות (כתפיים מכוסות)": "Modest clothing for entering churches (covered shoulders)", "כבלים ומטענים": "Cables and chargers", "גלריית אופיצי": "Uffizi Gallery", "ערב": "Evening", "פונטה וקיו": "Ponte Vecchio", "יום 3 · גלריית אופיצי ופונטה וקיו בפירנצה": "Day 3 · The Uffizi Gallery and Ponte Vecchio in Florence", "אישורי המלונות": "Hotel confirmations", "ארוחת ערב ברובע טרסטוורה (Trastevere) — סמטאות, טרטוריות משפחתיות ואווירה רומית אמיתית.": "Dinner in the <b>Trastevere</b> district — alleys, family trattorias and a truly Roman atmosphere.", "6–8.12.2026 (2 לילות)Via Marghera, Roma Termini area, Rome": "Dec 6–8, 2026 (2 nights)<br><span dir=\"ltr\">Via Marghera, Roma Termini area, Rome</span>", "אפליקציית דוגמה": "Sample app", "ביטוח נסיעות רפואי": "Medical travel insurance", "אחה\"צ": "Afternoon", "כרטיס משולב לקולוסיאום+פורום+פלטין בתוקף ליומיים — אין צורך לדחוס הכל ביום אחד.": "A combined Colosseum + Forum + Palatine ticket is valid for two days — there's no need to cram everything into one.", "הקולוסיאום (Colosseum) והפורום הרומי (Roman Forum) — כדאי כרטיס עם שעת כניסה קבועה כדי לדלג על התור.": "The <b>Colosseum</b> and the <b>Roman Forum</b> — get a ticket with a fixed entry time so you can skip the line.", "כרטיס ביטוח נסיעות (Passport Card)": "Travel insurance card (Passport Card)", "כרטיסים מוזמנים מראש (קולוסיאום, אופיצי)": "Pre-booked tickets (Colosseum, Uffizi)", "מסלול טיול איטליה": "Italy Trip Itinerary", "לחיצה על השם: המקום במפה · על החץ: ניווט": "Tap the name: the place on the map · tap the arrow: directions", "Trenitalia ו-Italo מתחרות על אותם קווים מהירים — כדאי להשוות מחיר בשתיהן. כרטיס מודפס/דיגיטלי עם מקום מוזמן, אין צורך להחתים.": "Trenitalia and Italo compete on the same high-speed lines — compare the price on both. A printed or digital ticket with a reserved seat; there is no need to validate it.", "נסיעה (רכב שכור) לסיינה (Siena) — כיכר איל קמפו (Piazza del Campo) והקתדרלה.": "Drive (rental car) to <b>Siena</b> — Piazza del Campo and the cathedral.", "Via Michele Mercati 14, 00197 Roma · קונסולרי: +39-06-36198-586": "Via Michele Mercati 14, 00197 Roma · Consular: +39-06-36198-586", "סיינה": "Siena", "FREE NOW — מוניות": "FREE NOW — taxis", "חסימת כרטיס אשראי": "Blocking a credit card", "בגדים קלים לימי חום, שכבה לערבים": "Light clothes for hot days, a layer for evenings", "רכבות איטלקיות": "Italian trains", "מרכזי הערים ההיסטוריים רוצפים אבן — נעליים נוחות חשובות במיוחד ביום עם הרבה הליכה.": "The historic city centers are paved with stone — comfortable shoes matter most on a day with lots of walking.", "טיפ": "Tip", "אישור שכירת רכב לטוסקנה": "Car-rental confirmation for Tuscany", "רכבת מהירה רומא–פירנצה (כ-1.5 שעה), התארגנות במלון ליד הדואומו (Duomo).": "A high-speed train Rome–Florence (about 1.5 hours), and settle in at the hotel near the Duomo.", "TheFork — הזמנת מסעדות": "TheFork — restaurant reservations", "משקפי שמש": "Sunglasses", "רומא (FCO) ← תל אביב (TLV)": "Rome (FCO) → Tel Aviv (TLV)", "ארוחת צהריים כפרית ביקב מקומי באזור קיאנטי (Chianti) עם טעימת יינות.": "A country lunch at a local winery in the <b>Chianti</b> area, with a wine tasting.", "GetYourGuide — כרטיסים ללא תור": "GetYourGuide — skip-the-line tickets", "סן ג'ימיניאנו": "San Gimignano", "לרשום את מספר מוקד החסימה מגב הכרטיס לפני היציאה — מחוץ לישראל לא תמיד יש גישה לאפליקציה.": "Write down the card-blocking hotline from the back of the card before you leave — outside Israel you don't always have access to the app.", "רומא · פירנצה · טוסקנה": "Rome · Florence · Tuscany", "רומא–פירנצה כ-1.5 שעה ב-Frecciarossa/Italo. כדאי להזמין מראש — מחירים עולים ככל שמתקרבים לתאריך.": "Rome–Florence takes about 1.5 hours on a Frecciarossa/Italo. Book ahead — prices go up as the date approaches.", "מטרו+אוטובוס ברומא, בעיקר הליכה ברגל בפירנצה (העיר ההיסטורית קומפקטית). כרטיס יומי (biglietto giornaliero) משתלם ליום עמוס.": "Metro + bus in Rome, mostly walking in Florence (the historic city is compact). A day ticket (biglietto giornaliero) pays off on a busy day.", "נעלי הליכה נוחות (הרבה אבן ומדרכות)": "Comfortable walking shoes (lots of stone and pavement)", "תרופות אישיות ומרשמים": "Personal medication and prescriptions", "בוקר": "Morning", "הליכה על אבן משתלטת": "Walking on stone", "אפליקציית Trenitalia/Italo (רכבות)": "Trenitalia/Italo app (trains)", "טרסטוורה": "Trastevere", "eSIM או כרטיס SIM לאירופה": "eSIM or SIM card for Europe", "Avis — רכב שכור לטוסקנה": "Avis — rental car for Tuscany", "Trenitalia — רכבות בין ערים": "Trenitalia — trains between cities", "כתפיים וברכיים מכוסות חובה בכניסה לכנסיות ולוותיקן — גם בימי חום.": "Covered shoulders and knees are required to enter churches and the Vatican — even on hot days.", "נחיתה": "Landing", "מטען נייד (פאוור בנק)": "Portable charger (power bank)", "ביטוח — Passport Card": "Insurance — Passport Card", "מטרייה קומפקטית": "Compact umbrella", "נמל התעופה פיומיצ'ינו (Fiumicino, FCO) ב-09:50. רכבת Leonardo Express עד Roma Termini (כ-32 דק') + מונית קצרה למלון.": "Land at Fiumicino airport (FCO) at 09:50. The <b>Leonardo Express</b> train to Roma Termini (about 32 min) and a short taxi to the hotel.", "טעימת יין בטוסקנה": "Wine tasting in Tuscany", "יום 5 · יום שדה בטוסקנה — סיינה וסן ג'ימיניאנו": "Day 5 · A field day in Tuscany — Siena and San Gimignano", "ספירה לאחור להמראה (הלוך)": "Countdown to takeoff (outbound)", "פתיחה במפות": "Open in Maps", "מסלול מותאם אישית · רומא (Rome) · פירנצה (Florence) · טוסקנה (Tuscany) · 2026": "Personalized itinerary · Rome · Florence · Tuscany · 2026", "פרטים": "Details", "בעיירות קטנות ובטוסקנה חנויות רבות נסגרות בין 13:00-16:00 — לתכנן קניות/ארוחות סביב זה.": "In small towns and in Tuscany many shops close between 13:00 and 16:00 — plan shopping and meals around it.", "סן ג'ימיניאנו (San Gimignano) — עיירת המגדלים מימי הביניים, גלידה איטלקית ברחוב הראשי.": "<b>San Gimignano</b> — the medieval town of towers, with Italian ice cream on the main street.", "עעע": "Hebrew", "הקולוסיאום": "Colosseum"};
+  var TITLES = {"t": "Italy Trip Itinerary 2026"};
+  var WD = {'א':'Sun','ב':'Mon','ג':'Tue','ד':'Wed','ה':'Thu','ו':'Fri','ש':'Sat'};
+  var BLOCK=/^(DIV|P|H1|H2|H3|H4|H5|H6|LI|LABEL|BUTTON|SECTION|UL|OL|TABLE|TR|TD|TH|SELECT|OPTION|SUMMARY|DETAILS|FORM|HEADER|FOOTER|MAIN|NAV|FIGURE|FIGCAPTION|IFRAME|TEXTAREA|INPUT|SVG|SCRIPT|STYLE)$/;
+  var HEB=/[֐-׿]/;
+  function norm(t){return t.replace(/\s+/g,' ').trim();}
+  function directHeb(el){ for(var n=el.firstChild;n;n=n.nextSibling){ if(n.nodeType===3 && HEB.test(n.nodeValue)) return true; } return false; }
+  function hasBlocky(el){ for(var c=el.firstElementChild;c;c=c.nextElementSibling){ if(BLOCK.test(c.tagName)||c.querySelector('div,p,h1,h2,h3,h4,li,label,button')) return true; } return false; }
+  function isUnit(el){
+    if(el.closest('[data-i18n-wd],[data-pill],#lang-switch,script,style,svg,select,textarea,.screen-illustration,#home-illustration,[data-noxlate]')) return false;
+    if(hasBlocky(el)) return false;
+    if(!HEB.test(el.textContent)) return false;
+    return directHeb(el) || el.children.length===0;
+  }
+  function bold(h){ return h.replace(/<b>/g,'<b style="font-weight:700;color:var(--navy-800)">'); }
+  function dyn(t){
+    var m;
+    if((m=t.match(/^נחיתה: ([אבגדהוש])['׳] (\d+\.\d+)(.*)$/))) return 'Landing: '+WD[m[1]]+' '+m[2]+m[3];
+    if((m=t.match(/^([אבגדהוש])['׳] (\d+\.\d+)(.*)$/))) return WD[m[1]]+' '+m[2]+m[3];
+    if((m=t.match(/^שער · (.*)$/))) return 'Rate · '+m[1];
+    if((m=t.match(/^סכום ב-(.*)$/))) return 'Amount in '+m[1];
+    if((m=t.match(/^לדוגמה: (.*)$/))) return 'Example: '+m[1];
+    return null;
+  }
+  var done = [], attrs = [], dirs = [], busy = false, timer = null;
+  function isEn(){ try{ return window.CURRENT_LANG === 'en'; }catch(e){ return false; } }
+  function apply(){
+    if(busy) return; busy = true;
+    try{
+      if(!isEn()){
+        done.forEach(function(r){ if(r.el.isConnected) r.el.innerHTML = r.html; });
+        done = [];
+        attrs.forEach(function(r){ if(r.el.isConnected) r.el.setAttribute(r.a, r.v); });
+        attrs = [];
+        dirs.forEach(function(r){ if(!r.el.isConnected) return; if(r.d === null) r.el.removeAttribute('dir'); else r.el.setAttribute('dir', r.d); });
+        dirs = [];
+        return;
+      }
+      [].forEach.call(document.body.querySelectorAll('*'), function(el){
+        if(!el.isConnected || !isUnit(el)) return;
+        for(var p=el.parentElement;p&&p!==document.body;p=p.parentElement){ if(isUnit(p)&&directHeb(p)) return; }
+        var k = norm(el.textContent), v = EN[k];
+        if(v == null) v = dyn(k);
+        if(v == null) return;
+        done.push({el:el, html:el.innerHTML});
+        el.innerHTML = bold(v);
+        var chain = [el];
+        for(var q=el.parentElement, n=0; q && n<3 && q!==document.body && !q.hasAttribute('data-daycard') && !q.classList.contains('app-screen'); q=q.parentElement, n++) chain.push(q);
+        chain.forEach(function(x){ if(x.getAttribute('dir') !== 'ltr'){ dirs.push({el:x, d:x.getAttribute('dir')}); x.setAttribute('dir','ltr'); } });
+      });
+      [].forEach.call(document.body.querySelectorAll('[aria-label],[title]'), function(el){
+        ['aria-label','title'].forEach(function(a){
+          var v = el.getAttribute(a); if(!v || !HEB.test(v)) return;
+          var n = null, m;
+          if((m = v.match(/^ניווט אל (.*)$/))) n = 'Navigate to ' + (EN[norm(m[1])] || m[1]).replace(/<[^>]+>/g,'');
+          else if(v === 'ניווט') n = 'Directions';
+          else if(v === 'מוסתר לצורך הדגמה') n = 'Hidden for the demo';
+          else if(v === 'הסרה') n = 'Remove';
+          else if(EN[norm(v)] != null) n = EN[norm(v)].replace(/<[^>]+>/g,'');
+          if(n == null) return;
+          attrs.push({el:el, a:a, v:v}); el.setAttribute(a, n);
+        });
+      });
+      var back = document.getElementById('pab-back');
+      if(back){ var a = back.querySelector('a'); if(a) a.setAttribute('href','/en/'); }
+      if(TITLES.t) document.title = TITLES.t;
+    } finally { busy = false; }
+  }
+  function schedule(){ if(timer) return; timer = setTimeout(function(){ timer = null; apply(); }, 40); }
+  var origApply = window.applyLanguage;
+  if(typeof origApply === 'function'){
+    window.applyLanguage = function(l){ var r = origApply.apply(this, arguments); apply(); return r; };
+  }
+  new MutationObserver(function(){ if(!busy) schedule(); }).observe(document.body, {childList:true, subtree:true, characterData:true});
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', apply); else apply();
+  window.addEventListener('load', function(){ apply(); setTimeout(apply, 400); });
 })();
 </script>
 </body>
