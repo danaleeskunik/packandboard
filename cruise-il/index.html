@@ -2890,12 +2890,12 @@ hydrateFromSupabase();
     var h=document.querySelector('header');
     if(h && !document.getElementById('pab-partner')){
       var s=document.createElement('style');
-      s.textContent='.pab-partner{position:absolute;top:14px;right:14px;left:auto;z-index:3;background:#fff;border-radius:12px;padding:7px 11px 6px;box-shadow:0 2px 10px rgba(11,39,66,.28);line-height:0}'+
-        '.pab-partner img{display:block;width:96px;height:auto}'+
+      s.textContent='.pab-partner{position:absolute;bottom:14px;left:14px;z-index:3;line-height:0;opacity:.96}'+
+        '.pab-partner img{display:block;width:104px;height:auto;filter:drop-shadow(0 1px 3px rgba(5,25,50,.45))}'+
         '.pab-note{margin:10px auto 0;max-width:34em;padding:0 22px;text-align:center;font:var(--fw-medium) var(--text-12-5,12.5px)/1.5 var(--font-ui);color:var(--ink-6)}';
       document.head.appendChild(s);
       var d=document.createElement('div'); d.id='pab-partner'; d.className='pab-partner'; d.setAttribute('data-noprint','');
-      d.innerHTML='<img src="/assets/mano-logo.png" alt="מנו ספנות" width="96" height="29">';
+      d.innerHTML='<img src="/assets/mano-logo-white.png" alt="מנו ספנות" width="104" height="32">';
       if(getComputedStyle(h).position==='static') h.style.position='relative';
       h.appendChild(d);
     }
