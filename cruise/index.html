@@ -2586,7 +2586,7 @@ hydrateFromSupabase();
     var last=calls[calls.length-1], end=at(last,last.depart)||new Date(dayStart(last).getTime()+864e5);
     if(i<0||n>end){ card.style.display='none'; CUR=null; return; }
     var c=calls[i]; CUR=c;
-    var ship=cr.ship[lang()]||cr.ship.he, h='<div class="e">'+tx('היום על הספינה','Today on board')+' · <bdi>'+ship+'</bdi> · '+tx('יום ','Day ')+c.day+'</div>';
+    var ship=cr.ship[lang()]||cr.ship.he, h='<div class="e">'+tx('היום על הספינה','Today on board')+'* · <bdi>'+ship+'</bdi> · '+tx('יום ','Day ')+c.day+'</div>';
     if(c.kind==='sea'){
       var nx=calls[i+1];
       h+='<div class="t">'+tx('יום בים','A day at sea')+'</div>';
@@ -2610,7 +2610,8 @@ hydrateFromSupabase();
       if(aa&&aa<=n){ var nx2=calls[i+1]; h+='<div class="s">'+(dp&&dp>n?tx('כולם על הסיפון. ','Everyone on board. '):tx('בדרך. ','Under way. '))+(nx2?tx('הבא: ','Next: ')+(nx2.kind==='sea'?tx('יום בים','a day at sea'):'<bdi>'+port(nx2)+'</bdi>'):'')+'</div>'; }
       else if(c.tender) h+='<div class="s">'+tx('ירידה לחוף בסירות (tender): כדאי לצאת מוקדם ולחזור מוקדם, יש תור.','Ashore by tender: go early and come back early, there is a queue.')+'</div>';
     }
-    h+='<div class="s">'+tx('לפי שעון הספינה · הקישו לפרטי היום ←','Ship time · tap for the day →')+'</div>';
+    h+='<div class="s">'+tx('לפי שעון הספינה · הקישו לפרטי היום ←','Ship time · tap for the day →')+'</div>'+
+      '<div class="s" style="font-size:11px;font-weight:500;opacity:.7">'+tx('* הספירה לאחור היא כלי עזר בלבד ואינה מחליפה את שעון הספינה, העלון היומי והודעות הצוות. האחריות לחזור בזמן היא של הנוסע.','* The countdown is a convenience only and does not replace the ship clock, the daily newsletter or crew announcements. Being back on time is the passenger\'s responsibility.')+'</div>';
     if(card.innerHTML!==h) card.innerHTML=h;
     card.style.display='block';
   }
@@ -2645,6 +2646,7 @@ hydrateFromSupabase();
   function lang(){ return (typeof CURRENT_LANG!=='undefined' && CURRENT_LANG==='en') ? 'en' : 'he'; }
   function tx(he,en){ return lang()==='en' ? en : he; }
   var START=Date.now(), SIM={};
+  var DISC=function(){ return tx('* הספירה לאחור היא כלי עזר בלבד ואינה מקור מחייב. שעות העלייה, ההפלגה והחזרה לספינה נקבעות לפי שעון הספינה, העלון היומי והודעות הצוות בלבד. ייתכנו שגיאות, עיכובים או תקלות (בטלפון, בחיבור לרשת, באזור הזמן או באפליקציה), ואין להסתמך עליה לבדה. האחריות לחזור לספינה בזמן היא של הנוסע.','* The countdown is a convenience only and is not binding. Boarding, sailing and all-aboard times are set solely by the ship clock, the daily newsletter and crew announcements. Errors, delays or malfunctions may occur (phone, network, time zone or the app), so do not rely on it alone. Being back on board on time is the passenger\'s responsibility.'); };
   function realNow(){
     try{ var q=new URLSearchParams(location.search).get('cruise_now'); if(q){ var d=new Date(q); if(!isNaN(d)) return new Date(d.getTime()+(Date.now()-START)); } }catch(e){}
     return new Date();
@@ -2669,6 +2671,7 @@ hydrateFromSupabase();
     '.pab-cd .c i{display:block;font:var(--fw-black) 28px/1.1 var(--font-num);font-style:normal;font-variant-numeric:tabular-nums}'+
     '.pab-cd .c small{display:block;font:var(--fw-bold) var(--text-11)/1.3 var(--font-ui);opacity:.85}'+
     '.pab-cd .s{margin-top:8px;font:var(--fw-semibold) var(--text-13)/1.4 var(--font-ui);opacity:.95}'+
+    '.pab-cd .f{margin-top:8px;font:var(--fw-medium) 11.5px/1.45 var(--font-ui);opacity:.8}'+
     '.pab-cd button{margin-top:8px;border:0;border-radius:999px;padding:7px 14px;font:var(--fw-bold) var(--text-12-5)/1 var(--font-ui);cursor:pointer;background:rgba(255,255,255,.2);color:inherit}'+
     '.pab-cd.wait button{background:var(--navy-800);color:#fff}';
   document.head.appendChild(st);
@@ -2694,7 +2697,7 @@ hydrateFromSupabase();
   function paint(w,c){
     var tg=target(c), n=c.day, sim=!!SIM[n], now=nowFor(n), diff=tg.t-now, ds=dayStart(c);
     var cls='pab-cd', html='';
-    var head='<div class="h"><span>⏱ '+tx(tg.he,tg.en)+'</span><b dir="ltr">'+tg.hm+'</b></div>';
+    var head='<div class="h"><span>⏱ '+tx(tg.he,tg.en)+'*</span><b dir="ltr">'+tg.hm+'</b></div>';
     function cells(ms){ var s=Math.max(0,Math.floor(ms/1000)), h=Math.floor(s/3600), m=Math.floor(s%3600/60), x=s%60;
       return '<div class="r"><div class="c"><i>'+p2(h)+'</i><small>'+tx('שעות','hrs')+'</small></div><div class="c"><i>'+p2(m)+'</i><small>'+tx('דק׳','min')+'</small></div><div class="c"><i>'+p2(x)+'</i><small>'+tx('שנ׳','sec')+'</small></div></div>'; }
     if(!sim && now<ds){
@@ -2709,6 +2712,7 @@ hydrateFromSupabase();
       html=head+cells(diff)+'<div class="s">'+(diff<600e3?tx('מהר! הספינה לא מחכה.','Hurry! The ship will not wait.'):diff<3600e3?tx('פחות משעה: מתחילים לחזור.','Under an hour: start heading back.'):diff<7200e3?tx('פחות משעתיים: כדאי לתכנן את החזרה.','Under two hours: plan your way back.'):tx('יש זמן, ממשיכים ליהנות.','Plenty of time, keep enjoying.'))+
         (sim?' · <b>'+tx('הדגמה ×120','Demo ×120')+'</b>':'')+'</div>'+(sim?'<button type="button">⏹ '+tx('סיום הדגמה','End demo')+'</button>':'');
     }
+    html+='<div class="f">'+DISC()+'</div>';
     if(w.__h!==cls+'|'+html){ w.className=cls; w.innerHTML=html; w.__h=cls+'|'+html; }
   }
   function tick(){
