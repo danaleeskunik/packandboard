@@ -936,8 +936,9 @@
       </button>
     </div>
     <!-- pab-app-brand -->
+    <style>#pab-brand a{cursor:pointer}#pab-brand a img{transition:opacity .15s ease}#pab-brand a:hover img,#pab-brand a:focus-visible img{opacity:1}</style>
     <div id="pab-brand" data-i18n-skip style="display:flex;justify-content:center;margin-top:36px;padding-bottom:8px">
-      <a href="https://packandboard.com/" target="_blank" rel="noopener" aria-label="Pack &amp; Board" style="display:block;line-height:0">
+      <a href="https://packandboard.com/" target="_blank" rel="noopener" aria-label="Pack &amp; Board" style="display:block;line-height:0;cursor:pointer">
         <img src="/assets/pab-wordmark.png" width="112" height="27" alt="Pack &amp; Board" style="display:block;opacity:.6">
       </a>
     </div>
@@ -2847,6 +2848,27 @@ hydrateFromSupabase();
   if(typeof ss==='function') window.showScreen=function(name){ var r=ss.apply(this,arguments); if(name==='days') setTimeout(run,0); return r; };
   var q=0; new MutationObserver(function(){ if(q) return; q=requestAnimationFrame(function(){ q=0; addRoutes(); }); }).observe(document.body,{childList:true,subtree:true});
   run();
+})();
+</script>
+<!-- pab-cruise-brand -->
+<style>
+.dest-stamp{display:none !important}
+.pab-site{position:absolute;top:14px;left:14px;z-index:3;background:#fff;border-radius:12px;padding:8px 11px;box-shadow:0 2px 10px rgba(11,39,66,.28);line-height:0;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease}
+.pab-site:hover,.pab-site:focus-visible{transform:translateY(-1px);box-shadow:0 5px 14px rgba(11,39,66,.38)}
+.pab-site img{display:block;width:96px;height:auto}
+@media print{.pab-site{display:none}}
+</style>
+<script>
+(function(){
+  function add(){
+    var h=document.querySelector('header'); if(!h||document.getElementById('pab-site')) return;
+    if(getComputedStyle(h).position==='static') h.style.position='relative';
+    var a=document.createElement('a'); a.id='pab-site'; a.className='pab-site'; a.href='https://packandboard.com/'; a.target='_blank'; a.rel='noopener';
+    a.setAttribute('aria-label','Pack & Board'); a.setAttribute('data-noprint','');
+    a.innerHTML='<img src="/assets/pab-wordmark.png" alt="Pack &amp; Board" width="96" height="23">';
+    h.appendChild(a);
+  }
+  add(); setInterval(add,1500);
 })();
 </script>
 
