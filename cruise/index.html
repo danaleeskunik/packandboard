@@ -1241,7 +1241,7 @@ function sbDeleteFile(path){
   return fetch(SUPABASE_URL + '/storage/v1/object/trip-documents/' + path, {method:'DELETE', headers: sbHeaders()});
 }
 var FAMILY_NAMES = {};
-var DAY_CITIES = { "cruise-med": {"1": "Barcelona", "2": "Marseille", "3": "Genoa", "4": "La Spezia", "5": "Civitavecchia", "6": "Naples", "7": "", "8": "Barcelona"}};
+var DAY_CITIES = { "cruise-med": {"1": "Barcelona, Spain", "2": "Marseille, France", "3": "Genoa, Italy", "4": "La Spezia, Italy", "5": "Civitavecchia, Italy", "6": "Naples, Italy", "7": "", "8": "Barcelona, Spain"}};
 var JAPAN_DAY_CITIES = {"1": "Akasaka, Tokyo, Japan", "2": "Tsukiji, Tokyo, Japan", "3": "Asakusa, Tokyo, Japan", "4": "Kyoto Station, Kyoto, Japan", "5": "Higashiyama, Kyoto, Japan", "6": "Arashiyama, Kyoto, Japan", "7": "Fushimi Inari Taisha, Kyoto, Japan", "8": "Demachiyanagi, Kyoto, Japan", "9": "Osaka Castle, Osaka, Japan", "10": "Ginza, Tokyo, Japan", "11": "Toyosu, Tokyo, Japan", "12": "Ueno, Tokyo, Japan", "13": "Ginza, Tokyo, Japan"};
 function updatePillrowFade(){
   var row = document.getElementById('days-pillrow');
@@ -2640,7 +2640,7 @@ hydrateFromSupabase();
 <!-- pab-route-maps -->
 <script>
 (function(){
-  var GEO={"Akasaka, Tokyo, Japan":[35.67168,139.73562,"טוקיו","Tokyo"],"Arashiyama, Kyoto, Japan":[35.00905,135.6745,"קיוטו","Kyoto"],"Asakusa, Tokyo, Japan":[35.7176,139.79756,"טוקיו","Tokyo"],"Barcelona":[41.38258,2.17707,"ברצלונה","Barcelona"],"Civitavecchia":[42.09375,11.79225,"Civitavecchia","Civitavecchia"],"Demachiyanagi, Kyoto, Japan":[35.0305,135.77324,"קיוטו","Kyoto"],"Fushimi Inari Taisha, Kyoto, Japan":[34.96752,135.77971,"קיוטו","Kyoto"],"Genoa":[44.40726,8.93386,"ג'נובה","Genoa"],"Ginza, Tokyo, Japan":[35.67201,139.76472,"טוקיו","Tokyo"],"Higashiyama, Kyoto, Japan":[34.99709,135.77646,"קיוטו","Kyoto"],"Kyoto Station, Kyoto, Japan":[34.98698,135.75831,"קיוטו","Kyoto"],"La Spezia":[44.23837,9.69123,"La Spezia","La Spezia"],"Marseille":[43.2964,5.37779,"מרסיי","Marseille"],"Naples":[40.83588,14.24877,"נפולי","Naples"],"Osaka Castle, Osaka, Japan":[34.68718,135.5254,"אוסקה","Osaka"],"Toyosu, Tokyo, Japan":[35.65014,139.79312,"טוקיו","Tokyo"],"Tsukiji, Tokyo, Japan":[35.66509,139.77083,"טוקיו","Tokyo"],"Ueno, Tokyo, Japan":[35.71182,139.77757,"טוקיו","Tokyo"]};
+  var GEO={"Akasaka, Tokyo, Japan":[35.67168,139.73562,"טוקיו","Tokyo"],"Arashiyama, Kyoto, Japan":[35.00905,135.6745,"קיוטו","Kyoto"],"Asakusa, Tokyo, Japan":[35.7176,139.79756,"טוקיו","Tokyo"],"Barcelona, Spain":[41.38258,2.17707,"ברצלונה","Barcelona"],"Civitavecchia, Italy":[42.09375,11.79225,"צ'יוויטווקיה","Civitavecchia"],"Demachiyanagi, Kyoto, Japan":[35.0305,135.77324,"קיוטו","Kyoto"],"Fushimi Inari Taisha, Kyoto, Japan":[34.96752,135.77971,"קיוטו","Kyoto"],"Genoa, Italy":[44.40726,8.93386,"ג'נובה","Genoa"],"Ginza, Tokyo, Japan":[35.67201,139.76472,"טוקיו","Tokyo"],"Higashiyama, Kyoto, Japan":[34.99709,135.77646,"קיוטו","Kyoto"],"Kyoto Station, Kyoto, Japan":[34.98698,135.75831,"קיוטו","Kyoto"],"La Spezia, Italy":[44.23837,9.69123,"לה ספציה","La Spezia"],"Marseille, France":[43.2964,5.37779,"מרסיי","Marseille"],"Naples, Italy":[40.83588,14.24877,"נאפולי","Naples"],"Osaka Castle, Osaka, Japan":[34.68718,135.5254,"אוסקה","Osaka"],"Toyosu, Tokyo, Japan":[35.65014,139.79312,"טוקיו","Tokyo"],"Tsukiji, Tokyo, Japan":[35.66509,139.77083,"טוקיו","Tokyo"],"Ueno, Tokyo, Japan":[35.71182,139.77757,"טוקיו","Tokyo"]};
   function en(){ return typeof CURRENT_LANG!=='undefined'&&CURRENT_LANG==='en'; }
   function T(he,e){ return en()?e:he; }
   function cssVar(n,f){ try{ return getComputedStyle(document.documentElement).getPropertyValue(n).trim()||f; }catch(e){ return f; } }
@@ -2708,7 +2708,7 @@ hydrateFromSupabase();
     '.pab-tripmap li span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pab-tripmap li small{color:var(--ink-6,#777);font-size:12px;margin-inline-start:auto;white-space:nowrap}'+
     '.pab-tripmap li b{flex:none;width:24px;height:24px;border-radius:50%;background:var(--navy-800);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px}'+
     '.pab-tripmap .note{margin:8px 0 0;font-size:12px;color:var(--ink-6,#777)}'+
-    '.pab-pin{background:var(--navy-800);color:#fff;border:2px solid #fff;border-radius:999px;display:flex;align-items:center;justify-content:center;font:700 12px/1 sans-serif;box-shadow:0 1px 4px rgba(0,0,0,.35)}';
+    '.leaflet-marker-icon.pab-pin{background:var(--navy-800);color:#fff;border:2px solid #fff;border-radius:999px;display:flex !important;align-items:center;justify-content:center;font:700 11px/1 sans-serif;box-shadow:0 1px 4px rgba(0,0,0,.35);text-align:center;padding:0;box-sizing:border-box}';
   document.head.appendChild(st);
   var map=null, sig='';
   function jump(card){ card.scrollIntoView({behavior:'smooth',block:'start'}); }
@@ -2750,8 +2750,8 @@ hydrateFromSupabase();
         if(p) p.n.push(i+1); else pins.push({ll:x.ll,name:x.name,n:[i+1],card:x.card});
       });
       pins.forEach(function(p){
-        var t=p.n.join('·'), w=Math.max(26,12+t.length*7);
-        L.marker(p.ll,{icon:L.divIcon({className:'pab-pin',html:t,iconSize:[w,26]}),title:p.name}).addTo(map).on('click',function(){ jump(p.card); });
+        var t=p.n.join('·'), w=Math.max(22,10+t.length*6.5);
+        L.marker(p.ll,{icon:L.divIcon({className:'pab-pin',html:t,iconSize:[w,22]}),title:p.name}).addTo(map).on('click',function(){ jump(p.card); });
       });
       var fit=function(){ map.invalidateSize(); map.fitBounds(pts,{padding:[28,28],maxZoom:13}); };
       fit(); setTimeout(fit,250);
