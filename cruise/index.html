@@ -2689,7 +2689,7 @@ hydrateFromSupabase();
     return list;
   }
   function dayLabel(s){ var a=s.days[0], b=s.days[s.days.length-1]; return a===b?T('יום ','Day ')+a:T('ימים ','Days ')+a+'–'+b; }
-  function shortDays(s){ var a=s.days[0], b=s.days[s.days.length-1]; return a===b?a:a+'–'+b; }
+  function shortDays(s){ var a=s.days[0], b=s.days[s.days.length-1]; return a===b?a:'\u2066'+a+'–'+b+'\u2069'; }
   var leaflet=null;
   function loadLeaflet(cb){
     if(window.L) return cb();
