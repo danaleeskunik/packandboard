@@ -861,8 +861,10 @@
       </button>
     </div>
     <!-- pab-app-brand -->
-    <div id="pab-brand" data-i18n-skip style="display:flex;justify-content:center;margin-top:36px;padding-bottom:8px">
-      <a href="https://packandboard.com/" target="_blank" rel="noopener" aria-label="Pack &amp; Board" style="display:block;line-height:0">
+    <style>#pab-brand a{cursor:pointer}#pab-brand a img{transition:opacity .15s ease}#pab-brand a:hover img,#pab-brand a:focus-visible img{opacity:1}</style>
+    <div id="pab-brand" data-i18n-skip style="display:flex;flex-direction:column;align-items:center;gap:7px;margin-top:36px;padding-bottom:8px">
+      <span id="pab-built" style="font:var(--fw-medium,500) 12px/1 var(--font-ui,sans-serif);letter-spacing:.02em;color:var(--ink-6,#7a8a80)">נבנה על ידי</span>
+      <a href="https://packandboard.com/" target="_blank" rel="noopener" aria-label="Pack &amp; Board" style="display:block;line-height:0;cursor:pointer">
         <img src="/assets/pab-wordmark.png" width="112" height="27" alt="Pack &amp; Board" style="display:block;opacity:.6">
       </a>
     </div>
@@ -1371,6 +1373,7 @@ function applyLanguage(lang){
   try{ localStorage.setItem('kunikTrips.lang', lang); }catch(e){}
   var isEn = lang === 'en';
   applyI18nDom(lang);
+  var pbb = document.getElementById('pab-built'); if(pbb) pbb.textContent = lang === 'en' ? 'Built by' : 'נבנה על ידי'; /* pab-built */
   var cdWrap = document.getElementById('cd-label-wrap');
   if(cdWrap) cdWrap.style.textAlign = isEn ? 'left' : 'right';
   var sw = document.getElementById('lang-switch');
@@ -1586,6 +1589,7 @@ function showAllDays(){
 
 var SCREENS=['days','converter','weather','bookings','packing','tips','emergency','apps','documents','translate','restaurants','attractions','budget'];
 function showScreen(name){
+  if(!window.__pabScreenOpen){ try{ history.pushState({pabScreen:1},''); window.__pabScreenOpen=true; }catch(e){} } /* pab-back-nav */
   SCREENS.forEach(function(s){
     [].forEach.call(document.querySelectorAll('[data-screen="'+s+'"]'),function(el){
       el.style.display = (s===name) ? 'block' : 'none';
@@ -1602,6 +1606,7 @@ function showScreen(name){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 function showHome(){
+  if(window.__pabScreenOpen){ window.__pabScreenOpen=false; try{ history.back(); }catch(e){} }
   SCREENS.forEach(function(s){
     [].forEach.call(document.querySelectorAll('[data-screen="'+s+'"]'),function(el){el.style.display='none';});
   });
@@ -1611,6 +1616,8 @@ function showHome(){
   if(flight) flight.style.display='block';
   window.scrollTo({top:0,behavior:'smooth'});
 }
+
+window.addEventListener('popstate',function(){ if(window.__pabScreenOpen){ window.__pabScreenOpen=false; showHome(); } });
 
 var PACK_KEY='japan2026.packing';
 function savePack(){

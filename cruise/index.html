@@ -1643,6 +1643,7 @@ function showAllDays(){
 
 var SCREENS=['days','converter','weather','bookings','packing','tips','emergency','apps','documents','translate','restaurants','attractions','budget'];
 function showScreen(name){
+  if(!window.__pabScreenOpen){ try{ history.pushState({pabScreen:1},''); window.__pabScreenOpen=true; }catch(e){} } /* pab-back-nav */
   SCREENS.forEach(function(s){
     [].forEach.call(document.querySelectorAll('[data-screen="'+s+'"]'),function(el){
       el.style.display = (s===name) ? 'block' : 'none';
@@ -1659,6 +1660,7 @@ function showScreen(name){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 function showHome(){
+  if(window.__pabScreenOpen){ window.__pabScreenOpen=false; try{ history.back(); }catch(e){} }
   SCREENS.forEach(function(s){
     [].forEach.call(document.querySelectorAll('[data-screen="'+s+'"]'),function(el){el.style.display='none';});
   });
@@ -1668,6 +1670,8 @@ function showHome(){
   if(flight) flight.style.display='block';
   window.scrollTo({top:0,behavior:'smooth'});
 }
+
+window.addEventListener('popstate',function(){ if(window.__pabScreenOpen){ window.__pabScreenOpen=false; showHome(); } });
 
 var PACK_KEY=tripStorageKey('packing');
 function savePack(){
