@@ -936,9 +936,10 @@
       </button>
     </div>
     <!-- pab-app-brand -->
-    <style>#pab-brand a{cursor:pointer}#pab-brand a img{transition:opacity .15s ease}#pab-brand a:hover img,#pab-brand a:focus-visible img{opacity:1}</style>
-    <div id="pab-brand" data-i18n-skip style="display:flex;justify-content:center;margin-top:36px;padding-bottom:8px">
-      <a href="https://packandboard.com/" target="_blank" rel="noopener" aria-label="Pack &amp; Board" style="display:block;line-height:0;cursor:pointer">
+    <style>/* pab-hover-v3 */#pab-brand a{cursor:pointer;padding-bottom:5px;border-bottom:2px solid transparent;transition:border-color .15s ease}#pab-brand a img{transition:opacity .15s ease}#pab-brand a:hover,#pab-brand a:focus-visible{border-bottom-color:var(--blue-600,#2A6496)}#pab-brand a:hover img,#pab-brand a:focus-visible img{opacity:1 !important}</style>
+    <div id="pab-brand" data-i18n-skip style="display:flex;flex-direction:column;align-items:center;gap:7px;margin-top:36px;padding-bottom:8px">
+      <span id="pab-built" style="font:var(--fw-medium,500) 12px/1 var(--font-ui,sans-serif);letter-spacing:.02em;color:var(--ink-6,#7a8a80)">נבנה על ידי</span>
+      <a href="https://packandboard.com/" target="_blank" rel="noopener" title="packandboard.com" aria-label="Pack &amp; Board" style="display:block;line-height:0;cursor:pointer">
         <img src="/assets/pab-wordmark.png" width="112" height="27" alt="Pack &amp; Board" style="display:block;opacity:.6">
       </a>
     </div>
@@ -1428,6 +1429,7 @@ function applyLanguage(lang){
   try{ localStorage.setItem('packandboard.lang', lang); localStorage.removeItem('kunikTrips.lang'); }catch(e){}
   var isEn = lang === 'en';
   applyI18nDom(lang);
+  var pbb = document.getElementById('pab-built'); if(pbb) pbb.textContent = lang === 'en' ? 'Built by' : 'נבנה על ידי'; /* pab-built */
   var cdWrap = document.getElementById('cd-label-wrap');
   if(cdWrap) cdWrap.style.textAlign = isEn ? 'left' : 'right';
   var sw = document.getElementById('lang-switch');
@@ -2861,8 +2863,8 @@ hydrateFromSupabase();
 <!-- pab-cruise-brand -->
 <style>
 .dest-stamp{display:none !important}
-.pab-site{position:absolute;bottom:14px;left:16px;top:auto;z-index:3;line-height:0;cursor:pointer;opacity:.97;transition:transform .15s ease,opacity .15s ease}
-.pab-site:hover,.pab-site:focus-visible{transform:translateY(-1px);opacity:1}
+.pab-site{position:absolute;bottom:14px;left:16px;top:auto;z-index:3;line-height:0;cursor:pointer;opacity:.97;padding-bottom:4px;border-bottom:2px solid transparent;transition:transform .15s ease,opacity .15s ease,border-color .15s ease}
+.pab-site:hover,.pab-site:focus-visible{transform:translateY(-1px);opacity:1;border-bottom-color:rgba(255,255,255,.9)}   /* reads as a link on hover (Dana, 2026-10-29) */
 .pab-site img{display:block;width:108px;height:auto;filter:drop-shadow(0 1px 3px rgba(5,25,50,.45))}
 @media print{.pab-site{display:none}}
 </style>
@@ -2872,7 +2874,7 @@ hydrateFromSupabase();
     var h=document.querySelector('header'); if(!h||document.getElementById('pab-site')) return;
     if(getComputedStyle(h).position==='static') h.style.position='relative';
     var a=document.createElement('a'); a.id='pab-site'; a.className='pab-site'; a.href='https://packandboard.com/'; a.target='_blank'; a.rel='noopener';
-    a.setAttribute('aria-label','Pack & Board'); a.setAttribute('data-noprint','');
+    a.setAttribute('aria-label','Pack & Board'); a.title='packandboard.com'; a.setAttribute('data-noprint','');
     a.innerHTML='<img src="/assets/pab-wordmark-white.png" alt="Pack &amp; Board" width="108" height="26">';
     h.appendChild(a);
   }
