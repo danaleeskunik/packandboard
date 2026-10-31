@@ -2737,6 +2737,11 @@ hydrateFromSupabase();
 <style>
 /* text greys that pass 4.5:1 on white, #F6EEE2 (cards) and #EFE4D2 (day pills): was 6A6D70 / 8D9296 / 9AA0A6 (2.1 to 3.1:1) */
 :root{--ink-6:#5A5E62;--ink-7:#616569;--ink-8:#666A6E}
+/* text fields had `outline:none` inline and no other focus mark (WCAG 2.4.7) */
+input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #1F5FA0!important;outline-offset:2px}
+/* small tap targets (WCAG 2.5.8): the 'Back to Pack & Board' link in the top bar and the close button of the install banner */
+#pab-back a{display:inline-flex;align-items:center;min-height:32px}
+#pab-install .x{min-width:44px;min-height:44px}
 </style>
 <script>
 (function(){
