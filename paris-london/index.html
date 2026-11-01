@@ -2505,8 +2505,9 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
       f.setAttribute('title',(lang()==='en'?'Map: ':'מפה: ')+p); f.__pabTitle=true;
     });
   }
-  /* 4. a form control without a label takes the label right before it */
+  /* 4. a form control without a label takes the label right before it; an image without alt (an uploaded document thumbnail inside a named button) is decorative */
   function labels(){
+    [].forEach.call(document.querySelectorAll('img:not([alt])'),function(i){ i.setAttribute('alt', i.closest('button,a')?'':(i.getAttribute('title')||'')); });
     [].forEach.call(document.querySelectorAll('input:not([type=hidden]):not([type=checkbox]):not([type=radio]),select,textarea'),function(c){
       if(c.getAttribute('aria-label')||c.getAttribute('aria-labelledby')||c.getAttribute('title')) return;
       if(c.id && document.querySelector('label[for="'+c.id+'"]')) return;
@@ -2528,7 +2529,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
     var layers=[], base=null;
     for(var e=el;e&&e.nodeType===1;e=e.parentElement){
       var cs=getComputedStyle(e);
-      if(cs.backgroundImage!=='none' || parseFloat(cs.opacity)<1) return null;
+      if(cs.backgroundImage!=='none' || (e!==el && parseFloat(cs.opacity)<1)) return null;   /* the element's own opacity is handled by the caller */
       var b=rgb(cs.backgroundColor); if(b && b.a>=0.99){ base={c:b,el:e}; break; } if(b && b.a>0) layers.push(b);
     }
     if(!base) base={c:{r:255,g:255,b:255,a:1},el:null};
@@ -2536,34 +2537,42 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
   }
   var BLACK={r:0,g:0,b:0,a:1}, WHITE={r:255,g:255,b:255,a:1}, INK={r:23,g:35,b:28,a:1};
   var seen=new WeakSet();
-  function contrast(){
-    var els=document.body.querySelectorAll('*'), n=els.length;
+  function contrast(root){
+    var els=(root||document.body).querySelectorAll('*'), n=els.length;
     for(var i=0;i<n;i++){
       var el=els[i]; if(seen.has(el)) continue; seen.add(el);
       var tag=el.tagName; if(tag==='SCRIPT'||tag==='STYLE'||tag==='svg'||tag==='path'||tag==='IFRAME'||tag==='INPUT'||tag==='SELECT'||tag==='TEXTAREA') continue;
       var own=false; for(var c=el.firstChild;c;c=c.nextSibling){ if(c.nodeType===3 && c.nodeValue.trim()){ own=true; break; } } if(!own) continue;
       var cs=getComputedStyle(el); if(cs.visibility==='hidden') continue;
-      var fg=rgb(cs.color), bg=bgOf(el); if(!fg||!bg||fg.a<0.99) continue;
+      var fg=rgb(cs.color), bg=bgOf(el); if(!fg||!bg) continue;
       var size=parseFloat(cs.fontSize), bold=parseInt(cs.fontWeight,10)>=700, need=(size>=24||(size>=18.66&&bold))?3.1:4.6;
-      if(ratio(fg,bg.c)>=need) continue;
+      /* text that is only partly opaque (rgba colour or opacity: the weekday label on a pill) shows a blend of its colour and the background */
+      var op=parseFloat(cs.opacity)*fg.a, shown=op<0.99?mixc(bg.c,fg,op):fg;
+      if(ratio(shown,bg.c)>=need) continue;
+      fg={r:fg.r,g:fg.g,b:fg.b,a:1}; if(parseFloat(cs.opacity)<1) el.style.opacity='1';
+      if(ratio(fg,bg.c)>=need){ el.style.setProperty('color','rgb('+fg.r+','+fg.g+','+fg.b+')'); continue; }
       var light=L(fg)>L(bg.c), k, cur;
       /* a) move the text colour away from the background (darker on a light background, lighter on a dark one) */
       for(k=1;k<=14;k++){ cur=mixc(fg,light?WHITE:BLACK,k/14); if(ratio(cur,bg.c)>=need) break; }
-      if(ratio(cur,bg.c)>=need){ el.style.setProperty('color','rgb('+cur.r+','+cur.g+','+cur.b+')','important'); continue; }
+      if(ratio(cur,bg.c)>=need){ el.style.setProperty('color','rgb('+cur.r+','+cur.g+','+cur.b+')'); continue; }
       /* b) light text on a mid colour (white on a tile): darken that colour by up to 25% ... */
       if(light && bg.baseEl){
         var ok=false, d;
         for(k=1;k<=5;k++){ d=mixc(bg.baseC,BLACK,k*0.05); if(ratio(fg,over(bg.layers,d))>=need){ ok=true; break; } }
-        if(ok){ bg.baseEl.style.setProperty('background-color','rgb('+d.r+','+d.g+','+d.b+')','important'); continue; }
+        if(ok){ bg.baseEl.style.setProperty('background-color','rgb('+d.r+','+d.g+','+d.b+')'); continue; }
         /* c) ... or, on a light mid colour (amber, light blue), dark text instead of white */
-        if(ratio(INK,bg.c)>=need){ el.style.setProperty('color','rgb(23,35,28)','important'); continue; }
-        for(k=6;k<=12;k++){ d=mixc(bg.baseC,BLACK,k*0.05); if(ratio(fg,over(bg.layers,d))>=need){ bg.baseEl.style.setProperty('background-color','rgb('+d.r+','+d.g+','+d.b+')','important'); break; } }
+        if(ratio(INK,bg.c)>=need){ el.style.setProperty('color','rgb(23,35,28)'); continue; }
+        for(k=6;k<=12;k++){ d=mixc(bg.baseC,BLACK,k*0.05); if(ratio(fg,over(bg.layers,d))>=need){ bg.baseEl.style.setProperty('background-color','rgb('+d.r+','+d.g+','+d.b+')'); break; } }
       }
     }
   }
   var timer=null; function later(){ clearTimeout(timer); timer=setTimeout(function(){ try{ retitle(); labels(); contrast(); }catch(e){} },120); }
   wrap('applyLanguage', function(){ setLang(); later(); });
   wrap('showScreen', later); wrap('showHome', later);
+  /* the app restyles the selected day pill (light text on a dark pill) and the weekday labels on selection: forget what was checked there and check again */
+  function recheck(sel){ var r=document.querySelector(sel); if(!r) return; [].forEach.call(r.querySelectorAll('*'),function(e){ seen.delete(e); }); contrast(r); }
+  function pills(){ setTimeout(function(){ try{ recheck('#days-pillrow'); }catch(e){} },60); }
+  wrap('selectDay', pills); wrap('paintPills', pills); wrap('showAllDays', pills);
   setLang(); later();
   if(window.MutationObserver) new MutationObserver(later).observe(document.body,{childList:true,subtree:true});
 })();
