@@ -346,8 +346,21 @@
   window.gtag('js',new Date());
   window.gtag('config',GA,{allow_google_signals:false,allow_ad_personalization_signals:false});
   var touched=false;
-  ['pointerdown','keydown','touchstart'].forEach(function(t){document.addEventListener(t,function(){touched=true;},true);});
   function ev(name){ if(touched){ try{window.gtag('event',name);}catch(e){} } }
+/* pab-source */
+  function pabSource(){
+    function lab(x){ x=(x||'').toLowerCase();
+      return /^(wa|whatsapp|wapp)$|whats|wa\.me/.test(x)?'whatsapp':/^(fb|facebook|face|messenger|m\.me)$|facebook|fb\.com|fb\.me|messenger/.test(x)?'facebook':/insta|^ig$/.test(x)?'instagram':/telegram|^tg$|t\.me/.test(x)?'telegram':/mail|outlook|newsletter/.test(x)?'email':/google/.test(x)?'google':/linkedin|lnkd/.test(x)?'linkedin':/twitter|^x$|x\.com|^t\.co$/.test(x)?'twitter':'other'; }
+    var p={}; try{ location.search.replace(/^\?/,'').split('&').forEach(function(kv){ var a=kv.split('='); if(a[0]) p[a[0]]=decodeURIComponent(a[1]||''); }); }catch(e){}
+    var tag=p.s||p.utm_source||p.src; if(tag) return lab(tag);
+    var ua=navigator.userAgent||''; if(/Instagram/.test(ua)) return 'instagram'; if(/FBAN|FBAV|FB_IAB/.test(ua)) return 'facebook';
+    var host=''; try{ host=new URL(document.referrer).hostname.toLowerCase(); }catch(e){}
+    if(!host) return 'direct'; if(/(^|\.)packandboard\.com$/.test(host)) return '';
+    return lab(host); }
+  function pabSendSource(send){ try{ if(sessionStorage.getItem('pab.src')) return; var s=pabSource(); sessionStorage.setItem('pab.src',s||'internal'); if(s) send('src_'+s); }catch(e){} }
+  /* end pab-source */
+  var srcSent=false;
+  ['pointerdown','keydown','touchstart'].forEach(function(t){document.addEventListener(t,function(){ touched=true; if(!srcSent){ srcSent=true; pabSendSource(ev); } },true);});
   window.addEventListener('load',function(){
     var ss=window.showScreen, sd=window.selectDay, al=window.applyLanguage;
     if(typeof ss==='function') window.showScreen=function(n){ ev('app_screen_'+n); return ss.apply(this,arguments); };
