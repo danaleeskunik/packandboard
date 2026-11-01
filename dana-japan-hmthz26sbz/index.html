@@ -2941,6 +2941,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
     var els=(root||document.body).querySelectorAll('*'), n=els.length;
     for(var i=0;i<n;i++){
       var el=els[i]; if(seen.has(el)) continue; seen.add(el);
+      if(el.closest && el.closest('[aria-hidden="true"]')) continue;   /* decorative (the big day number behind a day card) */
       var tag=el.tagName; if(tag==='SCRIPT'||tag==='STYLE'||tag==='svg'||tag==='path'||tag==='IFRAME'||tag==='INPUT'||tag==='SELECT'||tag==='TEXTAREA') continue;
       var own=false; for(var c=el.firstChild;c;c=c.nextSibling){ if(c.nodeType===3 && c.nodeValue.trim()){ own=true; break; } } if(!own) continue;
       var cs=getComputedStyle(el); if(cs.visibility==='hidden') continue;
@@ -2981,10 +2982,14 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
 <!-- pab-edit -->
 <script>window.PAB_EDIT={"worker": "https://pab-edit.dana-lees.workers.dev", "trip": "japan", "key": "rc9d5hyezbqtcfskpg9k", "base": ""};</script>
 <style>
-.pab-e [data-pab-row]>div:nth-child(1),.pab-e [data-pab-row]>div:nth-child(2){cursor:pointer;border-bottom:1px dashed #9aa5ae}
+.pab-e [data-pab-row]>div:nth-child(1),.pab-e [data-pab-row]>div:nth-child(2){cursor:pointer;border:1px solid #D9D1BE;border-radius:8px;background:#FBF8F1;padding:5px 9px;box-sizing:border-box}
 .pab-e [data-pab-row][data-pab-gone]{opacity:.55}
 .pab-e [data-pab-row][data-pab-gone]>div:nth-child(2){text-decoration:line-through}
-.pab-e [data-pab-new]{background:#E3F0E8;border-radius:8px}
+.pab-e [data-pab-new]>div:nth-child(2)::after{content:attr(data-pab-tag);display:inline-block;margin-inline-start:8px;font-size:11px;background:#E3F0E8;color:#1F5E48;border-radius:6px;padding:0 6px}
+.pab-mv{flex:none;min-width:34px;min-height:34px;border:0;border-radius:8px;background:#F1EBDD;color:#1F2A24;font:700 16px/1 inherit;cursor:pointer}
+.pab-ins{display:block;width:100%;height:24px;border:0;background:transparent;position:relative;cursor:pointer;color:#1F5FA0;font:700 16px/1 inherit;padding:0}
+.pab-ins::before{content:"";position:absolute;inset-inline:0;top:50%;border-top:1px dashed #9DB6D3}
+.pab-ins span{position:relative;background:var(--surface-card,#fff);padding:0 12px}
 .pab-x{flex:none;min-width:36px;min-height:36px;border:0;border-radius:8px;background:#F1EBDD;color:#791F1F;font:700 18px/1 inherit;cursor:pointer}
 .pab-panel{background:#fff;border:1px solid #B9AF98;border-radius:12px;padding:12px;margin:6px 0;font:500 14px/1.5 var(--font-ui,system-ui,sans-serif);color:#1F2A24}
 .pab-panel label{display:block;font-size:12.5px;color:#5A5E62;margin:8px 0 3px}
@@ -3013,7 +3018,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
     time:['שעה או תווית (אפשר להשאיר ריק)','Time or label (optional)'],timeOnly:['שעה או תווית','Time or label'],desc:['תיאור','Description'],
     shift:['להזיז גם את מה שאחריה','Also move what comes after'],notify:['לשלוח התראה לנוסעים','Notify the travelers'],tr:['יתורגם אוטומטית לשפה השנייה','Translated automatically to the other language'],
     gone:['נמחק','Deleted'],restore:['שחזור','Restore'],undo:['ביטול','Undo'],saved:['נשמר','Saved'],err:['השמירה נכשלה, נסו שוב','Could not save, try again'],empty:['אין שינויים עדיין','No changes yet'],
-    del:['מחיקת הבלוק','Delete block'],askDel:['למחוק את הבלוק?','Delete this block?'],close:['סגירה','Close'],tlabel:['תרגום','Translation'],old:['המסלול נבנה מחדש, השינויים הישנים לא מוצגים','The trip was rebuilt, older edits are not shown']};
+    del:['מחיקת הבלוק','Delete block'],askDel:['למחוק את הבלוק?','Delete this block?'],close:['סגירה','Close'],tlabel:['תרגום','Translation'],old:['המסלול נבנה מחדש, השינויים הישנים לא מוצגים','The trip was rebuilt, older edits are not shown'],addHere:['הוספת בלוק כאן','Add a block here'],isnew:['חדש','New'],up:['הזזה למעלה','Move up'],down:['הזזה למטה','Move down'],moved:['הועבר','Moved']};
   function lang(){ return (typeof CURRENT_LANG!=='undefined'&&CURRENT_LANG==='en')?'en':'he'; }
   function tx(k){ return T[k][lang()==='en'?1:0]; }
   try{
@@ -3033,12 +3038,13 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
   }
   /* ---- the model: what the ops say, with undone groups left out ---- */
   function model(){
-    var undone={}, m={rows:{},added:[]};
+    var undone={}, m={rows:{},added:[],pos:[]};
     S.ops.forEach(function(o){ if(o.t==='undo') undone[o.target]=1; });
     S.ops.forEach(function(o){
       if(o.t==='undo'||undone[o.g]) return;
       if((o.base||'')!==(C.base||'')) return;   /* written on another build of the trip: the block numbers may not match */
-      if(o.t==='add'){ m.added.push(o); m.rows[o.row]=m.rows[o.row]||{}; return; }
+      if(o.t==='add'){ m.added.push(o); m.rows[o.row]=m.rows[o.row]||{}; if(o.after) m.pos.push({row:o.row,after:o.after}); return; }
+      if(o.t==='move'){ m.pos.push({row:o.row,after:o.after}); return; }
       var r=m.rows[o.row]=m.rows[o.row]||{};
       if(o.t==='label') r.label=o.label; else if(o.t==='text') r.text=o.text; else if(o.t==='del') r.del=true; else if(o.t==='restore') r.del=false;
     });
@@ -3058,7 +3064,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
     var n=card.getAttribute('data-daycard'), key=S.rev+'|'+lang()+'|'+editing+'|'+(S.can?1:0);
     var br=baseRows(card);
     if(card.__pabKey===key && card.__pabBase===br.length && br.every(function(r){ return r.hasAttribute('data-pab-row'); })) return;
-    [].forEach.call(card.querySelectorAll('[data-pab-new],[data-pab-panel],.pab-add'),function(x){ x.remove(); });
+    [].forEach.call(card.querySelectorAll('[data-pab-new],[data-pab-panel],.pab-add,.pab-ins,.pab-mv'),function(x){ x.remove(); });
     var base=baseRows(card);
     base.forEach(function(r,i){
       var id='d'+n+'-'+i;
@@ -3069,19 +3075,49 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
       if(ov.text) txEl(r).textContent=ov.text[lang()];
       decorate(r,ov);
     });
+    restoreOrder(card);
     var tmpl=base[0];
     if(tmpl){
       m.added.filter(function(o){ return String(o.day)===n; }).forEach(function(o){
         var r=tmpl.cloneNode(true); [].slice.call(r.querySelectorAll('.pab-x')).forEach(function(x){x.remove();});
-        r.setAttribute('data-pab-new','1'); r.setAttribute('data-pab-row',o.row); r.__pabO=null; r.style.display='';
+        r.setAttribute('data-pab-new','1'); r.setAttribute('data-pab-row',o.row); r.__pabO=null; r.style.display=tmpl.__pabO?tmpl.__pabO.d:'flex'; r.removeAttribute('data-pab-gone');
         var ov=m.rows[o.row]||{}; var lab=ov.label!==undefined?ov.label:o.label, txt=ov.text||o.text;
-        labEl(r).textContent=pickLang(lab)||''; txEl(r).textContent=txt[lang()];
+        labEl(r).textContent=pickLang(lab)||''; txEl(r).textContent=txt[lang()]; txEl(r).setAttribute('data-pab-tag',tx('isnew'));
         insertByTime(card,r,pickLang(lab)); decorate(r,ov);
       });
-      if(editing&&S.can){ var add=document.createElement('button'); add.type='button'; add.className='pab-add'; add.textContent=tx('add'); add.onclick=function(){ openAdd(card,n,add); };
-        var rs=rowsOf(card), last=rs[rs.length-1]; if(last) last.parentNode.insertBefore(add,last.nextSibling); }
+      m.pos.forEach(function(p){ place(card,p.row,p.after); });
+      if(editing&&S.can) controls(card,n);
     }
     card.__pabKey=key; card.__pabBase=baseRows(card).length;
+  }
+  function idx(r){ return parseInt((r.getAttribute('data-pab-row')||'d0-0').split('-')[1],10)||0; }
+  function rowEl(card,id){ return card.querySelector('[data-pab-row="'+id+'"]'); }
+  /* the built order is the starting point of every paint: moves and positioned blocks are laid over it in the order they were made */
+  function restoreOrder(card){
+    var cur=baseRows(card); if(cur.length<2) return;
+    var sorted=cur.slice().sort(function(a,b){ return idx(a)-idx(b); }), anchor=cur[cur.length-1].nextSibling;
+    sorted.forEach(function(r){ r.parentNode.insertBefore(r,anchor); });
+  }
+  function place(card,id,after){
+    var r=rowEl(card,id); if(!r) return; var ref;
+    if(after==='start'){ ref=rowsOf(card)[0]; if(!ref||ref===r) return; }
+    else { var a=rowEl(card,after); if(!a||a===r) return; ref=a.nextSibling; }
+    r.parentNode.insertBefore(r,ref);
+  }
+  /* edit mode, once the order is final: move arrows on every block, and an insert point before the first block, between blocks and at the end */
+  function controls(card,day){
+    var rs=rowsOf(card); if(!rs.length) return;
+    rs.forEach(function(r,i){
+      if(r.hasAttribute('data-pab-gone')) return; var x=r.querySelector('.pab-x'), id=r.getAttribute('data-pab-row');
+      function mv(sym,key,after){ var b=document.createElement('button'); b.type='button'; b.className='pab-mv'; b.textContent=sym; b.setAttribute('aria-label',tx(key)); b.title=tx(key); b.onclick=function(e){ e.stopPropagation(); save([{t:'move',row:id,after:after}]); }; r.insertBefore(b,x); }
+      if(i>0) mv('↑','up',i>=2?rs[i-2].getAttribute('data-pab-row'):'start');
+      if(i<rs.length-1) mv('↓','down',rs[i+1].getAttribute('data-pab-row'));
+    });
+    function handle(after,label){ var b=document.createElement('button'); b.type='button'; b.className=label?'pab-add':'pab-ins'; if(label) b.textContent=label; else { b.innerHTML='<span>+</span>'; b.setAttribute('aria-label',tx('addHere')); b.title=tx('addHere'); }
+      b.onclick=function(){ openAdd(card,day,b,after); }; return b; }
+    rs.slice(0,-1).forEach(function(r){ r.parentNode.insertBefore(handle(r.getAttribute('data-pab-row')),r.nextSibling); });
+    rs[0].parentNode.insertBefore(handle('start'),rs[0]);
+    var last=rs[rs.length-1]; last.parentNode.insertBefore(handle(null,tx('add')),last.nextSibling);   /* the end: a time typed there still puts the block in time order */
   }
   function decorate(r,ov){
     var old=r.querySelector('.pab-x'); if(old) old.remove();
@@ -3138,21 +3174,22 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
   }
   function openText(r){
     closePanels(); var id=r.getAttribute('data-pab-row'), cur=txEl(r).textContent;
-    var p=el('<label for="pab-t">'+tx('desc')+'</label><textarea id="pab-t" maxlength="600"></textarea><div style="font-size:12px;color:#5A5E62">'+tx('tr')+'</div>'+chk('pab-n',tx('notify'),false)+btns());
+    var p=el('<label for="pab-t">'+tx('desc')+'</label><textarea id="pab-t" maxlength="600"></textarea>'+(S.translate?'<div style="font-size:12px;color:#5A5E62">'+tx('tr')+'</div>':'')+''+chk('pab-n',tx('notify'),false)+btns());
     p.querySelector('#pab-t').value=cur; after(r,p);
     p.querySelector('[data-s]').onclick=function(){
       var v=p.querySelector('#pab-t').value.trim(); if(!v||v===cur) return p.remove(); var t={}; t[lang()]=v;
       save([{t:'text',row:id,text:t}],p.querySelector('#pab-n').checked?(labEl(r).textContent+' '+v).slice(0,120):null);
     };
   }
-  function openAdd(card,day,anchor){
+  function openAdd(card,day,anchor,afterId){
     closePanels();
-    var p=el('<label for="pab-l">'+tx('time')+'</label><input type="time" id="pab-l"><label for="pab-t">'+tx('desc')+'</label><textarea id="pab-t" maxlength="600"></textarea><div style="font-size:12px;color:#5A5E62">'+tx('tr')+'</div>'+chk('pab-n',tx('notify'),false)+btns());
+    var p=el('<label for="pab-l">'+tx('time')+'</label><input type="time" id="pab-l"><label for="pab-t">'+tx('desc')+'</label><textarea id="pab-t" maxlength="600"></textarea>'+(S.translate?'<div style="font-size:12px;color:#5A5E62">'+tx('tr')+'</div>':'')+''+chk('pab-n',tx('notify'),false)+btns());
     anchor.parentNode.insertBefore(p,anchor); p.querySelector('#pab-l').focus();
     p.onkeydown=function(e){ if(e.key==='Escape') p.remove(); }; p.querySelector('[data-c]').onclick=function(){ p.remove(); };
     p.querySelector('[data-s]').onclick=function(){
       var v=p.querySelector('#pab-t').value.trim(); if(!v){ p.querySelector('#pab-t').focus(); return; } var t={}; t[lang()]=v;
-      save([{t:'add',day:+day,label:p.querySelector('#pab-l').value.trim(),text:t}],p.querySelector('#pab-n').checked?v.slice(0,120):null);
+      var op={t:'add',day:+day,label:p.querySelector('#pab-l').value.trim(),text:t}; if(afterId) op.after=afterId;
+      save([op],p.querySelector('#pab-n').checked?v.slice(0,120):null);
     };
   }
   function toast(msg){ var t=document.getElementById('pab-toast'); if(t) t.remove(); t=document.createElement('div'); t.id='pab-toast'; t.className='pab-toast'; t.setAttribute('role','status'); t.textContent=msg; document.body.appendChild(t); setTimeout(function(){ t.remove(); },4000); }
@@ -3170,7 +3207,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
     if(o.t==='label') return tx('timeOnly')+': '+(pickLang(o.label)||'-')+(name?' · '+name:'');
     if(o.t==='text') return tx('desc')+': '+(o.text[lang()]||'').slice(0,50);
     if(o.t==='add') return tx('add').replace('+ ','')+': '+((pickLang(o.label)||'')+' '+o.text[lang()]).slice(0,50);
-    if(o.t==='del') return tx('gone')+': '+name; if(o.t==='restore') return tx('restore')+': '+name; return o.t;
+    if(o.t==='del') return tx('gone')+': '+name; if(o.t==='restore') return tx('restore')+': '+name; if(o.t==='move') return tx('moved')+': '+name; return o.t;
   }
   function openHist(){
     var d=document.createElement('div'); d.className='pab-hist'; d.setAttribute('data-pab-panel','1');

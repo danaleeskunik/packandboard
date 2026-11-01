@@ -2540,6 +2540,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
     var els=(root||document.body).querySelectorAll('*'), n=els.length;
     for(var i=0;i<n;i++){
       var el=els[i]; if(seen.has(el)) continue; seen.add(el);
+      if(el.closest && el.closest('[aria-hidden="true"]')) continue;   /* decorative (the big day number behind a day card) */
       var tag=el.tagName; if(tag==='SCRIPT'||tag==='STYLE'||tag==='svg'||tag==='path'||tag==='IFRAME'||tag==='INPUT'||tag==='SELECT'||tag==='TEXTAREA') continue;
       var own=false; for(var c=el.firstChild;c;c=c.nextSibling){ if(c.nodeType===3 && c.nodeValue.trim()){ own=true; break; } } if(!own) continue;
       var cs=getComputedStyle(el); if(cs.visibility==='hidden') continue;
