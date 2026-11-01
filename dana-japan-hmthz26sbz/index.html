@@ -3329,7 +3329,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
   }
   /* ---- keep up with the page: days are re-rendered when the language changes ---- */
   var timer=null; function later(){ clearTimeout(timer); timer=setTimeout(paint,150); }
-  function relevant(t){ if(!t||!t.closest) return false; if(t.closest('[data-pab-panel],.pab-bar,.pab-toast')) return false; return t===document.body||!!t.closest('[data-screen="days"],#days-content,[data-daycard]'); }
+  function relevant(t){ if(!t||!t.closest) return false; if(t.closest('[data-pab-panel],.pab-bar,.pab-toast')) return false; return t===document.body||!!t.closest('[data-screen="days"],[data-screen="bookings"],#days-content,#bookings-grid,[data-daycard]'); }
   if(window.MutationObserver) new MutationObserver(function(ms){ for(var i=0;i<ms.length;i++){ if(relevant(ms[i].target)){ later(); return; } } }).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['style']});
   document.addEventListener('visibilitychange',function(){ if(!document.hidden) load(); });
   setInterval(function(){ if(!document.hidden&&!document.querySelector('[data-pab-panel]')) load(); },90000);
