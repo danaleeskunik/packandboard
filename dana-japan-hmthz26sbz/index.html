@@ -2982,11 +2982,17 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
 <!-- pab-edit -->
 <script>window.PAB_EDIT={"worker": "https://pab-edit.dana-lees.workers.dev", "trip": "japan", "key": "rc9d5hyezbqtcfskpg9k", "base": ""};</script>
 <style>
-.pab-e [data-pab-row]>div:nth-child(1),.pab-e [data-pab-row]>div:nth-child(2){cursor:pointer;border:1px solid #D9D1BE;border-radius:8px;background:#FBF8F1;padding:5px 9px;box-sizing:border-box}
+.pab-e [data-pab-row]:not([data-pab-bk])>div:nth-child(1),.pab-e [data-pab-row]:not([data-pab-bk])>div:nth-child(2){cursor:pointer;border:1px solid #D9D1BE;border-radius:8px;background:#FBF8F1;padding:5px 9px;box-sizing:border-box}
 .pab-e [data-pab-row][data-pab-gone]{opacity:.55}
 .pab-e [data-pab-row][data-pab-gone]>div:nth-child(2){text-decoration:line-through}
-.pab-e [data-pab-new]>div:nth-child(2)::after{content:attr(data-pab-tag);display:inline-block;margin-inline-start:8px;font-size:11px;background:#E3F0E8;color:#1F5E48;border-radius:6px;padding:0 6px}
+.pab-e [data-pab-new]:not([data-pab-bk])>div:nth-child(2)::after{content:attr(data-pab-tag);display:inline-block;margin-inline-start:8px;font-size:11px;background:#E3F0E8;color:#1F5E48;border-radius:6px;padding:0 6px}
 .pab-mv{flex:none;min-width:34px;min-height:34px;border:0;border-radius:8px;background:#F1EBDD;color:#1F2A24;font:700 16px/1 inherit;cursor:pointer}
+.pab-ctl{display:flex;gap:6px;justify-content:flex-end;margin:-6px 0 10px}
+.pab-ctl button{min-width:36px;min-height:36px;border:0;border-radius:8px;background:#F1EBDD;color:#1F2A24;font:700 15px/1 inherit;cursor:pointer;padding:0 10px}
+.pab-ctl button.d{color:#791F1F}
+.pab-gp{grid-column:1/-1}
+.pab-bkadd{grid-column:1/-1;min-height:48px;border:1px dashed #2F6AA6;border-radius:12px;background:transparent;color:#1F5FA0;font:700 14px/1 inherit;cursor:pointer}
+.pab-e [data-pab-card][data-pab-gone]{opacity:.55}
 .pab-ins{display:block;width:100%;height:24px;border:0;background:transparent;position:relative;cursor:pointer;color:#1F5FA0;font:700 16px/1 inherit;padding:0}
 .pab-ins::before{content:"";position:absolute;inset-inline:0;top:50%;border-top:1px dashed #9DB6D3}
 .pab-ins span{position:relative;background:var(--surface-card,#fff);padding:0 12px}
@@ -3018,7 +3024,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
     time:['שעה או תווית (אפשר להשאיר ריק)','Time or label (optional)'],timeOnly:['שעה או תווית','Time or label'],desc:['תיאור','Description'],
     shift:['להזיז גם את מה שאחריה','Also move what comes after'],notify:['לשלוח התראה לנוסעים','Notify the travelers'],tr:['יתורגם אוטומטית לשפה השנייה','Translated automatically to the other language'],
     gone:['נמחק','Deleted'],restore:['שחזור','Restore'],undo:['ביטול','Undo'],saved:['נשמר','Saved'],err:['השמירה נכשלה, נסו שוב','Could not save, try again'],empty:['אין שינויים עדיין','No changes yet'],
-    del:['מחיקת הבלוק','Delete block'],askDel:['למחוק את הבלוק?','Delete this block?'],close:['סגירה','Close'],tlabel:['תרגום','Translation'],old:['המסלול נבנה מחדש, השינויים הישנים לא מוצגים','The trip was rebuilt, older edits are not shown'],addHere:['הוספת בלוק כאן','Add a block here'],isnew:['חדש','New'],up:['הזזה למעלה','Move up'],down:['הזזה למטה','Move down'],moved:['הועבר','Moved']};
+    del:['מחיקת הבלוק','Delete block'],askDel:['למחוק את הבלוק?','Delete this block?'],close:['סגירה','Close'],tlabel:['תרגום','Translation'],old:['המסלול נבנה מחדש, השינויים הישנים לא מוצגים','The trip was rebuilt, older edits are not shown'],addHere:['הוספת בלוק כאן','Add a block here'],isnew:['חדש','New'],up:['הזזה למעלה','Move up'],down:['הזזה למטה','Move down'],moved:['הועבר','Moved'],edBooking:['עריכת ההזמנה','Edit booking'],addBooking:['+ הוספת הזמנה','+ Add booking'],title:['כותרת','Title'],body:['פרטים (שורה חדשה = שורה חדשה; **כך** = מודגש)','Details (new line = new line; **like this** = bold)'],tag:['מספר אישור או תג (אפשר להשאיר ריק)','Confirmation number or tag (optional)'],maps:['מקום במפות: שם או כתובת (אפשר להשאיר ריק)','Place on the map: name or address (optional)'],bookingUpd:['הזמנה עודכנה','Booking updated'],bookingAdd:['נוספה הזמנה','Booking added']};
   function lang(){ return (typeof CURRENT_LANG!=='undefined'&&CURRENT_LANG==='en')?'en':'he'; }
   function tx(k){ return T[k][lang()==='en'?1:0]; }
   try{
@@ -3038,13 +3044,15 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
   }
   /* ---- the model: what the ops say, with undone groups left out ---- */
   function model(){
-    var undone={}, m={rows:{},added:[],pos:[]};
+    var undone={}, m={rows:{},added:[],pos:[],badded:[]};
     S.ops.forEach(function(o){ if(o.t==='undo') undone[o.target]=1; });
     S.ops.forEach(function(o){
       if(o.t==='undo'||undone[o.g]) return;
       if((o.base||'')!==(C.base||'')) return;   /* written on another build of the trip: the block numbers may not match */
       if(o.t==='add'){ m.added.push(o); m.rows[o.row]=m.rows[o.row]||{}; if(o.after) m.pos.push({row:o.row,after:o.after}); return; }
       if(o.t==='move'){ m.pos.push({row:o.row,after:o.after}); return; }
+      if(o.t==='badd'){ m.badded.push(o); m.rows[o.row]=m.rows[o.row]||{}; return; }
+      if(o.t==='bset'){ var b=m.rows[o.row]=m.rows[o.row]||{}; b.b=Object.assign(b.b||{},o.f); return; }
       var r=m.rows[o.row]=m.rows[o.row]||{};
       if(o.t==='label') r.label=o.label; else if(o.t==='text') r.text=o.text; else if(o.t==='del') r.del=true; else if(o.t==='restore') r.del=false;
     });
@@ -3140,9 +3148,99 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
     }
     last.parentNode.insertBefore(r,ref);
   }
+  /* ---- the bookings screen: one card per booking (hotel, flight, train ...): title, details, a tag (the confirmation number), a map link ---- */
+  function cardsOf(g){ return [].filter.call(g.children,function(k){ return k.tagName==='DIV'&&k.firstElementChild&&k.firstElementChild.tagName==='H3'&&!k.hasAttribute('data-pab-panel'); }); }
+  function pEl(c){ return c.querySelector(':scope > p'); }
+  function tagEls(c){ return [].filter.call(c.children,function(k){ return k.tagName==='DIV'&&/radius-pill/.test(k.getAttribute('style')||'')&&!k.classList.contains('pab-ctl'); }); }
+  function mapEls(c){ return [].filter.call(c.querySelectorAll('a[href*="google.com/maps"]'),function(a){ return !a.hasAttribute('data-pab-m'); }); }
+  function toText(p){ var out=''; (function walk(n){ [].forEach.call(n.childNodes,function(k){ if(k.nodeType===3) out+=k.nodeValue; else if(k.tagName==='BR') out+='\n'; else if(k.tagName==='B'||k.tagName==='STRONG'){ out+='**'; walk(k); out+='**'; } else walk(k); }); })(p); return out.replace(/\n{3,}/g,'\n\n').trim(); }
+  /* plain text -> nodes: new lines, **bold**, links for web addresses and phone numbers */
+  function renderBody(p,text){
+    p.textContent='';
+    String(text||'').split('\n').forEach(function(line,i){
+      if(i) p.appendChild(document.createElement('br'));
+      line.split(/(\*\*[^*]+\*\*)/).forEach(function(seg){
+        var bold=/^\*\*[^*]+\*\*$/.test(seg), s=bold?seg.slice(2,-2):seg, host=p;
+        if(bold){ host=document.createElement('b'); host.style.fontWeight='700'; host.style.color='var(--navy-800)'; p.appendChild(host); }
+        s.split(/(https?:\/\/[^\s]+|\+?\d[\d\s().-]{7,}\d)/).forEach(function(x){
+          if(!x) return; var u=/^https?:\/\//.test(x), ph=!u&&/^\+?\d[\d\s().-]{7,}\d$/.test(x);
+          if(u||ph){ var a=document.createElement('a'); a.href=u?x:'tel:'+x.replace(/[^\d+]/g,''); if(u){ a.target='_blank'; a.rel='noopener'; } a.style.color='inherit'; a.style.textDecoration='underline'; a.textContent=x; if(ph) a.setAttribute('dir','ltr'); host.appendChild(a); }
+          else host.appendChild(document.createTextNode(x));
+        });
+      });
+    });
+  }
+  function fillCard(c,o,f){   /* o: what the page had; f: the edited fields {title, body, tag, maps}, each {he,en} or a string */
+    var h=c.querySelector('h3'), p=pEl(c), tg=tagEls(c), mp=mapEls(c);
+    h.innerHTML=o.h; if(p) p.innerHTML=o.p; tg.forEach(function(x,i){ x.innerHTML=o.t[i]||''; x.style.display=o.td[i]||''; }); mp.forEach(function(a,i){ a.setAttribute('href',o.m[i]||a.getAttribute('href')); });
+    if(!f) return;
+    function v(k){ var x=f[k]; return x===undefined?undefined:pickLang(x); }
+    if(v('title')!==undefined&&v('title')!=='') h.textContent=v('title');
+    if(v('body')!==undefined&&p) renderBody(p,v('body'));
+    if(v('tag')!==undefined){ var tv=v('tag'); if(tg[0]){ if(tv){ tg[0].textContent=tv; tg[0].style.display=o.td[0]||'inline-block'; } else tg[0].style.display='none'; } else if(tv&&p){ var d=document.createElement('div'); d.setAttribute('dir','ltr'); d.setAttribute('style','display:inline-block;margin-top:8px;background:var(--surface-muted);color:var(--ink-6);border-radius:var(--radius-pill);padding:4px 10px;font:var(--fw-bold) var(--text-12)/1.2 var(--font-ui)'); d.textContent=tv; p.parentNode.insertBefore(d,p.nextSibling); } }
+    if(v('maps')!==undefined){ var q=v('maps'); if(mp[0]){ if(q) mp[0].setAttribute('href','https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)); } else if(q){ var a=document.createElement('a'); a.href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q); a.target='_blank'; a.rel='noopener'; a.textContent=lang()==='en'?'Open in Maps':'פתיחה במפות'; a.setAttribute('style','display:inline-flex;align-items:center;margin-top:12px;min-height:36px;padding:8px 14px;background:var(--blue-100);color:var(--blue-600);border-radius:var(--radius-pill);font:var(--fw-bold) var(--text-13)/1 var(--font-ui);text-decoration:none'); c.appendChild(a); } }
+  }
+  function paintGrid(g,m){
+    var key=S.rev+'|'+lang()+'|'+editing+'|'+(S.can?1:0), cur=cardsOf(g).filter(function(x){ return !x.hasAttribute('data-pab-new'); });
+    if(g.__pabKey===key && g.__pabN===cur.length && cur.every(function(x){ return x.hasAttribute('data-pab-card'); })) return;
+    [].forEach.call(g.querySelectorAll('[data-pab-new],[data-pab-panel],.pab-bkadd'),function(x){ x.remove(); }); [].forEach.call(g.querySelectorAll('.pab-ctl'),function(x){ x.remove(); });
+    var base=cardsOf(g);
+    base.forEach(function(c,i){
+      if(!c.__pabO){ c.setAttribute('data-pab-card',''); c.setAttribute('data-pab-bk',''); c.setAttribute('data-pab-row','b'+i); var h=c.querySelector('h3'), p=pEl(c); c.__pabO={h:h.innerHTML,p:p?p.innerHTML:'',t:tagEls(c).map(function(x){return x.innerHTML;}),td:tagEls(c).map(function(x){return x.style.display;}),m:mapEls(c).map(function(a){return a.getAttribute('href');}),d:c.style.display}; }
+    });
+    var sorted=base.slice().sort(function(a,b){ return parseInt(a.getAttribute('data-pab-row').slice(1),10)-parseInt(b.getAttribute('data-pab-row').slice(1),10); }), anchor=base.length?base[base.length-1].nextSibling:null;
+    sorted.forEach(function(c){ g.insertBefore(c,anchor); });
+    sorted.forEach(function(c){ var id=c.getAttribute('data-pab-row'), ov=m.rows[id]||{}; fillCard(c,c.__pabO,ov.b); c.style.display=c.__pabO.d; c.removeAttribute('data-pab-gone'); if(ov.del){ if(!editing) c.style.display='none'; else c.setAttribute('data-pab-gone','1'); } });
+    var tmpl=sorted[0];
+    if(tmpl){
+      m.badded.forEach(function(o){
+        var c=tmpl.cloneNode(true); [].forEach.call(c.querySelectorAll('.pab-ctl'),function(x){x.remove();}); c.removeAttribute('data-pab-gone'); c.setAttribute('data-pab-new','1'); c.setAttribute('data-pab-row',o.row); c.removeAttribute('data-pab-card'); c.style.display=tmpl.__pabO.d;
+        var f=Object.assign({},o.f,(m.rows[o.row]||{}).b);
+        var tg=tagEls(c), mp=mapEls(c), o2={h:'',p:'',t:tg.map(function(){return '';}),td:tg.map(function(){return '';}),m:mp.map(function(){return '#';})};
+        c.querySelector('h3').textContent=''; if(pEl(c)) pEl(c).textContent=''; tg.forEach(function(x){ x.remove(); }); mp.forEach(function(a){ a.remove(); });
+        fillCard(c,{h:'',p:'',t:[],td:[],m:[]},f); g.appendChild(c);
+        var ov=m.rows[o.row]||{}; if(ov.del){ if(!editing) c.style.display='none'; else c.setAttribute('data-pab-gone','1'); }
+      });
+      m.pos.forEach(function(p){ var r=g.querySelector('[data-pab-row="'+p.row+'"]'); if(!r||r.parentNode!==g) return; var ref; if(p.after==='start'){ ref=cardsOf(g)[0]; if(!ref||ref===r) return; } else { var a=g.querySelector('[data-pab-row="'+p.after+'"]'); if(!a||a===r||a.parentNode!==g) return; ref=a.nextSibling; } g.insertBefore(r,ref); });
+      if(editing&&S.can) gridControls(g);
+    }
+    g.__pabKey=key; g.__pabN=cardsOf(g).filter(function(x){ return !x.hasAttribute('data-pab-new'); }).length;
+  }
+  function gridControls(g){
+    var cs=cardsOf(g);
+    cs.forEach(function(c,i){
+      var id=c.getAttribute('data-pab-row'), bar=document.createElement('div'); bar.className='pab-ctl';
+      function btn(sym,key,fn,cls){ var b=document.createElement('button'); b.type='button'; b.textContent=sym; if(cls) b.className=cls; b.setAttribute('aria-label',tx(key)); b.title=tx(key); b.onclick=function(e){ e.stopPropagation(); fn(); }; bar.appendChild(b); }
+      if(c.hasAttribute('data-pab-gone')) btn('↺','restore',function(){ save([{t:'restore',row:id}]); });
+      else {
+        btn('✎','edBooking',function(){ openBooking(g,c); });
+        if(i>0) btn('↑','up',function(){ save([{t:'move',row:id,after:i>=2?cs[i-2].getAttribute('data-pab-row'):'start'}]); });
+        if(i<cs.length-1) btn('↓','down',function(){ save([{t:'move',row:id,after:cs[i+1].getAttribute('data-pab-row')}]); });
+        btn('×','del',function(){ if(confirm(tx('askDel'))) save([{t:'del',row:id}]); },'d');
+      }
+      c.insertBefore(bar,c.firstChild);
+    });
+    var add=document.createElement('button'); add.type='button'; add.className='pab-bkadd'; add.textContent=tx('addBooking'); add.onclick=function(){ openBooking(g,null); }; g.appendChild(add);
+  }
+  function openBooking(g,c){
+    closePanels(); var cur=c?{title:c.querySelector('h3').textContent,body:pEl(c)?toText(pEl(c)):'',tag:(tagEls(c)[0]&&tagEls(c)[0].style.display!=='none')?tagEls(c)[0].textContent:'',maps:''}:{title:'',body:'',tag:'',maps:''};
+    var mp=c&&mapEls(c)[0]; if(mp){ try{ cur.maps=decodeURIComponent((new URL(mp.href).searchParams.get('query'))||'').replace(/\+/g,' '); }catch(e){} }
+    var p=el('<label for="pab-bt">'+tx('title')+'</label><input type="text" id="pab-bt" maxlength="100"><label for="pab-bb">'+tx('body')+'</label><textarea id="pab-bb" maxlength="1500" style="min-height:130px"></textarea><label for="pab-bg">'+tx('tag')+'</label><input type="text" id="pab-bg" maxlength="60"><label for="pab-bm">'+tx('maps')+'</label><input type="text" id="pab-bm" maxlength="120">'+chk('pab-n',tx('notify'),false)+btns());
+    p.classList.add('pab-gp'); p.querySelector('#pab-bt').value=cur.title; p.querySelector('#pab-bb').value=cur.body; p.querySelector('#pab-bg').value=cur.tag; p.querySelector('#pab-bm').value=cur.maps;
+    if(c) c.parentNode.insertBefore(p,c.nextSibling); else g.insertBefore(p,g.querySelector('.pab-bkadd'));
+    p.querySelector('#pab-bt').focus(); p.onkeydown=function(e){ if(e.key==='Escape') p.remove(); }; p.querySelector('[data-c]').onclick=function(){ p.remove(); };
+    p.querySelector('[data-s]').onclick=function(){
+      var f={}, L=lang(), v={title:p.querySelector('#pab-bt').value.trim(),body:p.querySelector('#pab-bb').value.trim(),tag:p.querySelector('#pab-bg').value.trim(),maps:p.querySelector('#pab-bm').value.trim()};
+      if(!c&&!v.title){ p.querySelector('#pab-bt').focus(); return; }
+      ['title','body','tag'].forEach(function(k){ if(!c||v[k]!==cur[k]){ f[k]={}; f[k][L]=v[k]; } }); if(!c||v.maps!==cur.maps) f.maps=v.maps;
+      if(c&&!Object.keys(f).length) return p.remove();
+      save([c?{t:'bset',row:c.getAttribute('data-pab-row'),f:f}:{t:'badd',f:f}],p.querySelector('#pab-n').checked?(v.title||cur.title)+(v.body?' · '+v.body.split('\n')[0]:''):null);
+    };
+  }
   function paint(){
     var m=model();
     [].forEach.call(document.querySelectorAll('[data-daycard]'),function(c){ paintCard(c,m); });
+    var grid=document.getElementById('bookings-grid'); if(grid) paintGrid(grid,m);
     var bar=document.getElementById('pab-bar');
     if(!S.can){ if(bar) bar.remove(); if(editing){ editing=false; document.body.classList.remove('pab-e'); } return; }
     if(!bar){ bar=document.createElement('div'); bar.id='pab-bar'; bar.className='pab-bar'; document.body.appendChild(bar); }
@@ -3151,7 +3249,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
     if(editing){ var h=document.createElement('button'); h.type='button'; h.textContent=tx('hist'); h.onclick=openHist; bar.appendChild(h); }
     bar.style.display=document.querySelector('[data-daycard]')&&visibleDays()?'flex':'none';
   }
-  function visibleDays(){ var c=document.querySelector('[data-daycard]'); return !!(c&&c.offsetParent!==null); }
+  function visibleDays(){ var c=document.querySelector('[data-daycard]'), g=document.getElementById('bookings-grid'); return !!((c&&c.offsetParent!==null)||(g&&g.offsetParent!==null)); }
   /* ---- panels ---- */
   function closePanels(){ [].forEach.call(document.querySelectorAll('[data-pab-panel]'),function(p){ p.remove(); }); }
   function el(html){ var d=document.createElement('div'); d.className='pab-panel'; d.setAttribute('data-pab-panel','1'); d.innerHTML=html; return d; }
@@ -3207,6 +3305,8 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
     if(o.t==='label') return tx('timeOnly')+': '+(pickLang(o.label)||'-')+(name?' · '+name:'');
     if(o.t==='text') return tx('desc')+': '+(o.text[lang()]||'').slice(0,50);
     if(o.t==='add') return tx('add').replace('+ ','')+': '+((pickLang(o.label)||'')+' '+o.text[lang()]).slice(0,50);
+    if(o.t==='bset') return tx('bookingUpd')+': '+(name||'');
+    if(o.t==='badd') return tx('bookingAdd')+': '+((o.f&&o.f.title&&pickLang(o.f.title))||'');
     if(o.t==='del') return tx('gone')+': '+name; if(o.t==='restore') return tx('restore')+': '+name; if(o.t==='move') return tx('moved')+': '+name; return o.t;
   }
   function openHist(){
