@@ -2465,7 +2465,14 @@ hydrateFromSupabase();
   var cst=document.createElement('style');
   cst.textContent='.pab-chip{display:inline-flex;align-items:stretch;border-radius:999px;overflow:hidden}.pab-chip>a{display:inline-flex;align-items:center}'+
     '.pab-chip>a.pab-nav{padding:0 11px;border-inline-start:1px solid color-mix(in srgb,currentColor 22%,transparent);text-decoration:none}'+
-    '.pab-chip-hint{flex-basis:100%;font-size:12px;font-weight:500;line-height:1.4;color:var(--ink-6,#6b776f);margin-top:-2px}';
+    '.pab-chip-hint{flex-basis:100%;font-size:12px;font-weight:500;line-height:1.4;color:var(--ink-6,#6b776f);margin-top:-2px}'+
+    /* map caption under each day: the place name wraps instead of being cut with an ellipsis (check_overflow.mjs, 2026-11-04) */
+    '.day-map-caption span{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;min-width:0}'+
+    /* uploaded file names in the documents list wrap instead of ending in an ellipsis; the footer line gets side padding so it never touches the screen edge */
+    '#doc-list>div>div>div:first-child{white-space:normal !important;overflow:visible !important;text-overflow:clip !important;overflow-wrap:anywhere}'+
+    '#app-footer{padding-inline:20px;box-sizing:border-box;overflow-wrap:anywhere}'+
+    /* home buttons: 4px more room on each side (was 10px), so labels do not hug the edge of the tile (Dana, 2026-11-04) */
+    '.home-tile:not(#tile-days-featured){padding-inline:14px}';
   document.head.appendChild(cst);
   function decorate(){
     [].forEach.call(document.querySelectorAll('[data-daycard] a[href*="google."]'),function(a){
@@ -2522,13 +2529,15 @@ hydrateFromSupabase();
     korea:[{t:'שגרירות ישראל בסיאול',tel:'+82232108500',show:'+82 2 3210 8500',note:'11 Cheonggyecheon-ro, Jongno-gu'}],
     france:[{t:'שגרירות ישראל בפריז: חירום',tel:'+33659444461',show:'+33 6 59 44 44 61',note:'לשעות שאחרי הפעילות (17:30–09:00)'},{t:'שגרירות ישראל בפריז',tel:'+33140765500',show:'+33 1 40 76 55 00'}],
     uk:[{t:'שגרירות ישראל בלונדון: חירום',tel:'+447511223617',show:'+44 7511 223617',note:'וואטסאפ, 24/7'},{t:'שגרירות ישראל בלונדון',tel:'+442079579500',show:'+44 20 7957 9500'}],
-    albania:[{t:'שגרירות ישראל בטירנה: חירום',tel:'+355697020501',show:'+355 69 702 0501'},{t:'שגרירות ישראל בטירנה',tel:'+35544508523',show:'+355 4 450 8523'}]
+    albania:[{t:'שגרירות ישראל בטירנה: חירום',tel:'+355697020501',show:'+355 69 702 0501'},{t:'שגרירות ישראל בטירנה',tel:'+35544508523',show:'+355 4 450 8523'}],
+    tanzania:[{t:'שגרירות ישראל בנאירובי: חירום (מכסה גם את טנזניה)',tel:'+254110150031',show:'+254 11 0150031',note:'נייד ווואטסאפ, 24/7'},{t:'שגרירות ישראל בנאירובי',tel:'+254204927500',show:'+254 20 4927500',note:'אחרי ההודעה הכללית ללחוץ 1'}],
+    vietnam:[{t:'שגרירות ישראל בהאנוי',tel:'+842437187500',show:'+84 24 3718 7500',note:'Hanoi Towers, 49 Hai Ba Trung, קומה 10'}]
   };
   function keysFor(d){
     d=String(d||'');
     if(/^japan/.test(d)) return ['japan']; if(/^thailand/.test(d)) return ['thailand']; if(/^(italy|milano)/.test(d)) return ['italy'];
     if(/^korea/.test(d)) return ['korea']; if(/^normandy/.test(d)) return ['france']; if(/^paris-london/.test(d)) return ['france','uk'];
-    if(/^albania/.test(d)) return ['albania']; if(/^portugal/.test(d)) return ['portugal']; return [];
+    if(/^albania/.test(d)) return ['albania']; if(/^portugal/.test(d)) return ['portugal']; if(/^geo-tanzania/.test(d)) return ['tanzania']; if(/^geo-vietnam/.test(d)) return ['vietnam']; return [];
   }
   function digits(s){ return String(s||'').replace(/\D/g,''); }
   function addEmergency(){
@@ -2552,6 +2561,9 @@ hydrateFromSupabase();
       g.appendChild(a);
     });
   }
+  /* 6. the home buttons never touch the screen edge: older demo pages lack the side padding the Japan master keeps around them (Dana, 2026-11-04) */
+  (function(){ var nav=document.querySelector('.home-nav'); if(!nav) return; var p=nav.parentElement;
+    if(p&&parseFloat(getComputedStyle(p).paddingLeft)<8) nav.style.padding='0 clamp(14px,4vw,24px)'; })();
   var ss=window.showScreen;
   if(typeof ss==='function') window.showScreen=function(name){ var r=ss.apply(this,arguments); if(name==='emergency') addEmergency(); return r; };
 })();
