@@ -3029,6 +3029,8 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
   function tx(k){ return T[k][lang()==='en'?1:0]; }
   try{
     var u=new URL(location.href), m=u.searchParams.get('m');
+    /* ?traveler=1 opens the trip as an ordinary traveler on a device that remembers the manager (for showing both views on one device); the manager link brings the manager back */
+    if(u.searchParams.get('traveler')==='1'){ try{ localStorage.removeItem(LS+'.m'); localStorage.removeItem(LS+'.s'); }catch(x){} u.searchParams.delete('traveler'); history.replaceState(null,'',u.pathname+(u.search||'')+u.hash); }
     if(m){ localStorage.setItem(LS+'.m',m); u.searchParams.delete('m'); history.replaceState(null,'',u.pathname+(u.search||'')+u.hash); }
     var sv=localStorage.getItem(LS+'.m'); if(sv) token=sv;
     var cs=localStorage.getItem(LS+'.s'); if(cs) S=JSON.parse(cs);
