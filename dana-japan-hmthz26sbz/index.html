@@ -3247,9 +3247,10 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
     bar.innerHTML=''; var b=document.createElement('button'); b.type='button'; b.className=editing?'y':''; b.textContent=editing?tx('done'):tx('edit');
     b.onclick=function(){ editing=!editing; document.body.classList.toggle('pab-e',editing); closePanels(); paint(); }; bar.appendChild(b);
     if(editing){ var h=document.createElement('button'); h.type='button'; h.textContent=tx('hist'); h.onclick=openHist; bar.appendChild(h); }
-    bar.style.display=document.querySelector('[data-daycard]')&&visibleDays()?'flex':'none';
+    bar.style.display=visibleDays()?'flex':'none';
   }
-  function visibleDays(){ var c=document.querySelector('[data-daycard]'), g=document.getElementById('bookings-grid'); return !!((c&&c.offsetParent!==null)||(g&&g.offsetParent!==null)); }
+  /* the bar shows when ANY day card is on screen (the app shows one day at a time: looking only at the first card hid the bar on every day but the first) or the bookings grid is */
+  function visibleDays(){ var cs=document.querySelectorAll('[data-daycard]'), g=document.getElementById('bookings-grid'); for(var i=0;i<cs.length;i++){ if(cs[i].offsetParent!==null) return true; } return !!(g&&g.offsetParent!==null); }
   /* ---- panels ---- */
   function closePanels(){ [].forEach.call(document.querySelectorAll('[data-pab-panel]'),function(p){ p.remove(); }); }
   function el(html){ var d=document.createElement('div'); d.className='pab-panel'; d.setAttribute('data-pab-panel','1'); d.innerHTML=html; return d; }
