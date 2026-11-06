@@ -2394,7 +2394,9 @@ hydrateFromSupabase();
     '#doc-list>div>div>div:first-child{white-space:normal !important;overflow:visible !important;text-overflow:clip !important;overflow-wrap:anywhere}'+
     '#app-footer{padding-inline:20px;box-sizing:border-box;overflow-wrap:anywhere}'+
     /* home buttons: 4px more room on each side (was 10px), so labels do not hug the edge of the tile (Dana, 2026-11-04) */
-    '.home-tile:not(#tile-days-featured){padding-inline:14px}';
+    '.home-tile:not(#tile-days-featured){padding-inline:14px}'+
+    /* EVERY dropdown: the arrow is a custom chevron set in from the edge (16px), never the native arrow hugging the border. Dana's standing rule (asked many times, 2026-11-06). !important because inline background shorthands reset background-image. */
+    'select{-webkit-appearance:none !important;appearance:none !important;background-image:url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMiIgaGVpZ2h0PSI4IiB2aWV3Qm94PSIwIDAgMTIgOCI+PHBhdGggZD0iTTEgMS41bDUgNSA1LTUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzVCNUU1MCIgc3Ryb2tlLXdpZHRoPSIxLjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPg==) !important;background-repeat:no-repeat !important;background-position:left 16px center !important;background-size:12px 8px !important;padding-left:40px !important}';
   document.head.appendChild(cst);
   function decorate(){
     [].forEach.call(document.querySelectorAll('[data-daycard] a[href*="google."]'),function(a){
@@ -2459,7 +2461,7 @@ hydrateFromSupabase();
     d=String(d||'');
     if(/^japan/.test(d)) return ['japan']; if(/^thailand/.test(d)) return ['thailand']; if(/^(italy|milano)/.test(d)) return ['italy'];
     if(/^korea/.test(d)) return ['korea']; if(/^normandy/.test(d)) return ['france']; if(/^paris-london/.test(d)) return ['france','uk'];
-    if(/^albania/.test(d)) return ['albania']; if(/^portugal/.test(d)) return ['portugal']; if(/^geo-tanzania/.test(d)) return ['tanzania']; if(/^geo-vietnam/.test(d)) return ['vietnam']; return [];
+    if(/^albania/.test(d)) return ['albania']; if(/^portugal/.test(d)) return ['portugal']; if(/^geo-tanzania|^aw-tanzania/.test(d)) return ['tanzania']; if(/^geo-vietnam/.test(d)) return ['vietnam']; return [];
   }
   function digits(s){ return String(s||'').replace(/\D/g,''); }
   function addEmergency(){
