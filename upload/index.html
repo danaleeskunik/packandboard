@@ -6,9 +6,9 @@
 <meta name="robots" content="noindex, nofollow">
 <title>תיבת הטיול · Pack &amp; Board</title>
 <!-- pab-og -->
-<meta name="description" content="מעלים כאן את המסלול, ההזמנות והחומרים לבניית האפליקציה האישית שלכם. הקישור אישי.">
+<meta name="description" content="מעלים כאן את המסלול, ההזמנות והחומרים לבניית המדריך האישי שלכם. הקישור אישי.">
 <meta property="og:title" content="תיבת הטיול · Pack &amp; Board">
-<meta property="og:description" content="מעלים כאן את המסלול, ההזמנות והחומרים לבניית האפליקציה האישית שלכם. הקישור אישי.">
+<meta property="og:description" content="מעלים כאן את המסלול, ההזמנות והחומרים לבניית המדריך האישי שלכם. הקישור אישי.">
 <meta property="og:site_name" content="Pack &amp; Board">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://packandboard.com/upload/">
@@ -82,7 +82,7 @@ textarea{min-height:90px;resize:vertical}
 
   <header>
     <h1 id="title">תיבת הטיול שלך</h1>
-    <p class="lead" id="lead">כאן מעבירים לנו את כל מה שיש לכם על הטיול, ואנחנו נבנה מזה אפליקציה אישית.</p>
+    <p class="lead" id="lead">כאן מעבירים לנו את כל מה שיש לכם על הטיול, ואנחנו נבנה מזה מדריך טיול דיגיטלי אישי.</p>
   </header>
 
   <div class="msg err" id="fatal" hidden></div>
@@ -93,13 +93,13 @@ textarea{min-height:90px;resize:vertical}
       <b>מה קורה עם החומרים שלכם:</b>
       <ul>
         <li>הם נשמרים אצלנו באופן פרטי, ורק אנחנו רואים אותם.</li>
-        <li>אנחנו משתמשים בהם רק כדי לבנות את האפליקציה של הטיול שלכם. ייתכן שנשתמש בכלי בינה מלאכותית כדי לקרוא אותם.</li>
+        <li>אנחנו משתמשים בהם רק כדי לבנות את מדריך הטיול שלכם. ייתכן שנשתמש בכלי בינה מלאכותית כדי לקרוא אותם.</li>
         <li>נא לא להעלות מספרי כרטיס אשראי, דרכונים או סיסמאות. הם לא נחוצים.</li>
         <li>אפשר למחוק כל קובץ בכל עת, ולבקש מחיקה מלאה. הקבצים יימחקו לאחר הטיול.</li>
       </ul>
       <p class="more">פרטים נוספים: <a href="/privacy/" target="_blank" rel="noopener">מדיניות הפרטיות</a></p>
     </div>
-    <label class="check"><input type="checkbox" id="agree"><span>קראתי והסכמתי שהחומרים שאעלה ישמשו לבניית האפליקציה שלי.</span></label>
+    <label class="check"><input type="checkbox" id="agree"><span>קראתי והסכמתי שהחומרים שאעלה ישמשו לבניית המדריך שלי.</span></label>
     <button class="btn" id="agreeBtn" type="button" disabled>המשך</button>
   </section>
 
@@ -112,8 +112,8 @@ textarea{min-height:90px;resize:vertical}
       </div>
       <div><label for="a_style">מה חשוב לכם בטיול? (סגנון, קצב, דברים שחייבים, דברים שלא)</label><textarea id="a_style" data-k="style" maxlength="1000"></textarea></div>
       <div>
-        <label>שפת האפליקציה</label>
-        <div class="chips" id="langPick" role="group" aria-label="שפת האפליקציה"></div>
+        <label>שפת המדריך</label>
+        <div class="chips" id="langPick" role="group" aria-label="שפת המדריך"></div>
       </div>
     </section>
 
@@ -196,9 +196,9 @@ textarea{min-height:90px;resize:vertical}
   }
   function paintStatus(){
     var s=trip.status, d=$('done');
-    if(s==='submitted'){d.textContent='קיבלנו. נחזור אליכם עם הקישור לאפליקציה. אפשר להוסיף עוד חומרים בכל עת.';d.hidden=false;$('submit').textContent='שליחה מחדש';}
+    if(s==='submitted'){d.textContent='קיבלנו. נחזור אליכם עם הקישור למדריך. אפשר להוסיף עוד חומרים בכל עת.';d.hidden=false;$('submit').textContent='שליחה מחדש';}
     else if(s==='processing'||s==='review'){d.textContent='התיבה בטיפול. נחזור אליכם בקרוב.';d.hidden=false;}
-    else if(s==='delivered'||s==='closed'){d.textContent='האפליקציה שלכם מוכנה. אם משהו חסר, כתבו לדנה.';d.hidden=false;}
+    else if(s==='delivered'||s==='closed'){d.textContent='המדריך שלכם מוכן. אם משהו חסר, כתבו לדנה.';d.hidden=false;}
     else d.hidden=true;
     var locked=!(s==='open'||s==='submitted');
     ['pick','addText','agree'].forEach(function(id){var e=$(id);if(e)e.disabled=locked&&id!=='agree';});
