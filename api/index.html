@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>API לשותפים · Pack &amp; Board</title>
+<meta name="description" content="יוצרים מדריכי טיול דיגיטליים אישיים אוטומטית: שולחים את הטיול, מקבלים קישור.">
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="canonical" href="https://packandboard.com/api/">
+<meta name="theme-color" content="#F7F2E8">
+<meta name="color-scheme" content="light only">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&family=Miriam+Libre:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F7F2E8;--surface:#fff;--line:#E2D9C4;--ink:#1F2A24;--ink2:#4B5A51;--brand:#17352A;--blue:#2F7FC8;--tint:#E3F0E8;--code:#17352A;--codeink:#E8F1EA;--bad:#9B2C2C;--badbg:#FBEAEA;--ok:#1E6B45}
+html{color-scheme:light;scroll-behavior:smooth}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.7 Heebo,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:860px;margin:0 auto;padding:28px 20px 90px}
+.back{display:inline-block;margin-bottom:22px;color:var(--ink2);text-decoration:none;font-size:15px}
+.eyebrow{font:700 13px/1 Heebo,sans-serif;letter-spacing:.08em;color:var(--ink2);margin:0 0 12px}
+h1{font:700 clamp(30px,6vw,44px)/1.15 'Miriam Libre',serif;color:var(--brand);margin:0 0 12px}
+.lead{font-size:19px;line-height:1.6;color:var(--ink);max-width:640px;margin:0 0 6px}
+h2{font:800 22px/1.3 Heebo,sans-serif;color:var(--brand);margin:46px 0 10px}
+h3{font:700 17px/1.4 Heebo,sans-serif;color:var(--brand);margin:22px 0 6px}
+p{margin:8px 0}
+a{color:#1F5FA0}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0 0;padding:0;list-style:none}
+.steps li{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 16px 14px}
+.steps b{display:block;font-weight:800;color:var(--brand);margin-bottom:4px}
+.steps span{color:var(--ink2);font-size:15.5px;line-height:1.55}
+@media(max-width:640px){.steps{grid-template-columns:1fr}}
+pre,code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+code{background:#EFE9D8;padding:1px 6px;border-radius:6px;font-size:.9em;direction:ltr;unicode-bidi:isolate}
+pre{background:var(--code);color:var(--codeink);border-radius:12px;padding:14px 16px;overflow-x:auto;direction:ltr;text-align:left;font-size:13.5px;line-height:1.6;margin:10px 0}
+pre code{background:none;padding:0;color:inherit;font-size:inherit}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;margin:10px 0;font-size:15.5px}
+th,td{text-align:start;vertical-align:top;padding:10px;border-bottom:1px solid var(--line)}
+th{color:var(--ink2);font-weight:700;font-size:13.5px}
+.box{background:var(--tint);border-radius:14px;padding:14px 16px;margin:16px 0;font-size:16px}
+.try{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px;margin:16px 0}
+label{display:block;font-weight:700;font-size:15px;margin:0 0 6px;color:var(--brand)}
+input,textarea{width:100%;font:inherit;font-size:15px;color:var(--ink);background:#FDFBF6;border:1px solid #CFC5AC;border-radius:10px;padding:10px 12px}
+input{direction:ltr;text-align:left}
+textarea{direction:ltr;text-align:left;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;line-height:1.55;min-height:260px;resize:vertical}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+button{font:700 16px/1 Heebo,sans-serif;border-radius:12px;padding:13px 20px;border:1px solid var(--brand);cursor:pointer;min-height:44px}
+.go{background:var(--brand);color:#fff}
+.ghost{background:#fff;color:var(--brand)}
+button:disabled{opacity:.55;cursor:wait}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.result{margin-top:16px;border-radius:12px;padding:14px 16px;font-size:16px;display:none}
+.result.show{display:block}
+.result.ok{background:var(--tint)}
+.result.bad{background:var(--badbg);color:var(--bad)}
+.result.wait{background:#F2EEE0}
+.result ul{margin:6px 0 0;padding-inline-start:20px}
+.result .lnk{display:block;direction:ltr;text-align:left;word-break:break-all;font-weight:700;margin:6px 0}
+.note{color:var(--ink2);font-size:14.5px;margin-top:10px}
+details{border-top:1px solid var(--line);padding:12px 0}
+summary{cursor:pointer;font-weight:700;color:var(--brand)}
+.contact a{font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+<a class="back" href="/">Pack &amp; Board <span aria-hidden="true">←</span></a>
+<p class="eyebrow">לשותפים</p>
+<h1>מדריך טיול דיגיטלי אישי, ישר מהמערכת שלכם</h1>
+<p class="lead">שולחים לנו את פרטי הטיול. מקבלים בחזרה קישור למדריך אישי שנפתח בטלפון, בלי הורדה מהחנות, ואפשר להוסיף אותו למסך הבית.</p>
+
+<ol class="steps">
+<li><b>1. שולחים את הטיול</b><span>בקשה אחת עם פרטי הטיול: ימים, טיסות, הזמנות ומיתוג שלכם.</span></li>
+<li><b>2. מקבלים קישור</b><span>הקישור מוכן בתוך שניות, או ממתין לאישור שלנו אם סוכנות חדשה.</span></li>
+<li><b>3. שולחים למטייל</b><span>הוא פותח, והמדריך נשמר גם לשימוש בלי אינטרנט אחרי פתיחה ראשונה.</span></li>
+</ol>
+
+<h2 id="try">נסו עכשיו</h2>
+<p>הדביקו את מפתח ה-API שקיבלתם. הטיול שמופיע למטה הוא דוגמה: אפשר לשנות בו כל דבר ולשלוח. המפתח נשלח ישירות לשרת שלנו ולא נשמר בדפדפן.</p>
+<div class="try">
+<label for="k">מפתח API</label>
+<input id="k" type="password" autocomplete="off" spellcheck="false" placeholder="pab_...">
+<label for="t" style="margin-top:16px">הטיול (JSON)</label>
+<textarea id="t" spellcheck="false" aria-describedby="tn"></textarea>
+<p class="note" id="tn">מה שנשלח בבדיקה הוא טיול אמיתי תחת המפתח שלכם, והוא נספר במכסה החודשית. את הטיול אפשר למחוק בקריאה אחת (ראו למטה).</p>
+<div class="row">
+<button class="go" id="send" type="button">שליחת טיול</button>
+<button class="ghost" id="me" type="button">בדיקת מפתח</button>
+<button class="ghost" id="reset" type="button">חזרה לדוגמה</button>
+</div>
+<div class="result" id="out" role="status" aria-live="polite"></div>
+</div>
+
+<h2>שלוש הקריאות החשובות</h2>
+<p>כתובת בסיס: <code>https://pab-api.dana-lees.workers.dev</code>. בכל קריאה: <code>Authorization: Bearer pab_...</code></p>
+<h3>יצירת טיול</h3>
+<pre tabindex="0"><code>curl -X POST https://pab-api.dana-lees.workers.dev/v1/trips \
+  -H "Authorization: Bearer $PAB_KEY" \
+  -H "Content-Type: application/json" \
+  -d @trip.json</code></pre>
+<p>התשובה (201):</p>
+<pre tabindex="0"><code>{ "trip_id": "k3j9x0ab", "status": "published",
+  "link": "https://packandboard.com/t/#k3j9x0ab.&lt;key&gt;",
+  "warnings": [], "review_reason": null }</code></pre>
+<p>את <code>link</code> שולחים למטייל כמו שהוא, כולל כל מה שאחרי <code>#</code>.</p>
+<h3>עדכון טיול</h3>
+<pre tabindex="0"><code>curl -X PATCH https://pab-api.dana-lees.workers.dev/v1/trips/k3j9x0ab \
+  -H "Authorization: Bearer $PAB_KEY" -H "Content-Type: application/json" \
+  -d '{"patch": {"title": "שם חדש"}}'</code></pre>
+<p>הקישור נשאר זהה. המטייל רואה את העדכון בפתיחה הבאה (או ברענון).</p>
+<h3>מחיקה</h3>
+<pre tabindex="0"><code>curl -X DELETE https://pab-api.dana-lees.workers.dev/v1/trips/k3j9x0ab -H "Authorization: Bearer $PAB_KEY"</code></pre>
+
+<h2>סטטוסים</h2>
+<div class="scroll" tabindex="0" role="region" aria-label="טבלה, ניתנת לגלילה"><table>
+<tr><th>סטטוס</th><th>משמעות</th></tr>
+<tr><td><code>published</code></td><td>הקישור פעיל.</td></tr>
+<tr><td><code>needs_review</code></td><td>ממתין לאישור (החשבון מוגדר לאישור, או שהבדיקות מצאו משהו חריג, למשל יום מחוץ לתאריכי הטיול). <code>warnings</code> מסבירים. הקישור לא מציג כלום עד לאישור.</td></tr>
+<tr><td>422</td><td>הטיול נדחה. <code>details</code> אומר מה לתקן, ושולחים שוב.</td></tr>
+</table></div>
+
+<h2>מבנה הטיול</h2>
+<p>חובה: <code>title</code>, <code>dates.start</code> ו-<code>dates.end</code> (בפורמט YYYY-MM-DD, עד 60 יום), ו-<code>days</code> עם <code>date</code> ו-<code>title</code> לכל יום. כל השאר אופציונלי.</p>
+<div class="scroll" tabindex="0" role="region" aria-label="טבלה, ניתנת לגלילה"><table>
+<tr><th>שדה</th><th>מה</th></tr>
+<tr><td><code>days[].rows</code></td><td>שורות הפעילות של היום: <code>label</code> (בוקר, ערב...) ו-<code>text</code>.</td></tr>
+<tr><td><code>days[].tip</code>, <code>days[].places</code></td><td>טיפ ליום, ומקומות (נפתחים במפה).</td></tr>
+<tr><td><code>flights</code></td><td><code>dir</code> (out או back), <code>number</code>, <code>from</code>, <code>to</code>, <code>dep</code>, <code>arr</code> (תאריך ושעה עם אזור זמן).</td></tr>
+<tr><td><code>bookings</code>, <code>packing</code>, <code>tips</code>, <code>emergency</code></td><td>הזמנות, רשימת אריזה, טיפים כלליים ומספרי חירום.</td></tr>
+<tr><td><code>currency</code></td><td>קוד מטבע בן 3 אותיות, למשל <code>EUR</code>.</td></tr>
+<tr><td><code>brand</code></td><td><code>name</code>, <code>logo_url</code> (https בלבד), <code>colors</code> (<code>#RRGGBB</code>). ערכת הצבעים של המדריך נגזרת מהצבע הראשון. בלי צבע נבחר צבע לפי היעד.</td></tr>
+<tr><td><code>reference</code></td><td>מזהה שלכם (מספר הזמנה). לא מוצג למטייל.</td></tr>
+</table></div>
+<p>טקסט הוא טקסט רגיל. <code>**כך**</code> מדגיש. HTML מוצג כטקסט ולא מופעל.</p>
+<div class="box"><b>לא שולחים</b> מספרי דרכון, כרטיסי אשראי או פרטי תשלום. אין בהם צורך במדריך.</div>
+
+<h2>שגיאות ומגבלות</h2>
+<div class="scroll" tabindex="0" role="region" aria-label="טבלה, ניתנת לגלילה"><table>
+<tr><th>קוד</th><th>מה קרה</th></tr>
+<tr><td>401</td><td>מפתח לא תקין.</td></tr>
+<tr><td>403</td><td>החשבון הושבת, או שאין לו הרשאה לפעולה.</td></tr>
+<tr><td>404</td><td>טיול לא קיים או שאינו שלכם.</td></tr>
+<tr><td>413</td><td>הבקשה גדולה מ-200KB.</td></tr>
+<tr><td>422</td><td>הטיול לא תקין. <code>details</code> מפרט.</td></tr>
+<tr><td>429</td><td>עברתם את המכסה החודשית, או 30 בקשות בשעה.</td></tr>
+</table></div>
+
+<h2>איך מקבלים מפתח</h2>
+<p class="contact">המפתח מונפק על ידינו, והוא מוצג פעם אחת בלבד. בחשבון חדש כל טיול ממתין לאישור שלנו עד שנצבר אמון, ואז עוברים לפרסום מיידי. פנו אלינו: <a href="https://wa.me/972537004934">וואטסאפ</a> או <a href="mailto:office@packandboard.com" dir="ltr">office@packandboard.com</a>.</p>
+
+<h2>פרטיות</h2>
+<p>אתם אחראים לנתוני המטיילים שאתם שולחים. Pack &amp; Board מעבדת אותם רק כדי לבנות את המדריך. טיול שנמחק מוסר, והקישור מפסיק לעבוד. הסכם עיבוד מידע זמין לפי בקשה. ראו גם את <a href="/privacy/">מדיניות הפרטיות</a>.</p>
+</div>
+
+<script>
+(function(){
+  var API='https://pab-api.dana-lees.workers.dev';
+  var EXAMPLE={"title": "פורטוגל בחמישה ימים", "language": "he", "reference": "MY-ORDER-1", "dates": {"start": "2027-05-10", "end": "2027-05-14"}, "destination": {"country": "PT", "cities": [{"name": "Lisbon", "lat": 38.7223, "lng": -9.1393}, {"name": "Porto", "lat": 41.1579, "lng": -8.6291}]}, "days": [{"date": "2027-05-10", "title": "נחיתה בליסבון", "city": "Lisbon", "rows": [{"label": "טיסה", "text": "טיסה מ**תל אביב** ל**ליסבון**, נחיתה אחר הצהריים."}, {"label": "ערב", "text": "טיול רגלי בשכונת **אלפמה** וארוחת ערב בטברנה קטנה."}, {"label": "לינה", "text": "**Hotel Alfama Demo**, ליסבון."}], "tip": "החשמלית 28 צפופה בשעות היום. עדיף לעלות מוקדם בבוקר.", "places": [{"name": "אלפמה"}]}, {"date": "2027-05-11", "title": "ליסבון הקלאסית", "city": "Lisbon", "rows": [{"label": "בוקר", "text": "מגדל בלם ומנזר הירונימוס."}, {"label": "צהריים", "text": "פשטידות **פאשטל דה נאטה** במאפייה ההיסטורית."}, {"label": "ערב", "text": "שקיעה במרפסת **מיראדורו דה סנטה לוזיה**."}], "tip": "כרטיס משולב למנזר ולמגדל חוסך תור.", "places": [{"name": "מגדל בלם"}, {"name": "מנזר הירונימוס"}]}, {"date": "2027-05-12", "title": "סינטרה ביום אחד", "city": "Lisbon", "rows": [{"label": "בוקר", "text": "רכבת לסינטרה (40 דקות) וביקור בארמון **פנה**."}, {"label": "צהריים", "text": "ארוחה בעיירה ההיסטורית."}, {"label": "ערב", "text": "חזרה לליסבון וערב חופשי."}], "tip": "נעלי הליכה נוחות. יש עליות תלולות.", "places": [{"name": "ארמון פנה"}]}, {"date": "2027-05-13", "title": "רכבת לפורטו", "city": "Porto", "rows": [{"label": "בוקר", "text": "רכבת מהירה מליסבון לפורטו (כ-3 שעות)."}, {"label": "צהריים", "text": "ספריית **לבראריה לו** והשוק המקומי."}, {"label": "לינה", "text": "**Hotel Ribeira Demo**, פורטו."}], "tip": "הזמינו כרטיסי רכבת מראש.", "places": [{"name": "ריברה"}]}, {"date": "2027-05-14", "title": "יין, נהר ובית", "city": "Porto", "rows": [{"label": "בוקר", "text": "שיט על נהר הדורו."}, {"label": "צהריים", "text": "טעימות פורט במרתפי **וילה נובה דה גאיה**."}, {"label": "ערב", "text": "טיסה הביתה."}], "tip": "שעת ההמראה בשובר ההזמנה.", "places": [{"name": "וילה נובה דה גאיה"}]}], "flights": [{"dir": "out", "number": "XX 100", "from": "TLV", "to": "LIS", "dep": "2027-05-10T07:00:00+03:00", "arr": "2027-05-10T11:30:00+01:00"}, {"dir": "back", "number": "XX 101", "from": "OPO", "to": "TLV", "dep": "2027-05-14T20:00:00+01:00", "arr": "2027-05-15T02:00:00+03:00"}], "bookings": [{"type": "hotel", "title": "Hotel Alfama Demo", "body": "10-13 במאי, 3 לילות"}, {"type": "hotel", "title": "Hotel Ribeira Demo", "body": "13-14 במאי, לילה אחד"}], "packing": [{"group": "בגדים", "items": ["נעלי הליכה", "מעיל קל לערב", "כובע"]}, {"group": "מסמכים", "items": ["דרכון", "ביטוח נסיעות"]}], "tips": [{"title": "תשלום", "text": "כרטיס אשראי מתקבל כמעט בכל מקום. מזומן לקפה קטן."}], "emergency": [{"label": "חירום", "tel": "112"}], "currency": "EUR", "brand": {"name": "השם של החברה שלכם", "colors": ["#1F5F6B"]}};
+  var $=function(i){return document.getElementById(i)}, out=$('out'), t=$('t');
+  function setExample(){ t.value=JSON.stringify(EXAMPLE,null,2); }
+  setExample();
+  function show(kind, nodes){ out.className='result show '+kind; out.textContent=''; nodes.forEach(function(n){ out.appendChild(typeof n==='string'?document.createTextNode(n):n); }); }
+  function el(tag, text, cls){ var e=document.createElement(tag); if(text) e.textContent=text; if(cls) e.className=cls; return e; }
+  function list(items){ var u=el('ul'); items.forEach(function(x){ u.appendChild(el('li', typeof x==='string'?x:JSON.stringify(x))); }); return u; }
+  var MSG={401:'המפתח לא תקין. בדקו שהדבקתם אותו כולו.',403:'החשבון הושבת או שאין לו הרשאה לפעולה.',413:'הבקשה גדולה מדי (עד 200KB).',429:'עברתם את המכסה: 30 בקשות בשעה או המכסה החודשית.'};
+  function busy(b){ ['send','me'].forEach(function(i){ $(i).disabled=b; }); }
+  function call(method, path, body){
+    var key=$('k').value.trim(); if(!key){ show('bad',['הדביקו קודם את מפתח ה-API.']); return Promise.resolve(null); }
+    busy(true); show('wait',['שולח...']);
+    return fetch(API+path,{method:method,headers:{'Authorization':'Bearer '+key,'Content-Type':'application/json'},body:body}).then(function(r){ return r.json().catch(function(){return {};}).then(function(j){ return {status:r.status,body:j}; }); })
+      .catch(function(){ show('bad',['אין חיבור לשרת. נסו שוב.']); return null; }).then(function(x){ busy(false); return x; });
+  }
+  $('send').onclick=function(){
+    var data; try{ data=JSON.parse(t.value); }catch(e){ show('bad',['ה-JSON לא תקין: '+e.message]); return; }
+    call('POST','/v1/trips',JSON.stringify(data)).then(function(x){
+      if(!x) return; var b=x.body;
+      if(x.status===201){
+        var ok=b.status==='published', nodes=[el('strong', ok?'הטיול פורסם. הקישור פעיל:':'הטיול התקבל וממתין לאישור.')];
+        if(typeof b.link==='string' && b.link.indexOf('https://packandboard.com/t/#')===0){ var a=el('a',b.link,'lnk'); a.href=b.link; a.target='_blank'; a.rel='noopener'; nodes.push(a); }
+        if(!ok && b.review_reason) nodes.push(el('div','סיבה: '+b.review_reason));
+        if(b.warnings && b.warnings.length){ nodes.push(el('div','אזהרות:')); nodes.push(list(b.warnings)); }
+        nodes.push(el('div','מזהה הטיול: '+b.trip_id));
+        show('ok',nodes);
+      } else if(x.status===422){ show('bad',[el('strong','הטיול נדחה. מה לתקן:'), list(b.details||['פרטים לא זמינים'])]); }
+      else show('bad',[MSG[x.status]||('שגיאה '+x.status+(b.error?' ('+b.error+')':''))]);
+    });
+  };
+  $('me').onclick=function(){
+    call('GET','/v1/me').then(function(x){ if(!x) return; var b=x.body;
+      if(x.status===200) show('ok',[el('strong','המפתח תקין.'), list(['שם: '+b.name,'מצב פרסום: '+(b.approval==='manual'?'כל טיול ממתין לאישור':'מיידי'),'מכסה חודשית: '+b.quota.used+' מתוך '+b.quota.per_month])]);
+      else show('bad',[MSG[x.status]||('שגיאה '+x.status)]); });
+  };
+  $('reset').onclick=function(){ setExample(); show('wait',['הוחזרה הדוגמה.']); };
+})();
+</script>
+</body>
+</html>
