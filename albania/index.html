@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
+<!-- pab-prepaint --><style>html:not(.pab-ready) body{visibility:hidden}html:not(.pab-ready){background:#F6F0E8}</style><script>(function(){function go(){requestAnimationFrame(function(){document.documentElement.classList.add("pab-ready")})}if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",go);else go();setTimeout(function(){document.documentElement.classList.add("pab-ready")},2500)})();</script><!-- /pab-prepaint -->
+
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>מסלול טיול אלבניה 2026</title>
@@ -2379,8 +2381,29 @@ hydrateFromSupabase();
   document.addEventListener('click',function(e){
     var a=e.target.closest&&e.target.closest('a'); if(!a) return;
     var h=a.getAttribute('href')||'';
-    if(isMaps(h)&&phone()){ e.preventDefault(); location.href=h; }
+    if(isMaps(h)&&phone()){ e.preventDefault(); leave(h); return; }
+    /* every other outside link (a hotel's site, a booking page...): on a phone in a regular browser or inside WhatsApp it opens in
+       the SAME tab, so the phone's Back button returns to the app (in a new tab people did not find their way back; Dana, 2026-11-08).
+       Opened from the home-screen icon, the phone already shows outside sites in a sheet with a Done / X button over the app: keep that.
+       Desktop keeps the new tab. */
+    if(a.target==='_blank'&&phone()&&!standalone()&&!e.defaultPrevented&&outside(h)){ e.preventDefault(); leave(h); }
   },true);
+  /* leaving in the same tab: remember the open screen and the scroll, so Back lands where the visitor was, not on the home screen */
+  var RK='pab.return';
+  function openScreen(){ if(typeof SCREENS==='undefined') return ''; for(var i=0;i<SCREENS.length;i++){ var el=document.querySelector('[data-screen="'+SCREENS[i]+'"]'); if(el&&el.style.display==='block') return SCREENS[i]; } return ''; }
+  function leave(h){ try{ sessionStorage.setItem(RK, JSON.stringify({p:location.pathname, s:openScreen(), y:window.scrollY, t:Date.now()})); }catch(_){} location.href=h; }
+  setTimeout(function(){
+    /* the note is NOT removed here: coming back, the page may be reloaded once more by the blank-page fix below, and that load must restore too */
+    var r=null; try{ r=JSON.parse(sessionStorage.getItem(RK)||'null'); }catch(_){}
+    if(!r||r.p!==location.pathname||Date.now()-r.t>3*3600*1000) return;
+    if(r.s&&typeof showScreen==='function') showScreen(r.s);
+    setTimeout(function(){ try{ window.scrollTo({top:r.y||0, left:0, behavior:'instant'}); }catch(_){ window.scrollTo(0, r.y||0); } }, 60);   /* instant: the app scrolls smoothly by default */
+  }, 80);
+  /* the visitor's next tap or key means they are back in the app: forget the note (pointerdown comes before the click that may set a new one) */
+  function forget(){ try{ sessionStorage.removeItem(RK); }catch(_){} }
+  document.addEventListener('pointerdown',forget,true); document.addEventListener('keydown',forget,true);
+  function standalone(){ return navigator.standalone===true||!!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches); }
+  function outside(h){ if(!/^https?:\/\//i.test(h)) return false; try{ return new URL(h,location.href).origin!==location.origin; }catch(_){ return false; } }
   var NAV_SVG='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l19-9-9 19-2-8z"/></svg>';
   var cst=document.createElement('style');
   cst.textContent='.pab-chip{display:inline-flex;align-items:stretch;border-radius:999px;overflow:hidden}.pab-chip>a{display:inline-flex;align-items:center}'+
