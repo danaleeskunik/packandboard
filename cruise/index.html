@@ -3127,7 +3127,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
         if(!navigator.serviceWorker.controller){ await new Promise(function(res){ var t=setTimeout(res,3000); navigator.serviceWorker.addEventListener('controllerchange',function(){ clearTimeout(t); res(); },{once:true}); }); }
         if(!navigator.serviceWorker.controller){ busy=false; view('off',tx('כמעט','Almost'),tx('פתחו את הדף מחדש ולחצו שוב: זו הפעם הראשונה במכשיר הזה.','Open this page again and press once more: this is the first visit on this device.'),btn(tx('ניסיון נוסף','Try again'))); return; }
         if(reg.active) reg.active.postMessage({type:'save-page'});
-      }catch(e){ busy=false; card.style.display='none'; return; }
+      }catch(e){ busy=false; gone=true; card.style.display='none'; return; }
       var haveDb=(typeof SUPABASE_URL!=='undefined' && typeof sbHeaders==='function' && typeof tripKey==='function');
       if(haveDb){
         var base=SUPABASE_URL+'/rest/v1/', k=encodeURIComponent(tripKey()), k2=encodeURIComponent(TRIP);
@@ -3156,6 +3156,10 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
       busy=false; idle();
     }
     idle();
+    /* the card belongs to the home screen only: the app hides .home-nav on every other screen, so hide this card too */
+    var gone=false;
+    var ss0=window.showScreen; if(typeof ss0==='function') window.showScreen=function(){ var r=ss0.apply(this,arguments); card.style.display='none'; return r; };
+    var sh0=window.showHome; if(typeof sh0==='function') window.showHome=function(){ var r=sh0.apply(this,arguments); card.style.display=gone?'none':''; return r; };
     var tl2=window.toggleLanguage; if(typeof tl2==='function') window.toggleLanguage=function(){ var r=tl2.apply(this,arguments); if(!busy) idle(); return r; };
   })();
 })();

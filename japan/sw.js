@@ -57,6 +57,7 @@ self.addEventListener('fetch', function (e) {
   if (req.method !== 'GET') return;
   var url = new URL(req.url);
   if (req.mode === 'navigate' && url.origin === location.origin && url.href.indexOf(SCOPE) === 0) { e.respondWith(networkFirst(req, PAGES, SCOPE, 4000, 0, true)); return; }
+  if (url.pathname.indexOf('/v1/public/trips/') === 0) { e.respondWith(networkFirst(req, DATA, req.url, 4000, MAX_DOC)); return; }   // a trip made through the API: the last copy opens without a connection
   if (url.hostname === DB_HOST) { e.respondWith(networkFirst(req, DATA, req.url, 4000, MAX_DOC)); return; }
   if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com' || (url.origin === location.origin && url.pathname.indexOf('/assets/') === 0)) { e.respondWith(staleWhileRevalidate(req)); return; }
 });
