@@ -3011,5 +3011,67 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
 })();
 </script>
 <!-- /pab-a11y -->
+<!-- pab-offline -->
+<script>
+(function(){
+  function lang(){ return (typeof CURRENT_LANG!=='undefined' && CURRENT_LANG==='en') ? 'en' : 'he'; }
+  function tx(he,en){ return lang()==='en' ? en : he; }
+  /* 1. the worker that keeps the app on the phone */
+  if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
+    window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+  }
+  /* 2. an "offline" bar and a note in the map boxes */
+  var st=document.createElement('style'); st.id='pab-offline-css'; document.head.appendChild(st);
+  var bar=document.createElement('div'); bar.id='pab-offline-bar'; bar.setAttribute('role','status'); bar.hidden=true;
+  bar.style.cssText='position:sticky;top:0;z-index:9999;background:#FFF3D6;color:#4A3A12;border-bottom:1px solid #E8D5A0;padding:10px 16px;text-align:center;font:600 13.5px/1.45 Heebo,system-ui,sans-serif';
+  function paint(){
+    var off=(navigator.onLine===false);
+    document.documentElement.classList.toggle('pab-offline',off);
+    bar.hidden=!off;
+    bar.textContent=tx('אין חיבור לאינטרנט. מוצג מה ששמור במכשיר. מפות, תחזית, שערי מטבע ותרגום זמינים רק כשיש חיבור.','No internet. Showing what is saved on this device. Maps, forecast, exchange rates and translation need a connection.');
+    st.textContent='#pab-offline-bar[hidden]{display:none}.pab-offline .day-map-box iframe{display:none}'+
+      '.pab-offline .day-map-box::before{content:"'+tx('המפה זמינה כשיש חיבור. אפשר להשתמש בשם המקום שמתחת.','The map needs a connection. The place name below still works.')+'";display:block;padding:20px 16px;text-align:center;background:var(--surface-muted);color:var(--ink-6);font:var(--fw-bold) var(--text-13)/1.5 var(--font-ui)}';
+  }
+  function mount(){ if(document.body && !bar.parentNode) document.body.insertBefore(bar,document.body.firstChild); paint(); }
+  window.addEventListener('online',paint); window.addEventListener('offline',paint);
+  if(document.body) mount(); else document.addEventListener('DOMContentLoaded',mount);
+  var tl=window.toggleLanguage; if(typeof tl==='function') window.toggleLanguage=function(){ var r=tl.apply(this,arguments); paint(); return r; };
+  /* 3. the forecast: the last one that loaded stays on the phone and is shown as approximate, with its date */
+  try{ if(typeof UI_STRINGS!=='undefined') UI_STRINGS.weatherError={he:'אין חיבור כרגע, ולכן אין תחזית. תחזית ל-5 ימים תופיע כשיהיה חיבור. עד אז אפשר להסתמך על מזג האוויר הרגיל של העונה.',en:'No connection right now, so there is no forecast. The 5-day forecast appears when you are online. Until then, rely on the usual weather of the season.'}; }catch(e){}
+  function fmt(t){ var d=new Date(t); return d.getDate()+'.'+(d.getMonth()+1)+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); }
+  var f0=window.fetchCityForecast;
+  if(typeof f0==='function'){
+    window.fetchCityForecast=function(slug){
+      return f0(slug).then(function(d){ try{ localStorage.setItem('pab.wx.'+slug,JSON.stringify({t:Date.now(),d:d})); }catch(e){} return d; })
+        .catch(function(err){ var s=null; try{ s=JSON.parse(localStorage.getItem('pab.wx.'+slug)); }catch(e){} if(s&&s.d){ var d=s.d; d.__saved=s.t; return d; } throw err; });
+    };
+    var r0=window.renderCityForecast;
+    if(typeof r0==='function') window.renderCityForecast=function(c){
+      r0(c);
+      var slug=c.getAttribute('data-weather-city');
+      window.fetchCityForecast(slug).then(function(d){
+        if(!(d&&d.__saved)) return;
+        var n=c.querySelector('.pab-wx-note'); if(!n){ n=document.createElement('div'); n.className='pab-wx-note'; n.style.cssText='margin-top:6px;font:var(--fw-medium) 12.5px/1.5 var(--font-ui);color:var(--ink-6)'; c.appendChild(n); }
+        n.textContent=tx('נשמר ב-','Saved on ')+fmt(d.__saved)+tx(' · תחזית משוערת, תתעדכן כשיהיה חיבור',' · approximate forecast, updates when you are online');
+      }).catch(function(){});
+    };
+  }
+  /* 4. exchange rates: the last rate stays and is labelled as saved */
+  var l0=window.loadFxRates;
+  if(typeof l0==='function'){
+    window.loadFxRates=function(){
+      var code; try{ code=FX_CURRENCY.code; }catch(e){ return l0(); }
+      try{
+        var s=JSON.parse(localStorage.getItem('pab.fx.'+code));
+        if(s&&s.u){ rateUSD=s.u; rateILS=s.i; var el=document.getElementById('fx-ratedate'); if(el) el.textContent=tx('שער שמור מ-','Saved rate from ')+s.d+tx(' (משוער)',' (approximate)'); if(typeof recalc==='function') recalc(); }
+      }catch(e){}
+      l0();
+      fetch('https://api.frankfurter.dev/v1/latest?from='+code+'&to=USD,ILS').then(function(r){ return r.json(); }).then(function(d){
+        localStorage.setItem('pab.fx.'+code,JSON.stringify({u:d.rates.USD,i:d.rates.ILS,d:d.date}));
+      }).catch(function(){});
+    };
+  }
+})();
+</script>
 </body>
 </html>
