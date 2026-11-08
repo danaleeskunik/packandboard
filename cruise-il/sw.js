@@ -47,6 +47,11 @@ function staleWhileRevalidate(req) {
   });
 }
 
+/** "Save for the trip" asks for a fresh copy of the page */
+self.addEventListener('message', function (e) {
+  if (e.data && e.data.type === 'save-page') e.waitUntil(caches.open(PAGES).then(function (c) { return c.add(new Request(SCOPE, { cache: 'reload' })); }).catch(function () {}));
+});
+
 self.addEventListener('fetch', function (e) {
   var req = e.request;
   if (req.method !== 'GET') return;

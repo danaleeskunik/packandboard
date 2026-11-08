@@ -3107,7 +3107,94 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
         localStorage.setItem('pab.fx.'+code,JSON.stringify({u:d.rates.USD,i:d.rates.ILS,d:d.date}));
       }).catch(function(){});
     };
+    if(document.getElementById('fx-ratedate')){ try{ window.loadFxRates(); }catch(e){} }   /* the page already asked once before this layer was in place: ask again so the rate is saved */
   }
+  /* 5. "Save for the trip" (שמרו למסע): one button that saves everything worth having without a connection, and says what it did */
+  (function(){
+    if(!('serviceWorker' in navigator) || !/^https?:$/.test(location.protocol)) return;
+    var nav=document.querySelector('.home-nav'); if(!nav || !nav.parentNode) return;
+    var TRIP=(typeof CURRENT_DESTINATION!=='undefined')?CURRENT_DESTINATION:'trip', KEY='pab.saved.'+TRIP;
+    var card=document.createElement('div'); card.id='pab-save-card'; card.setAttribute('data-noprint','');
+    card.style.cssText='background:var(--surface-card);border:1px solid var(--border-card);border-radius:16px;padding:14px 16px;margin:0 0 14px;text-align:start';
+    nav.parentNode.insertBefore(card,nav);
+    /* the same side margin as the buttons below it (older demo pages have no padding around the home buttons: add_app_fixes.py gives .home-nav its own) */
+    (function(){ var pp=parseFloat(getComputedStyle(nav.parentNode).paddingLeft)||0; card.style.margin=(pp<8)?'14px clamp(14px,4vw,24px)':'14px 0'; })();
+    var IC={
+      dl:{bg:'var(--blue-100)',fg:'var(--blue-600)',svg:'<polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/>'},
+      ok:{bg:'#E1EFE0',fg:'#2F6B3A',svg:'<polyline points="20 6 9 17 4 12"/>'},
+      off:{bg:'#FAEEDA',fg:'#854F0B',svg:'<line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.58 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/>'}};
+    function esc(x){ return String(x==null?'':x).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+    function btn(label){ return '<button type="button" id="pab-save-btn" style="margin-top:12px;width:100%;min-height:44px;border:0;border-radius:999px;background:var(--navy-800);color:#fff;cursor:pointer;font:var(--fw-bold) var(--text-14)/1 var(--font-ui)">'+label+'</button>'; }
+    function link(label){ return '<button type="button" id="pab-save-btn" style="margin-top:8px;min-height:44px;padding:0;border:0;background:none;color:var(--blue-600);cursor:pointer;font:var(--fw-bold) var(--text-13)/1 var(--font-ui)">'+label+'</button>'; }
+    function view(ic,title,text,extra,bar){
+      var i=IC[ic];
+      card.innerHTML='<div style="display:flex;gap:12px;align-items:flex-start"><div style="flex:none;width:40px;height:40px;border-radius:12px;background:'+i.bg+';color:'+i.fg+';display:flex;align-items:center;justify-content:center">'+
+        '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+i.svg+'</svg></div>'+
+        '<div style="min-width:0;flex:1"><div style="font:var(--fw-heavy) 12px/1.2 var(--font-ui);letter-spacing:var(--track-eyebrow);color:var(--blue-600)">'+tx('שמרו למסע','Save for the trip')+'</div>'+
+        '<div style="font:var(--fw-bold) var(--text-15)/1.3 var(--font-ui);color:var(--ink-1);margin-top:3px">'+title+'</div>'+
+        '<div style="font:var(--fw-medium) var(--text-13)/1.5 var(--font-ui);color:var(--ink-6);margin-top:3px">'+text+'</div></div></div>'+(bar||'')+(extra||'');
+      var b=card.querySelector('#pab-save-btn'); if(b) b.addEventListener('click',save);
+    }
+    function when(t){ var d=new Date(+t); return d.getDate()+'.'+(d.getMonth()+1)+' '+tx('בשעה','at')+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); }
+    var HINT=function(){ return '<div style="margin-top:10px;border-top:1px solid var(--border-hair);padding-top:10px;font:var(--fw-medium) 12.5px/1.5 var(--font-ui);color:var(--ink-6)">'+tx('באייפון: שיתוף, ואז "הוספה למסך הבית", כדי שהעותק לא יימחק.','On iPhone: Share, then "Add to Home Screen", so the saved copy is not deleted.')+'</div>'; };
+    function idle(){
+      var s=null; try{ s=JSON.parse(localStorage.getItem(KEY)); }catch(e){}
+      if(s && s.t && !s.failed){
+        view('ok',tx('המדריך שמור ומוכן לדרך','The guide is saved and ready'),tx('נשמר ב-','Saved on ')+when(s.t)+tx('. בלי קליטה אפשר לראות ימים, הזמנות, מסמכים ומספרי חירום. מפות ומזג אוויר צריכים חיבור.','. Without a signal you can see days, bookings, documents and emergency numbers. Maps and weather need a connection.'),link(tx('שמירה מחדש','Save again')),HINT());
+      } else if(s && s.t && s.failed){
+        var bigN=s.failed.filter(function(f){ return f.b; }).map(function(f){ return esc(f.n); }), netN=s.failed.filter(function(f){ return !f.b; }).map(function(f){ return esc(f.n); });
+        var msg=''; if(netN.length) msg+=tx('לא נשמרו: ','Not saved: ')+netN.join(', ')+tx('. נסו שוב כשיש חיבור יציב. ','. Try again with a steady connection. ');
+        if(bigN.length) msg+=tx('גדולים מדי לשמירה: ','Too big to save: ')+bigN.join(', ')+tx('. את אלה צריך לפתוח כשיש חיבור, או לשמור בנפרד בטלפון.','. Open these when you are online, or keep a copy on your phone.');
+        view('off',tx('נשמר חלקית','Partly saved'),msg,netN.length?btn(tx('ניסיון נוסף','Try again')):link(tx('שמירה מחדש','Save again')));
+      } else {
+        view('dl',tx('לפני שיוצאים: שמרו את המדריך','Before you leave: save the guide'),tx('כך הוא ייפתח גם בטיסה ובמקומות בלי קליטה, כולל המסמכים וההזמנות שלכם.','So it opens on the plane and where there is no signal, with your documents and bookings.'),btn(tx('שמירה לשימוש בלי אינטרנט','Save for use without internet')),'<div style="font:var(--fw-medium) 12px/1.5 var(--font-ui);color:var(--ink-6);margin-top:8px;text-align:center">'+tx('כדאי לעשות את זה עם וייפיי','Best done on Wi-Fi')+'</div>');
+      }
+    }
+    var busy=false;
+    function sleep(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
+    async function save(){
+      if(busy) return;
+      if(navigator.onLine===false){ view('off',tx('אין חיבור כרגע','No connection right now'),tx('השמירה צריכה חיבור. נסו שוב כשיש וייפיי.','Saving needs a connection. Try again on Wi-Fi.'),btn(tx('ניסיון נוסף','Try again'))); return; }
+      busy=true;
+      var bar=function(n,m){ return '<div style="margin-top:12px;height:8px;border-radius:4px;background:var(--blue-100);overflow:hidden"><div style="width:'+(m?Math.round(100*n/m):15)+'%;height:100%;background:var(--navy-800)"></div></div>'; };
+      view('dl',tx('שומרים את המדריך…','Saving the guide…'),tx('אל תסגרו את הדף.','Please keep this page open.'),'',bar(0,0));
+      var failed=[], docs=[], reg;
+      try{
+        reg=await navigator.serviceWorker.ready;
+        if(!navigator.serviceWorker.controller){ await new Promise(function(res){ var t=setTimeout(res,3000); navigator.serviceWorker.addEventListener('controllerchange',function(){ clearTimeout(t); res(); },{once:true}); }); }
+        if(!navigator.serviceWorker.controller){ busy=false; view('off',tx('כמעט','Almost'),tx('פתחו את הדף מחדש ולחצו שוב: זו הפעם הראשונה במכשיר הזה.','Open this page again and press once more: this is the first visit on this device.'),btn(tx('ניסיון נוסף','Try again'))); return; }
+        if(reg.active) reg.active.postMessage({type:'save-page'});
+      }catch(e){ busy=false; card.style.display='none'; return; }
+      var haveDb=(typeof SUPABASE_URL!=='undefined' && typeof sbHeaders==='function' && typeof tripKey==='function');
+      if(haveDb){
+        var base=SUPABASE_URL+'/rest/v1/', k=encodeURIComponent(tripKey()), k2=encodeURIComponent(TRIP);
+        var grab=function(u){ return fetch(u,{headers:sbHeaders()}).catch(function(){}); };
+        await grab(base+'trip_data?trip_key=eq.'+k+'&select=*');
+        await grab(base+'trip_features?trip_key=eq.'+k2+'&feature=eq.messages&select=enabled');
+        await grab(base+'trip_messages?trip_key=eq.'+k2+'&kind=eq.announcement&select=id,body,day,pinned,created_at&order=created_at.desc&limit=60');
+        try{ var r=await fetch(base+'trip_documents?trip_key=eq.'+k+'&select=*&order=uploaded_at.asc',{headers:sbHeaders()}); if(r.ok) docs=await r.json(); }catch(e){}
+      }
+      for(var i=0;i<docs.length;i++){
+        var d=docs[i], ok=false, big=false;
+        view('dl',tx('שומרים את המדריך…','Saving the guide…'),tx('מסמכים: ','Documents: ')+i+tx(' מתוך ',' of ')+docs.length+tx('. אל תסגרו את הדף.','. Please keep this page open.'),'',bar(i,docs.length));
+        try{
+          var urls=[SUPABASE_URL+'/storage/v1/object/authenticated/trip-docs/'+d.storage_path, SUPABASE_URL+'/storage/v1/object/public/trip-documents/'+d.storage_path];
+          for(var u=0;u<urls.length && !ok;u++){
+            var rr=await fetch(urls[u],{headers:u===0?sbHeaders():{}}).catch(function(){ return null; });
+            if(rr && rr.ok){ await rr.blob(); await sleep(150); ok=!!(await caches.match(urls[u])); if(!ok) big=true; }
+          }
+        }catch(e){}
+        if(!ok) failed.push({n:d.filename||tx('מסמך','document'),b:big});
+      }
+      try{ var slugs={}; [].forEach.call(document.querySelectorAll('[data-weather-city]'),function(el){ slugs[el.getAttribute('data-weather-city')]=1; });
+           if(typeof window.fetchCityForecast==='function') await Promise.all(Object.keys(slugs).map(function(s){ return window.fetchCityForecast(s).catch(function(){}); })); }catch(e){}
+      try{ if(typeof window.loadFxRates==='function') window.loadFxRates(); }catch(e){}
+      try{ localStorage.setItem(KEY,JSON.stringify({t:Date.now(),failed:failed.length?failed:null})); }catch(e){}
+      busy=false; idle();
+    }
+    idle();
+    var tl2=window.toggleLanguage; if(typeof tl2==='function') window.toggleLanguage=function(){ var r=tl2.apply(this,arguments); if(!busy) idle(); return r; };
+  })();
 })();
 </script>
 </body>
