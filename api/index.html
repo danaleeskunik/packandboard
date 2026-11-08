@@ -69,33 +69,50 @@ summary{cursor:pointer;font-weight:700;color:var(--brand)}
 <a class="back" href="/">Pack &amp; Board <span aria-hidden="true">←</span></a>
 <p class="eyebrow">לשותפים</p>
 <h1>מדריך טיול דיגיטלי אישי, ישר מהמערכת שלכם</h1>
-<p class="lead">שולחים לנו את פרטי הטיול. מקבלים בחזרה קישור למדריך אישי שנפתח בטלפון, בלי הורדה מהחנות, ואפשר להוסיף אותו למסך הבית.</p>
+<p class="lead">שולחים לנו את המסמכים שיש לכם: מייל, PDF, Word, Excel או טקסט. מקבלים בחזרה קישור למדריך אישי שנפתח בטלפון, בלי הורדה מהחנות.</p>
 
 <ol class="steps">
-<li><b>1. שולחים את הטיול</b><span>בקשה אחת עם פרטי הטיול: ימים, טיסות, הזמנות ומיתוג שלכם.</span></li>
-<li><b>2. מקבלים קישור</b><span>הקישור מוכן בתוך שניות, או ממתין לאישור שלנו אם סוכנות חדשה.</span></li>
+<li><b>1. שולחים מסמכים</b><span>את המסלול, הזמנות וכרטיסי טיסה כמו שהם. אין צורך לסדר או להמיר.</span></li>
+<li><b>2. מקבלים קישור</b><span>הקריאה לוקחת עד דקה. אם משהו לא ברור, הטיול ממתין לבדיקה שלנו לפני שהוא נפתח.</span></li>
 <li><b>3. שולחים למטייל</b><span>הוא פותח, והמדריך נשמר גם לשימוש בלי אינטרנט אחרי פתיחה ראשונה.</span></li>
 </ol>
 
 <h2 id="try">נסו עכשיו</h2>
-<p>הדביקו את מפתח ה-API שקיבלתם. הטיול שמופיע למטה הוא דוגמה: אפשר לשנות בו כל דבר ולשלוח. המפתח נשלח ישירות לשרת שלנו ולא נשמר בדפדפן.</p>
+<p>הדביקו את מפתח ה-API שקיבלתם, צרפו את המסמכים ו/או הדביקו טקסט, ולחצו "יצירת טיול". המפתח נשלח ישירות לשרת שלנו ולא נשמר בדפדפן. המסמכים משמשים רק לבניית הטיול ואינם נשמרים.</p>
 <div class="try">
 <label for="k">מפתח API</label>
 <input id="k" type="password" autocomplete="off" spellcheck="false" placeholder="pab_...">
-<label for="t" style="margin-top:16px">הטיול (JSON)</label>
-<textarea id="t" spellcheck="false" aria-describedby="tn"></textarea>
-<p class="note" id="tn">מה שנשלח בבדיקה הוא טיול אמיתי תחת המפתח שלכם, והוא נספר במכסה החודשית. את הטיול אפשר למחוק בקריאה אחת (ראו למטה).</p>
+<label for="f" style="margin-top:16px">קבצים (PDF, Word, Excel, מייל eml, תמונה, טקסט)</label>
+<input id="f" type="file" multiple accept=".pdf,.docx,.xlsx,.eml,.txt,.csv,.png,.jpg,.jpeg,.webp" style="direction:rtl;text-align:start">
+<p class="note" id="fl"></p>
+<label for="x" style="margin-top:12px">או הדביקו טקסט (מייל, מסלול, פרטי הזמנה)</label>
+<textarea id="x" spellcheck="false" style="direction:rtl;text-align:start;font-family:inherit;font-size:15px;min-height:130px"></textarea>
+<label for="ti" style="margin-top:12px">שם הטיול (לא חובה, אחרת נקרא מהמסמכים)</label>
+<input id="ti" type="text" autocomplete="off" style="direction:rtl;text-align:start">
+<p class="note">אל תשלחו דרכונים או פרטי תשלום. מספרי כרטיס ודרכון שבטקסט מוסרים אוטומטית לפני הקריאה, אבל לא ניתן לסנן אותם מתוך קובצי PDF ותמונות.</p>
 <div class="row">
-<button class="go" id="send" type="button">שליחת טיול</button>
+<button class="go" id="send" type="button">יצירת טיול</button>
 <button class="ghost" id="me" type="button">בדיקת מפתח</button>
-<button class="ghost" id="reset" type="button">חזרה לדוגמה</button>
 </div>
+<details style="margin-top:18px"><summary>יש לכם נתונים מובנים? שליחה כ-JSON</summary>
+<textarea id="t" spellcheck="false" aria-label="טיול ב-JSON" style="margin-top:10px"></textarea>
+<div class="row"><button class="ghost" id="sendj" type="button">שליחת JSON</button><button class="ghost" id="reset" type="button">חזרה לדוגמה</button></div>
+</details>
 <div class="result" id="out" role="status" aria-live="polite"></div>
 </div>
 
-<h2>שלוש הקריאות החשובות</h2>
+<h2>יצירה ממסמכים</h2>
 <p>כתובת בסיס: <code>https://pab-api.dana-lees.workers.dev</code>. בכל קריאה: <code>Authorization: Bearer pab_...</code></p>
-<h3>יצירת טיול</h3>
+<pre tabindex="0"><code>curl -X POST https://pab-api.dana-lees.workers.dev/v1/trips/from-documents \
+  -H "Authorization: Bearer $PAB_KEY" -H "Content-Type: application/json" \
+  -d '{"files": [{"name": "itinerary.pdf", "data": "&lt;base64&gt;"}],
+       "text": "אפשר גם טקסט חופשי או מייל מודבק",
+       "title": "שם (לא חובה)", "reference": "מספר הזמנה שלכם",
+       "brand": {"name": "החברה שלכם", "colors": ["#1F5F6B"]}}'</code></pre>
+<p>עד 8 קבצים ו-6MB בסך הכול. נתמכים PDF, <code>.docx</code>, <code>.xlsx</code>, <code>.eml</code> (כולל PDF מצורף), תמונות וטקסט. קבצי <code>.doc</code> ו-<code>.xls</code> ישנים: שמרו כ-docx/xlsx או PDF. התשובה זהה ליצירה מ-JSON ויש בה גם <code>notes</code> (מה הוסק או לא היה ברור) ו-<code>confidence</code>. הקריאה פתוחה עד כדקה. בביטחון נמוך הטיול ממתין לאישור גם אם החשבון מוגדר לפרסום מיידי.</p>
+
+<h2>יצירה מנתונים מובנים, עדכון ומחיקה</h2>
+<h3>יצירת טיול מ-JSON</h3>
 <pre tabindex="0"><code>curl -X POST https://pab-api.dana-lees.workers.dev/v1/trips \
   -H "Authorization: Bearer $PAB_KEY" \
   -H "Content-Type: application/json" \
@@ -158,34 +175,51 @@ summary{cursor:pointer;font-weight:700;color:var(--brand)}
 (function(){
   var API='https://pab-api.dana-lees.workers.dev';
   var EXAMPLE={"title": "פורטוגל בחמישה ימים", "language": "he", "reference": "MY-ORDER-1", "dates": {"start": "2027-05-10", "end": "2027-05-14"}, "destination": {"country": "PT", "cities": [{"name": "Lisbon", "lat": 38.7223, "lng": -9.1393}, {"name": "Porto", "lat": 41.1579, "lng": -8.6291}]}, "days": [{"date": "2027-05-10", "title": "נחיתה בליסבון", "city": "Lisbon", "rows": [{"label": "טיסה", "text": "טיסה מ**תל אביב** ל**ליסבון**, נחיתה אחר הצהריים."}, {"label": "ערב", "text": "טיול רגלי בשכונת **אלפמה** וארוחת ערב בטברנה קטנה."}, {"label": "לינה", "text": "**Hotel Alfama Demo**, ליסבון."}], "tip": "החשמלית 28 צפופה בשעות היום. עדיף לעלות מוקדם בבוקר.", "places": [{"name": "אלפמה"}]}, {"date": "2027-05-11", "title": "ליסבון הקלאסית", "city": "Lisbon", "rows": [{"label": "בוקר", "text": "מגדל בלם ומנזר הירונימוס."}, {"label": "צהריים", "text": "פשטידות **פאשטל דה נאטה** במאפייה ההיסטורית."}, {"label": "ערב", "text": "שקיעה במרפסת **מיראדורו דה סנטה לוזיה**."}], "tip": "כרטיס משולב למנזר ולמגדל חוסך תור.", "places": [{"name": "מגדל בלם"}, {"name": "מנזר הירונימוס"}]}, {"date": "2027-05-12", "title": "סינטרה ביום אחד", "city": "Lisbon", "rows": [{"label": "בוקר", "text": "רכבת לסינטרה (40 דקות) וביקור בארמון **פנה**."}, {"label": "צהריים", "text": "ארוחה בעיירה ההיסטורית."}, {"label": "ערב", "text": "חזרה לליסבון וערב חופשי."}], "tip": "נעלי הליכה נוחות. יש עליות תלולות.", "places": [{"name": "ארמון פנה"}]}, {"date": "2027-05-13", "title": "רכבת לפורטו", "city": "Porto", "rows": [{"label": "בוקר", "text": "רכבת מהירה מליסבון לפורטו (כ-3 שעות)."}, {"label": "צהריים", "text": "ספריית **לבראריה לו** והשוק המקומי."}, {"label": "לינה", "text": "**Hotel Ribeira Demo**, פורטו."}], "tip": "הזמינו כרטיסי רכבת מראש.", "places": [{"name": "ריברה"}]}, {"date": "2027-05-14", "title": "יין, נהר ובית", "city": "Porto", "rows": [{"label": "בוקר", "text": "שיט על נהר הדורו."}, {"label": "צהריים", "text": "טעימות פורט במרתפי **וילה נובה דה גאיה**."}, {"label": "ערב", "text": "טיסה הביתה."}], "tip": "שעת ההמראה בשובר ההזמנה.", "places": [{"name": "וילה נובה דה גאיה"}]}], "flights": [{"dir": "out", "number": "XX 100", "from": "TLV", "to": "LIS", "dep": "2027-05-10T07:00:00+03:00", "arr": "2027-05-10T11:30:00+01:00"}, {"dir": "back", "number": "XX 101", "from": "OPO", "to": "TLV", "dep": "2027-05-14T20:00:00+01:00", "arr": "2027-05-15T02:00:00+03:00"}], "bookings": [{"type": "hotel", "title": "Hotel Alfama Demo", "body": "10-13 במאי, 3 לילות"}, {"type": "hotel", "title": "Hotel Ribeira Demo", "body": "13-14 במאי, לילה אחד"}], "packing": [{"group": "בגדים", "items": ["נעלי הליכה", "מעיל קל לערב", "כובע"]}, {"group": "מסמכים", "items": ["דרכון", "ביטוח נסיעות"]}], "tips": [{"title": "תשלום", "text": "כרטיס אשראי מתקבל כמעט בכל מקום. מזומן לקפה קטן."}], "emergency": [{"label": "חירום", "tel": "112"}], "currency": "EUR", "brand": {"name": "השם של החברה שלכם", "colors": ["#1F5F6B"]}};
-  var $=function(i){return document.getElementById(i)}, out=$('out'), t=$('t');
+  var $=function(i){return document.getElementById(i)}, out=$('out'), t=$('t'), files=[];
   function setExample(){ t.value=JSON.stringify(EXAMPLE,null,2); }
   setExample();
   function show(kind, nodes){ out.className='result show '+kind; out.textContent=''; nodes.forEach(function(n){ out.appendChild(typeof n==='string'?document.createTextNode(n):n); }); }
   function el(tag, text, cls){ var e=document.createElement(tag); if(text) e.textContent=text; if(cls) e.className=cls; return e; }
   function list(items){ var u=el('ul'); items.forEach(function(x){ u.appendChild(el('li', typeof x==='string'?x:JSON.stringify(x))); }); return u; }
-  var MSG={401:'המפתח לא תקין. בדקו שהדבקתם אותו כולו.',403:'החשבון הושבת או שאין לו הרשאה לפעולה.',413:'הבקשה גדולה מדי (עד 200KB).',429:'עברתם את המכסה: 30 בקשות בשעה או המכסה החודשית.'};
-  function busy(b){ ['send','me'].forEach(function(i){ $(i).disabled=b; }); }
-  function call(method, path, body){
+  var MSG={401:'המפתח לא תקין. בדקו שהדבקתם אותו כולו.',403:'החשבון הושבת או שאין לו הרשאה לפעולה.',413:'הבקשה גדולה מדי.',429:'עברתם את המכסה: 30 בקשות בשעה או המכסה החודשית.'};
+  var ERR={extraction_unavailable:'הקריאה האוטומטית אינה פעילה כרגע. פנו אלינו.',extraction_budget_reached:'הקריאה האוטומטית הגיעה לתקרה החודשית. פנו אלינו.',extraction_failed:'הקריאה האוטומטית נכשלה. נסו שוב בעוד רגע.',nothing_to_read:'צרפו קובץ או הדביקו טקסט.'};
+  function busy(b){ ['send','me','sendj'].forEach(function(i){ $(i).disabled=b; }); }
+  function call(method, path, body, msg){
     var key=$('k').value.trim(); if(!key){ show('bad',['הדביקו קודם את מפתח ה-API.']); return Promise.resolve(null); }
-    busy(true); show('wait',['שולח...']);
-    return fetch(API+path,{method:method,headers:{'Authorization':'Bearer '+key,'Content-Type':'application/json'},body:body}).then(function(r){ return r.json().catch(function(){return {};}).then(function(j){ return {status:r.status,body:j}; }); })
-      .catch(function(){ show('bad',['אין חיבור לשרת. נסו שוב.']); return null; }).then(function(x){ busy(false); return x; });
+    busy(true); show('wait',[msg||'שולח...']);
+    var ac=new AbortController(), to=setTimeout(function(){ ac.abort(); },150000);
+    return fetch(API+path,{method:method,headers:{'Authorization':'Bearer '+key,'Content-Type':'application/json'},body:body,signal:ac.signal}).then(function(r){ return r.json().catch(function(){return {};}).then(function(j){ return {status:r.status,body:j}; }); })
+      .catch(function(){ show('bad',['אין חיבור לשרת, או שהקריאה לקחה יותר מדי זמן. נסו שוב.']); return null; }).then(function(x){ clearTimeout(to); busy(false); return x; });
   }
+  function done(x){
+    if(!x) return; var b=x.body;
+    if(x.status===201){
+      var ok=b.status==='published', nodes=[el('strong', ok?'הטיול פורסם. הקישור פעיל:':'הטיול התקבל וממתין לבדיקה לפני שייפתח.')];
+      if(typeof b.link==='string' && b.link.indexOf('https://packandboard.com/t/#')===0){ var a=el('a',b.link,'lnk'); a.href=b.link; a.target='_blank'; a.rel='noopener'; nodes.push(a); }
+      if(!ok && b.review_reason) nodes.push(el('div','סיבה: '+b.review_reason));
+      if(b.notes && b.notes.length){ nodes.push(el('div','מה שלא היה ברור בקריאה:')); nodes.push(list(b.notes)); }
+      if(b.warnings && b.warnings.length){ nodes.push(el('div','אזהרות:')); nodes.push(list(b.warnings)); }
+      nodes.push(el('div','מזהה הטיול: '+b.trip_id)); show('ok',nodes);
+    } else if(x.status===422 && b.details){ show('bad',[el('strong', b.error==='extraction_incomplete'?'לא הצלחנו לבנות טיול שלם מהמסמכים:':'מה לתקן:'), list(b.details)].concat(b.notes&&b.notes.length?[el('div','הערות:'),list(b.notes)]:[])); }
+    else if(b.upstream_message && /credit balance/i.test(b.upstream_message)) show('bad',['הקריאה האוטומטית אינה זמינה כרגע. פנו אלינו.']);
+    else show('bad',[ERR[b.error]||MSG[x.status]||('שגיאה '+x.status+(b.error?' ('+b.error+')':''))]);
+  }
+  $('f').onchange=function(){
+    files=[]; var sel=Array.prototype.slice.call($('f').files), total=0; $('fl').textContent='';
+    if(sel.length>8){ $('fl').textContent='עד 8 קבצים.'; $('f').value=''; return; }
+    sel.forEach(function(f){ total+=f.size; });
+    if(total>6*1024*1024){ $('fl').textContent='הקבצים גדולים מדי (עד 6MB בסך הכול).'; $('f').value=''; return; }
+    var left=sel.length; if(!left) return;
+    sel.forEach(function(f){ var r=new FileReader(); r.onload=function(){ files.push({name:f.name,data:String(r.result).split(',')[1]||''}); if(--left===0) $('fl').textContent='נבחרו '+files.length+' קבצים.'; }; r.readAsDataURL(f); });
+  };
   $('send').onclick=function(){
+    var txt=$('x').value.trim(); if(!files.length && !txt){ show('bad',['צרפו קובץ או הדביקו טקסט.']); return; }
+    var body={files:files,text:txt}; if($('ti').value.trim()) body.title=$('ti').value.trim();
+    call('POST','/v1/trips/from-documents',JSON.stringify(body),'קוראים את המסמכים ובונים את הטיול. זה לוקח עד דקה...').then(done);
+  };
+  $('sendj').onclick=function(){
     var data; try{ data=JSON.parse(t.value); }catch(e){ show('bad',['ה-JSON לא תקין: '+e.message]); return; }
-    call('POST','/v1/trips',JSON.stringify(data)).then(function(x){
-      if(!x) return; var b=x.body;
-      if(x.status===201){
-        var ok=b.status==='published', nodes=[el('strong', ok?'הטיול פורסם. הקישור פעיל:':'הטיול התקבל וממתין לאישור.')];
-        if(typeof b.link==='string' && b.link.indexOf('https://packandboard.com/t/#')===0){ var a=el('a',b.link,'lnk'); a.href=b.link; a.target='_blank'; a.rel='noopener'; nodes.push(a); }
-        if(!ok && b.review_reason) nodes.push(el('div','סיבה: '+b.review_reason));
-        if(b.warnings && b.warnings.length){ nodes.push(el('div','אזהרות:')); nodes.push(list(b.warnings)); }
-        nodes.push(el('div','מזהה הטיול: '+b.trip_id));
-        show('ok',nodes);
-      } else if(x.status===422){ show('bad',[el('strong','הטיול נדחה. מה לתקן:'), list(b.details||['פרטים לא זמינים'])]); }
-      else show('bad',[MSG[x.status]||('שגיאה '+x.status+(b.error?' ('+b.error+')':''))]);
-    });
+    call('POST','/v1/trips',JSON.stringify(data)).then(done);
   };
   $('me').onclick=function(){
     call('GET','/v1/me').then(function(x){ if(!x) return; var b=x.body;
