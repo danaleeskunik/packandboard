@@ -3116,9 +3116,9 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
     var TRIP=(typeof CURRENT_DESTINATION!=='undefined')?CURRENT_DESTINATION:'trip', KEY='pab.saved.'+TRIP;
     var card=document.createElement('div'); card.id='pab-save-card'; card.setAttribute('data-noprint','');
     card.style.cssText='background:var(--surface-card);border:1px solid var(--border-card);border-radius:16px;padding:14px 16px;margin:0 0 14px;text-align:start';
-    nav.parentNode.insertBefore(card,nav);
+    nav.parentNode.insertBefore(card,nav.nextSibling);   /* below the home buttons, not above "day by day" (Dana, 2026-11-08) */
     /* the same side margin as the buttons below it (older demo pages have no padding around the home buttons: add_app_fixes.py gives .home-nav its own) */
-    (function(){ var pp=parseFloat(getComputedStyle(nav.parentNode).paddingLeft)||0; card.style.margin=(pp<8)?'14px clamp(14px,4vw,24px)':'14px 0'; })();
+    (function(){ var pp=parseFloat(getComputedStyle(nav.parentNode).paddingLeft)||0; card.style.margin=(pp<8)?'18px clamp(14px,4vw,24px) 0':'18px 0 0'; })();
     var IC={
       dl:{bg:'var(--blue-100)',fg:'var(--blue-600)',svg:'<polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/>'},
       ok:{bg:'#E1EFE0',fg:'#2F6B3A',svg:'<polyline points="20 6 9 17 4 12"/>'},
