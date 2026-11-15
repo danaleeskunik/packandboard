@@ -1,7 +1,8 @@
 // Agent itinerary builder: the screens (PLAN.md tasks A3-A8). Plain JS, no build step.
 // State lives in S; every change to the trip goes through commit() (undo + autosave) or edit() (typing: autosave only).
-import * as M from './model.js?v=20261115f';
-import { createStore, takeSecret, forgetSecret, Conflict, NoAccess } from './store.js?v=20261115f';
+import * as M from './model.js?v=20261115h';
+import { createStore, takeSecret, forgetSecret, Conflict, NoAccess } from './store.js?v=20261115h';
+import { buildPdfHtml, loadPack } from './pdf.js?v=20261115h';
 
 const S = {
   store: null, me: null, trips: [], filter: 'all', q: '', menuFor: null,
@@ -253,6 +254,7 @@ function topTrip() {
     <div class="trip-id"><b>${esc(tripTitle(d))}</b><span>${tripDates(d)}</span></div>
     <div class="grow"></div>
     <span class="saved" id="saved" role="status"></span>
+    <button class="btn ghost sm" type="button" data-act="pdf">${icon('M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6')}תצוגת PDF</button>
   </div></header>
   ${S.conflict ? `<div class="wrap" style="padding-top:12px"><div class="err-box" role="alert">הטיול נשמר בחלון או במחשב אחר, ולכן השינויים האחרונים כאן לא נשמרו. <button class="btn sm" type="button" data-act="reload">לטעון את הגרסה השמורה</button></div></div>` : ''}
   <nav class="steps" aria-label="שלבי הטיול"><div class="wrap"><ol>
@@ -486,7 +488,7 @@ function viewDays() {
       </div>
       ${sugg.map((s) => `<div class="note" style="margin:12px 18px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="grow">הצעה: קטע הגעה <b>${esc(s.title)}</b></span><button class="btn ghost sm" type="button" data-act="sugg" data-v="${esc(s.suggest)}">הוספה ל${esc(s.part)}</button></div>`).join('')}
       ${bands}
-      <div style="padding:14px 18px">${nextStep('transfers', 'סיימתי עם הימים: להגעה ותחבורה', true)}</div>
+      <div style="padding:14px 18px">${nextStep('transfers', 'להגעה ותחבורה', true)}</div>
     </section>
     <section class="panel libcol" aria-label="${S.side === 'lib' ? 'הספרייה שלי' : 'תצוגה באפליקציה'}">
       <div class="panel-h side-tabs" role="group" aria-label="מה להציג בצד">
@@ -776,6 +778,23 @@ const ACT = {
     const snip = M.snippetFromItem(it, info.dest);
     try { const row = await S.store.addSnippet(S.me.id, snip); S.snippets.unshift(row); render(); toast('נשמר בספרייה של ' + destName(info.dest)); }
     catch (e) { toast('לא נשמר בספרייה. כדאי לנסות שוב.'); }
+  },
+  pdf: async () => {
+    if (!S.t.stays.length) { toast('קודם מוסיפים יעדים ולילות. ה-PDF נבנה מהם.'); return; }
+    const pack = await loadPack(S.t.country);
+    const html = buildPdfHtml(S.t, pack, { bar: false });
+    const box = document.createElement('div');
+    box.className = 'pdf-view'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true'); box.setAttribute('aria-label', 'תצוגת PDF');
+    box.innerHTML = `<div class="pdf-bar"><b>תצוגת PDF</b><span class="muted-on-dark">לפי מה שמולא עד עכשיו</span><div class="grow"></div>
+      <button class="btn sm" type="button" data-pdf="print">הדפסה או שמירה כ-PDF</button><button class="btn sm ghost-dark" type="button" data-pdf="close">סגירה</button></div><iframe title="תצוגת PDF"></iframe>`;
+    document.body.appendChild(box);
+    $('#app').inert = true;
+    const fr = box.querySelector('iframe'); fr.srcdoc = html;
+    const close = () => { box.remove(); $('#app').inert = false; const b = $('[data-act="pdf"]'); if (b) b.focus(); document.removeEventListener('keydown', onKey, true); };
+    const onKey = (e) => { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
+    document.addEventListener('keydown', onKey, true);
+    box.addEventListener('click', (e) => { const b = e.target.closest('[data-pdf]'); if (!b) return; if (b.dataset.pdf === 'close') close(); else fr.contentWindow.print(); });
+    box.querySelector('[data-pdf="print"]').focus();
   },
   side: (el) => { S.side = el.dataset.v; try { localStorage.setItem('packandboard.agent.side', S.side); } catch (e) {} render(); },
   'lib-new': () => { S.dlg = { type: 'lib-new' }; render(); },
