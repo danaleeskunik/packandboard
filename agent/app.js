@@ -1,7 +1,7 @@
 // Agent itinerary builder: the screens (PLAN.md tasks A3-A8). Plain JS, no build step.
 // State lives in S; every change to the trip goes through commit() (undo + autosave) or edit() (typing: autosave only).
-import * as M from './model.js?v=20261115d';
-import { createStore, takeSecret, forgetSecret, Conflict, NoAccess } from './store.js?v=20261115d';
+import * as M from './model.js?v=20261115e';
+import { createStore, takeSecret, forgetSecret, Conflict, NoAccess } from './store.js?v=20261115e';
 
 const S = {
   store: null, me: null, trips: [], filter: 'all', q: '', menuFor: null,
@@ -450,14 +450,15 @@ function viewDays() {
         <button class="chip" type="button" data-act="side" data-v="preview" aria-pressed="${S.side !== 'lib'}">תצוגה באפליקציה</button>
         <button class="chip" type="button" data-act="side" data-v="lib" aria-pressed="${S.side === 'lib'}">הספרייה שלי · ${S.snippets.length}</button>
       </div>
-      ${S.side === 'lib' ? `      <div style="padding:10px 14px 0" class="search"><label class="sr" for="lq">חיפוש בספרייה</label><svg class="i" viewBox="0 0 24 24" aria-hidden="true" style="top:23px;inset-inline-start:26px"><path d="${I.search}"/></svg><input id="lq" class="inp" type="search" placeholder="חיפוש בספרייה" value="${esc(S.libQuery)}" data-f="libq"></div>
+      ${S.side === 'lib' ? `      <div style="padding:12px 14px 0"><button class="btn ghost sm" type="button" data-act="lib-new" style="width:100%">${icon(I.plus)}קטע חדש לספרייה</button></div>
+      <div style="padding:10px 14px 0" class="search"><label class="sr" for="lq">חיפוש בספרייה</label><svg class="i" viewBox="0 0 24 24" aria-hidden="true" style="top:23px;inset-inline-start:26px"><path d="${I.search}"/></svg><input id="lq" class="inp" type="search" placeholder="חיפוש בספרייה" value="${esc(S.libQuery)}" data-f="libq"></div>
       <div class="libfilter" role="group" aria-label="סינון הספרייה">
         <button class="chip" type="button" data-act="lib-all" data-v="0" aria-pressed="${!S.libAll}"><span class="dot" style="background:${esc(destColor(info.dest))}"></span>${esc(libDests)} + כללי</button>
         <button class="chip" type="button" data-act="lib-all" data-v="1" aria-pressed="${S.libAll}">כל היעדים</button>
       </div>
       ${lib.length ? `<ul class="lib">${lib.map((s) => `<li><div><div class="mt">${esc(s.dest === 'all' ? 'כללי' : destName(s.dest))} · ${esc(s.data.part || '')} · ${esc(KIND_HE[s.data.kind] || '')}</div><div class="tt">${esc(he(s.data.title))}</div>${he(s.data.text) ? `<p>${esc(he(s.data.text))}</p>` : ''}</div>
         <div style="display:flex;flex-direction:column;gap:4px"><button class="plus" type="button" data-act="lib-add" data-id="${s.id}" aria-label="הוספת ${esc(he(s.data.title))} ל${esc(s.data.part || 'בוקר')}">${icon(I.plus)}</button><button class="mini" type="button" data-act="lib-del" data-id="${s.id}" aria-label="מחיקת ${esc(he(s.data.title))} מהספרייה">${icon(I.trash)}</button></div></li>`).join('')}</ul>`
-        : `<p class="muted" style="padding:0 14px 14px;margin:0;font-size:14px">${S.snippets.length ? 'אין כאן קטעים שמתאימים.' : 'הספרייה ריקה. בכל קטע יש "שמירה לספרייה", וכך הוא יחכה לטיול הבא.'}</p>`}
+        : `<p class="muted" style="padding:0 14px 14px;margin:0;font-size:14px">${S.snippets.length ? 'אין כאן קטעים שמתאימים.' : 'הספרייה ריקה. מוסיפים כאן קטע חדש, או "שמירה לספרייה" מתוך קטע ביום.'}</p>`}
 ` : `<div id="preview" class="preview">${previewDay(d)}</div><p class="muted" style="font-size:12.5px;padding:0 14px 14px;margin:0">כך הלקוח יראה את היום באפליקציה. מתעדכן תוך כדי כתיבה.</p>`}
     </section>
   </div>`;
@@ -613,6 +614,25 @@ function viewDialog() {
       <div class="field"><label for="mv-part">לחלק ביום</label><select id="mv-part" name="part" class="inp">${M.PARTS.map((p) => `<option${M.itemPart(it) === p ? ' selected' : ''}>${p}</option>`).join('')}</select></div>`,
       `<button class="btn" type="submit">העברה</button>`);
   }
+  if (g.type === 'lib-new') {
+    const info = M.dayInfo(S.t, S.day);
+    const dests = [...new Map(S.t.stays.map((x) => [x.dest, he(x.label) || x.dest])).entries()];
+    const def = info.dest2 || info.dest;
+    return dialogShell('dl-h', 'קטע חדש לספרייה', `
+      <div class="g2">
+        <div class="field"><label for="ln-dest">יעד</label><select id="ln-dest" name="dest" class="inp">${dests.map(([k, l]) => `<option value="${esc(k)}"${k === def ? ' selected' : ''}>${esc(l)}</option>`).join('')}<option value="all">כללי (לכל היעדים)</option></select></div>
+        <div class="field"><label for="ln-part">חלק ביום</label><select id="ln-part" name="part" class="inp">${M.PARTS.map((p) => `<option>${p}</option>`).join('')}</select></div>
+      </div>
+      <fieldset class="field"><legend>סוג</legend><div class="seg">${M.KINDS.map((k, i) => `<label style="display:inline-flex"><input class="sr" type="radio" name="kind" value="${k}"${i === 0 ? ' checked' : ''}><span class="seg-opt">${KIND_HE[k]}</span></label>`).join('')}</div></fieldset>
+      <div class="field"><label for="ln-title">כותרת <span class="req" aria-hidden="true">*</span></label><input id="ln-title" name="title" class="inp" required placeholder="למשל שוק צוקיג'י" data-autofocus></div>
+      <div class="field"><label for="ln-text">טקסט</label><textarea id="ln-text" name="text" class="inp" placeholder="מה חשוב לדעת"></textarea></div>
+      <div class="g2">
+        <div class="field"><label for="ln-place">מיקום במפות (שם המקום או קישור)</label><input id="ln-place" name="place" class="inp ltr"></div>
+        <div class="field"><label for="ln-url">קישור (רשות)</label><input id="ln-url" name="url" class="inp ltr" placeholder="https://"></div>
+      </div>
+      ${g.error ? `<div class="err-box" role="alert">${esc(g.error)}</div>` : ''}`,
+      `<button class="btn" type="submit">שמירה לספרייה</button>`);
+  }
   if (g.type === 'stay-del') {
     const s = S.t.stays.find((x) => x.id === g.id);
     return dialogShell('dsd-h', 'להסיר את ' + esc(he(s.label)) + '?', `<p style="margin:0">היעד יוסר עם ${Number(s.nights) || 0} הימים שלו. אפשר לבטל אחרי ההסרה.</p>`, `<button class="btn" type="submit">הסרה</button>`);
@@ -707,6 +727,7 @@ const ACT = {
     catch (e) { toast('לא נשמר בספרייה. כדאי לנסות שוב.'); }
   },
   side: (el) => { S.side = el.dataset.v; try { localStorage.setItem('packandboard.agent.side', S.side); } catch (e) {} render(); },
+  'lib-new': () => { S.dlg = { type: 'lib-new' }; render(); },
   'lib-all': (el) => { S.libAll = el.dataset.v === '1'; render(); },
   'lib-add': (el) => {
     const s = S.snippets.find((x) => x.id === el.dataset.id);
@@ -838,6 +859,24 @@ document.addEventListener('submit', async (e) => {
       closeDlg(); go('#/t/' + row.id + '/structure');
       toast('הטיול שוכפל');
     } catch (err) { S.dlg.error = /required/.test(err.message) ? 'חסרים שם הלקוח ותאריך ההתחלה.' : 'לא שוכפל. כדאי לנסות שוב.'; render(); }
+    return;
+  }
+  if (kind === 'lib-new') {
+    const fail = (m) => { let b = form.querySelector('.err-box'); if (!b) { b = document.createElement('div'); b.className = 'err-box'; b.setAttribute('role', 'alert'); form.querySelector('.dlg-b').appendChild(b); } b.textContent = m; };   // keeps what was typed
+    const title = String(fd.get('title') || '').trim();
+    if (!title) { fail('חסרה כותרת.'); return; }
+    const k = M.KINDS.includes(fd.get('kind')) ? fd.get('kind') : 'activity';
+    const data = { kind: k, part: M.PARTS.includes(fd.get('part')) ? fd.get('part') : M.PARTS[0], title: { he: title }, text: { he: String(fd.get('text') || '').trim() } };
+    const place = String(fd.get('place') || '').trim(), url = String(fd.get('url') || '').trim();
+    if (place) data.place = place;
+    if (url) { if (!M.safeUrl(url)) { fail('הקישור צריך להתחיל ב-https://'); return; } data.url = M.safeUrl(url); }
+    if (k === 'transfer') data.transfer = { from: '', to: '', mode: 'other' };
+    const dest = String(fd.get('dest') || 'all');
+    try {
+      const row = await S.store.addSnippet(S.me.id, { dest, category: k, data });
+      S.snippets.unshift(row); closeDlg(); S.side = 'lib'; render();
+      toast('נשמר בספרייה של ' + (dest === 'all' ? 'כל היעדים' : destName(dest)));
+    } catch (err) { fail('לא נשמר. כדאי לנסות שוב.'); }
     return;
   }
   if (kind === 'night') { const d = Number(fd.get('day')), id = S.dlg.id; closeDlg(); tryCommit((t) => M.removeNight(t, id, d), `יום ${d + 1} הוסר`); return; }
