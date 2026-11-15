@@ -322,3 +322,5 @@ select.inp{-webkit-appearance:none;appearance:none;padding-inline-end:38px;backg
 .seg .seg-opt{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;font-size:14px}
 .seg input:checked+.seg-opt{background:var(--brand);color:#fff}
 .seg input:focus-visible+.seg-opt{outline:3px solid #7FB7A0;outline-offset:-3px}
+.next-step{display:flex;justify-content:flex-start;margin-top:20px}
+.lbl{font-size:13px;font-weight:500;color:var(--ink-2)}

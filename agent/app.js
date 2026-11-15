@@ -1,7 +1,7 @@
 // Agent itinerary builder: the screens (PLAN.md tasks A3-A8). Plain JS, no build step.
 // State lives in S; every change to the trip goes through commit() (undo + autosave) or edit() (typing: autosave only).
-import * as M from './model.js?v=20261115e';
-import { createStore, takeSecret, forgetSecret, Conflict, NoAccess } from './store.js?v=20261115e';
+import * as M from './model.js?v=20261115f';
+import { createStore, takeSecret, forgetSecret, Conflict, NoAccess } from './store.js?v=20261115f';
 
 const S = {
   store: null, me: null, trips: [], filter: 'all', q: '', menuFor: null,
@@ -244,7 +244,7 @@ function topTrip() {
   const step = (key, code, name, state, sub, target) => {
     const cur = route().step === (target || key);
     const cls = state === 'done' ? 'done' : state === 'work' ? 'work' : '';
-    return `<li><button type="button" data-act="step" data-v="${target || key}"${cur && !(key === 'transfers') ? ' aria-current="step"' : ''}><span class="state ${cls}" aria-hidden="true"></span><span><span class="code">${code}</span> <span class="nm">${name}</span><span class="st">${sub}</span></span></button></li>`;
+    return `<li><button type="button" data-act="step" data-v="${target || key}"${cur ? ' aria-current="step"' : ''}><span class="state ${cls}" aria-hidden="true"></span><span><span class="code">${code}</span> <span class="nm">${name}</span><span class="st">${sub}</span></span></button></li>`;
   };
   const c = st.counts;
   const label = { empty: 'עוד לא', work: 'בעבודה', done: 'מוכן' };
@@ -259,14 +259,14 @@ function topTrip() {
     ${step('structure', '01', 'מבנה', st.structure, label[st.structure])}
     ${step('hotels', '02', 'מלונות', st.hotels, c.stays ? c.staysWithHotel + ' מתוך ' + c.stays : label[st.hotels])}
     ${step('days', '03', 'ימים', st.days, c.days ? c.filledDays + ' מתוך ' + c.days : label[st.days])}
-    ${step('transfers', '04', 'הגעה', st.transfers, c.pendingTransfers ? c.pendingTransfers + ' לאשר' : label[st.transfers], 'days')}
+    ${step('transfers', '04', 'הגעה', st.transfers, c.pendingTransfers ? c.pendingTransfers + ' לאשר' : label[st.transfers])}
     <li class="later"><button type="button" disabled aria-describedby="later-5"><span class="state" aria-hidden="true"></span><span><span class="code">05</span> <span class="nm">אישור לקוח</span><span class="st" id="later-5">בקרוב</span></span></button></li>
     ${step('publish', '06', 'פרסום', S.row.status === 'published' ? 'done' : S.row.status === 'submitted' ? 'work' : 'empty', (STATUS[S.row.status] || STATUS.draft)[0])}
   </ol></div></nav>`;
 }
 
 function viewTrip(step) {
-  const body = step === 'hotels' ? viewHotels() : step === 'days' ? viewDays() : step === 'publish' ? viewPublish() : viewStructure();
+  const body = step === 'hotels' ? viewHotels() : step === 'days' ? viewDays() : step === 'transfers' ? viewTransfers() : step === 'publish' ? viewPublish() : viewStructure();
   return topTrip() + `<main><div class="wrap">${body}</div></main>`;
 }
 
@@ -343,7 +343,49 @@ function viewHotels() {
   return `<p class="eyebrow">שלב 02</p><h1 class="display">מלונות</h1>
     <p class="sub">מלון אחד לכל יעד. רק מלון "נבחר" או "הוזמן" מופיע אצל הלקוח.</p>
     <div class="card" style="padding:4px 18px;margin-bottom:16px"><div class="toggle"><button class="sw" type="button" role="switch" aria-checked="${!!t.showPrices}" aria-labelledby="sp-l" data-act="prices"></button><span id="sp-l"><b>להציג מחירים ללקוח</b><br><span class="muted" style="font-size:14px">${t.showPrices ? 'דלוק: המחירים יופיעו באפליקציה וב-PDF.' : 'כבוי: המחירים נשמרים אצלך, ולא נכנסים לאפליקציה ול-PDF.'}</span></span></div></div>
-    <div class="hotels">${cards}</div>`;
+    <div class="hotels">${cards}</div>${nextStep('days', 'לבניית הימים')}`;
+}
+
+function nextStep(step, text, inline) {
+  return `<div class="${inline ? '' : 'next-step'}"><a class="btn" href="#/t/${S.row.id}/${step}">${esc(text)} ${icon('M15 6l-6 6 6 6')}</a></div>`;
+}
+
+// ---------- step 4: all transfers of the trip in one place ----------
+function viewTransfers() {
+  const t = S.t;
+  if (!t.stays.length) return `<p class="eyebrow">שלב 04</p><h1 class="display">הגעה ותחבורה</h1><div class="empty-state">קודם מוסיפים יעדים ולילות בשלב המבנה.<br><a class="btn" href="#/t/${S.row.id}/structure">למבנה</a></div>`;
+  const sugg = M.suggestedTransfers(t);
+  const dayHead = (d) => { const info = M.dayInfo(t, d); return `יום ${d + 1} · <span class="ltr">${dayLabel(info.date)}</span> · ${esc(he(t.days[d].title).trim() || (info.transition ? destName(info.dest) + ' ← ' + destName(info.dest2) : destName(info.dest)))}`; };
+  const list = [];
+  t.days.forEach((day, d) => day.items.forEach((it) => { if (it.kind === 'transfer') list.push({ it, d }); }));
+  list.sort((a, b) => a.d - b.d || M.PARTS.indexOf(M.itemPart(a.it)) - M.PARTS.indexOf(M.itemPart(b.it)));
+  const f = (it, k, label, val, o = {}) => `<div class="field"><label for="x${k.replace('.', '')}-${it.id}">${label}</label><input id="x${k.replace('.', '')}-${it.id}" class="inp${o.ltr ? ' ltr' : ''}" value="${esc(val == null ? '' : val)}" placeholder="${o.ph || ''}" data-f="item" data-k="${k}" data-id="${it.id}"></div>`;
+  const cards = list.map(({ it, d }) => {
+    const tr = it.transfer || {}, nav = M.navUrl(tr);
+    return `<section class="hcard" aria-label="${esc(he(it.title) || 'קטע הגעה')}">
+      <div class="hh"><span class="dot" style="background:${esc(destColor(M.dayInfo(t, d).dest2 || M.dayInfo(t, d).dest))}"></span><h2 style="font-size:16px">${dayHead(d)}</h2>${it.pending ? '<span class="flag todo">לאשר</span>' : ''}<div class="grow"></div>
+        <a class="btn ghost sm" href="#/t/${S.row.id}/days/${d}">ביום</a><button class="mini" type="button" data-act="item-del" data-id="${it.id}" aria-label="מחיקת קטע ההגעה">${icon(I.trash)}</button></div>
+      <div class="hb">
+        ${f(it, 'title', 'מה', he(it.title), { ph: 'למשל מהשדה למלון' })}
+        <div class="field"><label for="xm-${it.id}">אמצעי</label><select id="xm-${it.id}" class="inp" data-f="item" data-k="tr.mode" data-id="${it.id}">${M.MODES.map((m) => `<option value="${m}"${(tr.mode || 'other') === m ? ' selected' : ''}>${MODE_HE[m]}</option>`).join('')}</select></div>
+        ${f(it, 'tr.from', 'מאיפה', tr.from, { ltr: 1, ph: 'Narita Airport' })}${f(it, 'tr.to', 'לאן', tr.to, { ltr: 1, ph: 'Hotel, Tokyo' })}
+        ${f(it, 'from', 'שעת יציאה', it.when && it.when.from, { ltr: 1, ph: '09:30' })}${f(it, 'tr.duration', 'משך', tr.duration, { ph: 'שעה' })}
+        ${f(it, 'tr.distanceKm', 'מרחק בק״מ', tr.distanceKm, { ltr: 1 })}${f(it, 'tr.provider', 'ספק', tr.provider, { ph: 'למשל Narita Express' })}
+        <div class="field"><label for="xp-${it.id}">מחיר (רשות)</label><div class="row" style="flex-wrap:nowrap"><input id="xp-${it.id}" class="inp ltr" value="${esc(it.price == null ? '' : it.price)}" data-f="item" data-k="price" data-id="${it.id}"><label class="sr" for="xc-${it.id}">מטבע</label><select id="xc-${it.id}" class="inp" style="width:100px" data-f="item" data-k="currency" data-id="${it.id}">${CURRENCIES.map((c) => `<option${(it.currency || 'ILS') === c ? ' selected' : ''}>${c}</option>`).join('')}</select></div></div>
+        <div class="field">${nav ? `<span class="lbl">ניווט</span><a class="lk" style="align-self:flex-start" href="${esc(nav)}" target="_blank" rel="noopener">${icon(I.nav, 14)}ניווט במפות</a>` : '<span class="lbl">ניווט</span><span class="muted" style="font-size:14px">מופיע כשממלאים מאיפה ולאן</span>'}</div>
+        <div class="field full"><label for="xn-${it.id}">הערות</label><textarea id="xn-${it.id}" class="inp" data-f="item" data-k="text" data-id="${it.id}" placeholder="למשל לשבת בצד ימין כדי לראות את פוג׳י">${esc(he(it.text))}</textarea></div>
+      </div></section>`;
+  }).join('');
+  return `<p class="eyebrow">שלב 04</p><h1 class="display">הגעה ותחבורה</h1>
+    <p class="sub">כל ההעברות בטיול במקום אחד: מהשדה למלון, בין הערים ובחזרה לשדה. כל שינוי כאן מופיע גם ביום עצמו.</p>
+    ${sugg.length ? `<section class="card" style="padding:6px 18px;margin-bottom:16px" aria-labelledby="sg-h"><h2 id="sg-h" style="font-size:16px;margin:12px 0 4px">הצעות לאישור</h2>
+      <ul class="checklist">${sugg.map((x) => `<li><span class="ck no" aria-hidden="true">!</span><div class="grow"><b>${esc(x.title)}</b><div class="muted" style="font-size:14px">${dayHead(x.d)}</div></div><button class="btn ghost sm" type="button" data-act="sugg" data-v="${esc(x.suggest)}" data-d="${x.d}">הוספה</button></li>`).join('')}</ul></section>` : ''}
+    <div class="hotels">${cards || '<div class="empty-state">עוד אין קטעי הגעה בטיול. אפשר להוסיף מההצעות למעלה, או קטע חדש כאן למטה.</div>'}</div>
+    <form class="card add-row" data-form="add-transfer" style="margin-top:16px;border-radius:var(--r);flex-wrap:wrap;align-items:flex-end">
+      <div class="field grow"><label for="at-day">קטע הגעה חדש ביום</label><select id="at-day" class="inp">${t.days.map((x, d) => `<option value="${d}">יום ${d + 1} · ${M.shortDate(M.dayInfo(t, d).date)} · ${esc(he(x.title).trim() || destName(M.dayInfo(t, d).dest))}</option>`).join('')}</select></div>
+      <button class="btn ghost sm" type="submit">${icon(I.plus)}הוספה</button>
+    </form>
+    ${nextStep('publish', 'לפרסום')}`;
 }
 
 // ---------- days ----------
@@ -444,6 +486,7 @@ function viewDays() {
       </div>
       ${sugg.map((s) => `<div class="note" style="margin:12px 18px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="grow">הצעה: קטע הגעה <b>${esc(s.title)}</b></span><button class="btn ghost sm" type="button" data-act="sugg" data-v="${esc(s.suggest)}">הוספה ל${esc(s.part)}</button></div>`).join('')}
       ${bands}
+      <div style="padding:14px 18px">${nextStep('transfers', 'סיימתי עם הימים: להגעה ותחבורה', true)}</div>
     </section>
     <section class="panel libcol" aria-label="${S.side === 'lib' ? 'הספרייה שלי' : 'תצוגה באפליקציה'}">
       <div class="panel-h side-tabs" role="group" aria-label="מה להציג בצד">
@@ -700,7 +743,15 @@ const ACT = {
   'day-dup': (el) => { const d = Number(el.dataset.v); tryCommit((t) => M.duplicateDay(t, d, { target: 'after' }), `יום ${d + 1} שוכפל. העותק אחריו, ונוסף לילה`); S.day = d + 1; render(); },
   'day-dup-opts': () => { S.dlg = { type: 'dup' }; render(); },
   'day-del': () => { const d = S.day; tryCommit((t) => M.deleteDay(t, d), `יום ${d + 1} נמחק`); },
-  sugg: (el) => { const s = M.suggestedTransfers(S.t).find((x) => x.d === S.day && x.suggest === el.dataset.v); if (s) { const next = M.applySuggestion(S.t, s); S.editItem = next.days[S.day].items[next.days[S.day].items.length - 1].id; commit(next); } },
+  sugg: (el) => {
+    const d = el.dataset.d !== undefined ? Number(el.dataset.d) : S.day;
+    const s = M.suggestedTransfers(S.t).find((x) => x.d === d && x.suggest === el.dataset.v);
+    if (!s) return;
+    const next = M.applySuggestion(S.t, s);
+    if (route().step === 'days') S.editItem = next.days[d].items[next.days[d].items.length - 1].id;
+    commit(next);
+    if (route().step === 'transfers') toast('נוסף קטע הגעה: ' + s.title + '. ממלאים את הפרטים למטה.');
+  },
   'item-add': (el) => { const it = M.newItem({ part: el.dataset.v }); S.editItem = it.id; commit(M.addItem(S.t, S.day, it)); const f = document.getElementById('it-' + it.id); if (f) f.focus(); },
   'item-edit': (el) => { S.editItem = el.dataset.id; render(); const f = document.getElementById('it-' + el.dataset.id); if (f) f.focus(); },
   'item-done': () => { S.editItem = null; render(); },
@@ -877,6 +928,12 @@ document.addEventListener('submit', async (e) => {
       S.snippets.unshift(row); closeDlg(); S.side = 'lib'; render();
       toast('נשמר בספרייה של ' + (dest === 'all' ? 'כל היעדים' : destName(dest)));
     } catch (err) { fail('לא נשמר. כדאי לנסות שוב.'); }
+    return;
+  }
+  if (kind === 'add-transfer') {
+    const d = Number($('#at-day').value);
+    commit(M.addItem(S.t, d, M.newItem({ kind: 'transfer', part: 'בוקר', title: '' })));
+    toast(`נוסף קטע הגעה ביום ${d + 1}. ממלאים את הפרטים ברשימה.`);
     return;
   }
   if (kind === 'night') { const d = Number(fd.get('day')), id = S.dlg.id; closeDlg(); tryCommit((t) => M.removeNight(t, id, d), `יום ${d + 1} הוסר`); return; }
