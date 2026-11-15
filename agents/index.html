@@ -279,6 +279,7 @@ footer a{display:inline-block;padding:12px 6px}
     <div class="cta-row" style="margin-top:22px">
       <a class="btn btn-primary" data-contact href="#contact">שליחת מסלול בוואטסאפ</a>
       <a class="btn btn-ghost" id="cta-mail" href="#contact">או במייל</a>
+      <a class="btn btn-ghost" id="cta-ig" href="https://www.instagram.com/pack_and_board/" target="_blank" rel="noopener"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".8" fill="currentColor"/></svg>עוקבים באינסטגרם</a>
     </div>
     <p class="contact-note" id="contact-note"></p>
   </div>
@@ -286,7 +287,7 @@ footer a{display:inline-block;padding:12px 6px}
 </main>
 
 <footer>
-  <div class="wrap"><b>Pack &amp; Board</b> · מדריכי טיול דיגיטליים בנויים בשבילכם<br>התמונות והדוגמאות באתר הן לצורך הדגמה. פרטים אישיים הוסתרו.<br>האתר משתמש ב-Google Analytics למדידת ביקורים באופן אנונימי. <a href="/privacy/">מדיניות פרטיות</a> · <a href="/accessibility/">הצהרת נגישות</a></div>
+  <div class="wrap"><b>Pack &amp; Board</b> · מדריכי טיול דיגיטליים בנויים בשבילכם<br>התמונות והדוגמאות באתר הן לצורך הדגמה. פרטים אישיים הוסתרו.<br>האתר משתמש ב-Google Analytics למדידת ביקורים באופן אנונימי. <a href="https://www.instagram.com/pack_and_board/" target="_blank" rel="noopener">אינסטגרם</a> · <a href="/privacy/">מדיניות פרטיות</a> · <a href="/accessibility/">הצהרת נגישות</a></div>
 </footer>
 <script>
 var CONTACT = { whatsapp: '972537004934', email: 'office@packandboard.com' };
@@ -314,6 +315,7 @@ var CONTACT = { whatsapp: '972537004934', email: 'office@packandboard.com' };
     var a=ev.target.closest&&ev.target.closest('a'); if(!a) return;
     if(a.matches('[data-contact],#cta-wa,#hdr-wa')) track('agents_cta_whatsapp');
     else if(a.matches('#cta-mail,#hdr-mail')) track('agents_cta_email');
+    else if(a.matches('#cta-ig,[href*="instagram.com/pack_and_board"]')) track('social_instagram',{page:'agents'});
     else if(a.matches('a.demo')){ var h=a.getAttribute('href').replace(/\/$/,'').replace(/\?.*$/,''); track('agents_demo_open',{demo:h}); }
   });
   /* how far down the page visitors read (the event NAME carries the depth) */
