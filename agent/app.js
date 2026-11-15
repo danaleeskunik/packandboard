@@ -1,7 +1,7 @@
 // Agent itinerary builder: the screens (PLAN.md tasks A3-A8). Plain JS, no build step.
 // State lives in S; every change to the trip goes through commit() (undo + autosave) or edit() (typing: autosave only).
-import * as M from './model.js?v=20261115c';
-import { createStore, takeSecret, forgetSecret, Conflict, NoAccess } from './store.js?v=20261115c';
+import * as M from './model.js?v=20261115d';
+import { createStore, takeSecret, forgetSecret, Conflict, NoAccess } from './store.js?v=20261115d';
 
 const S = {
   store: null, me: null, trips: [], filter: 'all', q: '', menuFor: null,
@@ -465,9 +465,18 @@ function viewDays() {
 
 // ---------- the day as the client app shows it (same order and rules as scripts/agent_trip_to_app.py) ----------
 const WD_SHORT = ["א'", "ב'", "ג'", "ד'", "ה'", "ו'", "ש'"];
+// the small map the app puts in every day card: the day's city (the app uses the same Google Maps embed)
+function dayCity(d) { const info = M.dayInfo(S.t, d); return destName(info.dest2 || info.dest) + (S.t.country ? ', ' + S.t.country : ''); }
 function previewDay(d) {
+  const city = dayCity(d);
+  return `<div class="pv-phone"><div class="pv-card" style="--c:${esc(destColor(M.dayInfo(S.t, d).dest2 || M.dayInfo(S.t, d).dest))}">
+    <div id="pv-body">${previewBody(d)}</div>
+    <div class="pv-map"><iframe title="מפה של ${esc(city)}" src="https://maps.google.com/maps?q=${encodeURIComponent(city)}&z=12&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" tabindex="-1"></iframe>
+      <div class="pv-map-cap"><span>${esc(city)}</span><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(city)}" target="_blank" rel="noopener">פתיחה במפות</a></div></div>
+  </div></div>`;
+}
+function previewBody(d) {
   const t = S.t, day = t.days[d], info = M.dayInfo(t, d);
-  const color = destColor(info.dest2 || info.dest);
   const [y, m, dd] = info.date.split('-').map(Number);
   const wd = WD_SHORT[new Date(Date.UTC(y, m - 1, dd)).getUTCDay()];
   const where = info.transition ? destName(info.dest) + ' ← ' + destName(info.dest2) : destName(info.dest);
@@ -495,13 +504,12 @@ function previewDay(d) {
     if (it.place) chips += `<a class="pv-chip" href="${esc(M.placeHref(it.place))}" target="_blank" rel="noopener">${esc(M.placeLabel(it.place))}</a>`;
   }));
   if (!rows) rows = '<div class="pv-row"><span></span><div class="pv-dim">יום חופשי</div></div>';
-  return `<div class="pv-phone"><div class="pv-card" style="--c:${esc(color)}">
-    <span class="pv-wm" aria-hidden="true">${String(d + 1).padStart(2, '0')}</span>
+  return `<span class="pv-wm" aria-hidden="true">${String(d + 1).padStart(2, '0')}</span>
     <div class="pv-head"><h3>יום ${d + 1} · ${esc(title)}</h3><span class="pv-date">${wd} ${M.shortDate(info.date)}</span></div>
-    ${rows}${chips ? `<div class="pv-chips">${chips}</div>` : ''}
-  </div></div>`;
+    ${rows}${chips ? `<div class="pv-chips">${chips}</div>` : ''}`;
 }
-function paintPreview() { const el = document.getElementById('preview'); if (el && S.t && S.t.days[S.day]) el.innerHTML = previewDay(S.day); }
+// while typing only the text part is redrawn, so the map does not reload on every key
+function paintPreview() { const el = document.getElementById('pv-body'); if (el && S.t && S.t.days[S.day]) el.innerHTML = previewBody(S.day); }
 
 // ---------- publish ----------
 function viewPublish() {
