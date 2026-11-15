@@ -37,6 +37,9 @@ export function shortDate(iso) {                              // '2026-09-29' ->
 }
 // only web links become clickable (never javascript:, data: and the like)
 export function safeUrl(u) { return typeof u === 'string' && /^https?:\/\/[^\s"'<>]+$/i.test(u.trim()) ? u.trim() : ''; }
+// "place" may be a name to search in Google Maps or a maps link the agent pasted
+export function placeHref(place) { return safeUrl(place) || 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(place || ''); }
+export function placeLabel(place) { return safeUrl(place) ? 'מיקום במפות' : (place || ''); }
 export function isTime(s) { return typeof s === 'string' && /^([01]?\d|2[0-3]):[0-5]\d$/.test(s); }
 
 // ---------- structure ----------

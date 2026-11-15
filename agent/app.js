@@ -1,16 +1,18 @@
 // Agent itinerary builder: the screens (PLAN.md tasks A3-A8). Plain JS, no build step.
 // State lives in S; every change to the trip goes through commit() (undo + autosave) or edit() (typing: autosave only).
-import * as M from './model.js';
-import { createStore, takeSecret, forgetSecret, Conflict, NoAccess } from './store.js';
+import * as M from './model.js?v=20261115c';
+import { createStore, takeSecret, forgetSecret, Conflict, NoAccess } from './store.js?v=20261115c';
 
 const S = {
   store: null, me: null, trips: [], filter: 'all', q: '', menuFor: null,
   row: null, t: null, priv: {}, version: 0, history: [],
   snippets: [], libQuery: '', libAll: false,
-  day: 0, editItem: null,
+  day: 0, editItem: null, side: (() => { try { return localStorage.getItem('packandboard.agent.side') || 'preview'; } catch (e) { return 'preview'; } })(),
   save: 'saved', saveTimer: null, saving: false, dirty: false, privTimer: null,
   dlg: null, conflict: false,
 };
+// day and item duplication are hidden for now (Dana, 2026-11-15: confusing). Whole-trip cloning in the trips list stays.
+const SHOW_DUPLICATE = false;
 const PALETTE = ['#C02436', '#2F6B4F', '#6B3FA0', '#1F5F8B', '#1F7A73', '#8E3B6B', '#4A5C36', '#3B5BA0'];
 const WEEKDAY = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
 const STATUS = { draft: ['טיוטה', 'draft'], submitted: ['אצל דנה', 'dana'], published: ['פורסם', 'pub'], archived: ['בארכיון', 'draft'] };
@@ -74,7 +76,7 @@ function commit(next, undoMsg) {
     S.t = prev; S.day = Math.min(prevDay, S.t.days.length - 1); S.editItem = null; scheduleSave(); render();
   });
 }
-function edit(next) { S.t = next; scheduleSave(); paintSaved(); }
+function edit(next) { S.t = next; scheduleSave(); paintSaved(); paintPreview(); }
 function tryCommit(fn, undoMsg) {
   try { commit(fn(S.t), undoMsg); } catch (e) { toast(e.message.replace(/^\w+: /, '')); }
 }
@@ -360,14 +362,14 @@ function itemCard(it, d) {
       <div class="tt">${esc(he(it.title)) || '<span class="muted">בלי כותרת</span>'}</div>
       ${he(it.text) ? `<p>${esc(he(it.text))}</p>` : ''}
       <div class="links">
-        ${it.place ? `<a class="lk" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(it.place)}">${icon(I.pin, 14)}<bdi>${esc(it.place)}</bdi></a>` : ''}
+        ${it.place ? `<a class="lk" target="_blank" rel="noopener" href="${esc(M.placeHref(it.place))}">${icon(I.pin, 14)}<bdi>${esc(M.placeLabel(it.place))}</bdi></a>` : ''}
         ${nav ? `<a class="lk" target="_blank" rel="noopener" href="${esc(nav)}">${icon(I.nav, 14)}ניווט במפות</a>` : ''}
         ${M.safeUrl(it.url) ? `<a class="lk" target="_blank" rel="noopener" href="${esc(M.safeUrl(it.url))}">קישור</a>` : ''}
       </div>
     </div>
     <div class="acts">
       <button class="mini" type="button" data-act="item-edit" data-id="${it.id}" aria-label="עריכת הקטע ${esc(he(it.title))}">${icon(I.edit)}</button>
-      <button class="mini" type="button" data-act="item-dup" data-id="${it.id}" aria-label="שכפול הקטע">${icon(I.copy)}</button>
+      ${SHOW_DUPLICATE ? `<button class="mini" type="button" data-act="item-dup" data-id="${it.id}" aria-label="שכפול הקטע">${icon(I.copy)}</button>` : ''}
       <button class="mini" type="button" data-act="item-move" data-id="${it.id}" aria-label="העברה ליום או לחלק אחר">${icon(I.move)}</button>
       <button class="mini" type="button" data-act="item-del" data-id="${it.id}" aria-label="מחיקת הקטע">${icon(I.trash)}</button>
     </div>
@@ -396,7 +398,7 @@ function itemEditor(it) {
         ${inp('tpr-' + it.id, 'ספק', tr.provider, 'tr.provider', { ph: 'למשל Narita Express' })}
       </div>` : ''}
     <div class="g2" style="margin-top:12px">
-      ${inp('ip-' + it.id, 'מיקום במפות', it.place, 'place', { ltr: 1 })}
+      ${inp('ip-' + it.id, 'מיקום במפות (שם המקום או קישור מגוגל מפות)', it.place, 'place', { ltr: 1 })}
       ${inp('iu-' + it.id, 'קישור (רשות)', it.url, 'url', { ltr: 1, ph: 'https://' })}
       <div class="field"><label for="ipr-${it.id}">מחיר (רשות)</label><div class="row" style="flex-wrap:nowrap"><input id="ipr-${it.id}" class="inp ltr" value="${esc(it.price == null ? '' : it.price)}" data-f="item" data-k="price" data-id="${it.id}"><label class="sr" for="icu-${it.id}">מטבע</label><select id="icu-${it.id}" class="inp" style="width:100px" data-f="item" data-k="currency" data-id="${it.id}">${CURRENCIES.map((c) => `<option${(it.currency || 'ILS') === c ? ' selected' : ''}>${c}</option>`).join('')}</select></div></div>
     </div>
@@ -415,7 +417,7 @@ function viewDays() {
     const where = inf.transition ? destName(inf.dest) + ' ← ' + destName(inf.dest2) : destName(inf.dest);
     const empty = M.dayIsEmpty(x);
     return `<li><button class="drow" type="button" data-act="day" data-v="${i}" data-drop-day="${i}"${i === d ? ' aria-current="true"' : ''}><span class="bar" style="background:${bar}"></span><span class="n ltr">${M.shortDate(inf.date)}</span><span class="t${empty ? ' empty' : ''}">${empty ? 'יום ריק' : esc(he(x.title)) || 'בלי כותרת'}<small>${esc(where)}${x.items.length ? ' · ' + x.items.length + ' קטעים' : ''}${pend ? ' · הגעה לאשר' : ''}</small></span><span></span></button>
-      <button class="mini rowdup" type="button" data-act="day-dup" data-v="${i}" aria-label="שכפול יום ${i + 1}">${icon(I.copy)}</button></li>`;
+      ${SHOW_DUPLICATE ? `<button class="mini rowdup" type="button" data-act="day-dup" data-v="${i}" aria-label="שכפול יום ${i + 1}">${icon(I.copy)}</button>` : ''}</li>`;
   }).join('');
   const groups = M.itemsByPart(day);
   const sugg = M.suggestedTransfers(t).filter((s) => s.d === d);
@@ -435,17 +437,20 @@ function viewDays() {
       <div class="dayhead">
         <div class="field"><label id="day-title-l" for="day-title">יום ${d + 1} · <span class="ltr">${dayLabel(info.date)}</span> · ${esc(info.transition ? destName(info.dest) + ' ← ' + destName(info.dest2) : destName(info.dest))}</label><input id="day-title" class="inp" value="${esc(he(day.title))}" placeholder="כותרת היום, למשל אסאקוסה ואואנו" data-f="day-title"></div>
         <div class="row">
-          <button class="btn ghost sm" type="button" data-act="day-dup" data-v="${d}">${icon(I.copy)}שכפול יום</button>
-          <button class="icon-btn" type="button" data-act="day-dup-opts" aria-label="אפשרויות שכפול">${icon(I.down)}</button>
+          ${SHOW_DUPLICATE ? `<button class="btn ghost sm" type="button" data-act="day-dup" data-v="${d}">${icon(I.copy)}שכפול יום</button>
+          <button class="icon-btn" type="button" data-act="day-dup-opts" aria-label="אפשרויות שכפול">${icon(I.down)}</button>` : ''}
           <button class="icon-btn" type="button" data-act="day-del" aria-label="מחיקת יום ${d + 1}"${M.totalNights(t) <= 1 ? ' disabled' : ''}>${icon(I.trash)}</button>
         </div>
       </div>
       ${sugg.map((s) => `<div class="note" style="margin:12px 18px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="grow">הצעה: קטע הגעה <b>${esc(s.title)}</b></span><button class="btn ghost sm" type="button" data-act="sugg" data-v="${esc(s.suggest)}">הוספה ל${esc(s.part)}</button></div>`).join('')}
       ${bands}
     </section>
-    <section class="panel libcol" aria-labelledby="lib-h">
-      <div class="panel-h"><h2 id="lib-h">הספרייה שלי</h2><span class="muted" style="font-size:13px">${S.snippets.length} קטעים</span></div>
-      <div style="padding:10px 14px 0" class="search"><label class="sr" for="lq">חיפוש בספרייה</label><svg class="i" viewBox="0 0 24 24" aria-hidden="true" style="top:23px;inset-inline-start:26px"><path d="${I.search}"/></svg><input id="lq" class="inp" type="search" placeholder="חיפוש בספרייה" value="${esc(S.libQuery)}" data-f="libq"></div>
+    <section class="panel libcol" aria-label="${S.side === 'lib' ? 'הספרייה שלי' : 'תצוגה באפליקציה'}">
+      <div class="panel-h side-tabs" role="group" aria-label="מה להציג בצד">
+        <button class="chip" type="button" data-act="side" data-v="preview" aria-pressed="${S.side !== 'lib'}">תצוגה באפליקציה</button>
+        <button class="chip" type="button" data-act="side" data-v="lib" aria-pressed="${S.side === 'lib'}">הספרייה שלי · ${S.snippets.length}</button>
+      </div>
+      ${S.side === 'lib' ? `      <div style="padding:10px 14px 0" class="search"><label class="sr" for="lq">חיפוש בספרייה</label><svg class="i" viewBox="0 0 24 24" aria-hidden="true" style="top:23px;inset-inline-start:26px"><path d="${I.search}"/></svg><input id="lq" class="inp" type="search" placeholder="חיפוש בספרייה" value="${esc(S.libQuery)}" data-f="libq"></div>
       <div class="libfilter" role="group" aria-label="סינון הספרייה">
         <button class="chip" type="button" data-act="lib-all" data-v="0" aria-pressed="${!S.libAll}"><span class="dot" style="background:${esc(destColor(info.dest))}"></span>${esc(libDests)} + כללי</button>
         <button class="chip" type="button" data-act="lib-all" data-v="1" aria-pressed="${S.libAll}">כל היעדים</button>
@@ -453,9 +458,50 @@ function viewDays() {
       ${lib.length ? `<ul class="lib">${lib.map((s) => `<li><div><div class="mt">${esc(s.dest === 'all' ? 'כללי' : destName(s.dest))} · ${esc(s.data.part || '')} · ${esc(KIND_HE[s.data.kind] || '')}</div><div class="tt">${esc(he(s.data.title))}</div>${he(s.data.text) ? `<p>${esc(he(s.data.text))}</p>` : ''}</div>
         <div style="display:flex;flex-direction:column;gap:4px"><button class="plus" type="button" data-act="lib-add" data-id="${s.id}" aria-label="הוספת ${esc(he(s.data.title))} ל${esc(s.data.part || 'בוקר')}">${icon(I.plus)}</button><button class="mini" type="button" data-act="lib-del" data-id="${s.id}" aria-label="מחיקת ${esc(he(s.data.title))} מהספרייה">${icon(I.trash)}</button></div></li>`).join('')}</ul>`
         : `<p class="muted" style="padding:0 14px 14px;margin:0;font-size:14px">${S.snippets.length ? 'אין כאן קטעים שמתאימים.' : 'הספרייה ריקה. בכל קטע יש "שמירה לספרייה", וכך הוא יחכה לטיול הבא.'}</p>`}
+` : `<div id="preview" class="preview">${previewDay(d)}</div><p class="muted" style="font-size:12.5px;padding:0 14px 14px;margin:0">כך הלקוח יראה את היום באפליקציה. מתעדכן תוך כדי כתיבה.</p>`}
     </section>
   </div>`;
 }
+
+// ---------- the day as the client app shows it (same order and rules as scripts/agent_trip_to_app.py) ----------
+const WD_SHORT = ["א'", "ב'", "ג'", "ד'", "ה'", "ו'", "ש'"];
+function previewDay(d) {
+  const t = S.t, day = t.days[d], info = M.dayInfo(t, d);
+  const color = destColor(info.dest2 || info.dest);
+  const [y, m, dd] = info.date.split('-').map(Number);
+  const wd = WD_SHORT[new Date(Date.UTC(y, m - 1, dd)).getUTCDay()];
+  const where = info.transition ? destName(info.dest) + ' ← ' + destName(info.dest2) : destName(info.dest);
+  const title = he(day.title).trim() || where;
+  const groups = M.itemsByPart(day);
+  const price = (it) => (t.showPrices && it.price != null && it.price !== '' ? ' · ' + esc(Number(it.price).toLocaleString('en-US') + (it.currency ? ' ' + it.currency : '')) : '');
+  let rows = '', chips = '';
+  M.PARTS.forEach((p) => groups[p].forEach((it) => {
+    const tr = it.transfer || {};
+    if (it.pending && !tr.to) return;                       // an empty suggestion is not shown to the client
+    const ti = he(it.title).trim(), tx = he(it.text).trim();
+    let body = ti ? `<b>${esc(ti)}</b>${tx ? ': ' + esc(tx) : ''}` : esc(tx);
+    if (it.kind === 'transfer') {
+      const facts = [MODE_HE[tr.mode] && tr.mode !== 'other' ? MODE_HE[tr.mode] : '', tr.duration || '', tr.distanceKm ? tr.distanceKm + ' ק״מ' : '', tr.provider || ''].filter(Boolean);
+      if (facts.length) body += ` <span class="pv-dim">(${esc(facts.join(' · '))})</span>`;
+      const nav = M.navUrl(tr);
+      if (nav) chips += `<a class="pv-route" href="${esc(nav)}" target="_blank" rel="noopener">ניווט: ${esc(ti || (tr.from + ' ← ' + tr.to))}</a>`;
+    }
+    if (it.kind !== 'tip') body += price(it);
+    if (M.safeUrl(it.url)) body += ` <a class="pv-link" href="${esc(M.safeUrl(it.url))}" target="_blank" rel="noopener">קישור</a>`;
+    if (!body) return;
+    rows += it.kind === 'tip'
+      ? `<div class="pv-tip"><span>טיפ</span><div>${body}</div></div>`
+      : `<div class="pv-row"><span>${esc(M.itemLabel(it))}</span><div>${body}</div></div>`;
+    if (it.place) chips += `<a class="pv-chip" href="${esc(M.placeHref(it.place))}" target="_blank" rel="noopener">${esc(M.placeLabel(it.place))}</a>`;
+  }));
+  if (!rows) rows = '<div class="pv-row"><span></span><div class="pv-dim">יום חופשי</div></div>';
+  return `<div class="pv-phone"><div class="pv-card" style="--c:${esc(color)}">
+    <span class="pv-wm" aria-hidden="true">${String(d + 1).padStart(2, '0')}</span>
+    <div class="pv-head"><h3>יום ${d + 1} · ${esc(title)}</h3><span class="pv-date">${wd} ${M.shortDate(info.date)}</span></div>
+    ${rows}${chips ? `<div class="pv-chips">${chips}</div>` : ''}
+  </div></div>`;
+}
+function paintPreview() { const el = document.getElementById('preview'); if (el && S.t && S.t.days[S.day]) el.innerHTML = previewDay(S.day); }
 
 // ---------- publish ----------
 function viewPublish() {
@@ -652,6 +698,7 @@ const ACT = {
     try { const row = await S.store.addSnippet(S.me.id, snip); S.snippets.unshift(row); render(); toast('נשמר בספרייה של ' + destName(info.dest)); }
     catch (e) { toast('לא נשמר בספרייה. כדאי לנסות שוב.'); }
   },
+  side: (el) => { S.side = el.dataset.v; try { localStorage.setItem('packandboard.agent.side', S.side); } catch (e) {} render(); },
   'lib-all': (el) => { S.libAll = el.dataset.v === '1'; render(); },
   'lib-add': (el) => {
     const s = S.snippets.find((x) => x.id === el.dataset.id);
