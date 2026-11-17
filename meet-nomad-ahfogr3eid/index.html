@@ -254,16 +254,14 @@ footer{margin-top:44px;color:var(--ink2);font-size:14px}
 .vc span{position:absolute;white-space:nowrap;line-height:1;color:var(--navy);font-size:1.35em;font-weight:700}
 .vc.world span{color:var(--ok)}
 .vbridge{display:block;font-family:var(--font-ui);font-size:.95em;font-weight:700;color:var(--ink);margin-bottom:.7em}
-/* reveal on click: right list, then left list, then Pack & Board */
+/* reveal on click: tapping inside an area shows that area's words; the overlap shows Pack & Board */
 .venn.steps{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .venn.steps:focus-visible{outline:2px solid var(--blue);outline-offset:6px;border-radius:12px}
 .venn.steps .vc span,.venn.steps .vmid{opacity:0;transition:opacity .5s ease}
 .venn.steps .vmid{transform:translate(-50%,-50%) scale(.85);transition:opacity .6s ease,transform .6s ease}
-.venn.s1 .vc.tech span,.venn.s2 .vc span,.venn.s3 .vc span{opacity:1}
-.venn.s3 .vmid{opacity:1;transform:translate(-50%,-50%) scale(1)}
-.vhint{text-align:center;font-size:13px;color:var(--ink2);margin:4px 0 0;transition:opacity .4s}
-.vhint[hidden]{display:block;opacity:0;visibility:hidden}
-@media print{.venn.steps .vc span,.venn.steps .vmid{opacity:1!important;transform:translate(-50%,-50%)!important}.vhint{display:none}}
+.venn.on-tech .vc.tech span,.venn.on-world .vc.world span{opacity:1}
+.venn.on-mid .vmid{opacity:1;transform:translate(-50%,-50%) scale(1)}
+@media print{.venn.steps .vc span,.venn.steps .vmid{opacity:1!important;transform:translate(-50%,-50%)!important}}
 .vmid{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:20%;text-align:center;font-family:var(--font-display);font-weight:700;color:var(--navy);line-height:1.15;font-size:1.25em}
 
 /* group communication mock phones (Vietnam demo colours) */
@@ -334,16 +332,18 @@ footer{margin-top:44px;color:var(--ink2);font-size:14px}
     <div class="vc world" aria-hidden="true"><span style="left:42%;top:17%;transform:translate(-50%,-50%)">טיולים</span><span style="left:30%;top:30%;transform:translate(-50%,-50%)">נופים</span><span style="left:27%;top:44%;transform:translate(-50%,-50%)">קולינריה</span><span style="left:26%;top:58%;transform:translate(-50%,-50%)">Hospitality</span><span style="left:32%;top:72%;transform:translate(-50%,-50%)">תרבויות</span><span style="left:43%;top:85%;transform:translate(-50%,-50%)">אמנות</span></div>
     <div class="vmid" aria-hidden="true">Pack &amp; Board</div>
   </div>
-  <p class="vhint" id="vhint">לחצו להמשך</p>
   <script>
-  (function(){var v=document.querySelector('.venn'),hint=document.getElementById('vhint');if(!v)return;
-    var n=0;v.classList.add('steps');v.tabIndex=0;v.setAttribute('role','button');
-    v.setAttribute('aria-label','שני העולמות שלי. לחצו כדי לחשוף');
-    function go(){if(n>=3)return;v.classList.remove('s'+n);n++;v.classList.add('s'+n);
-      if(n===3){hint.hidden=true;v.setAttribute('role','img');v.removeAttribute('tabindex');v.style.cursor='default';
-        v.setAttribute('aria-label','שני העולמות שלי: טכנולוגיה (UX, UI, Pixel perfect, Front end, אפליקציות, תכנות) והעולם הגדול (טיולים, נופים, קולינריה, Hospitality, תרבויות, אמנות). במפגש ביניהם: Pack & Board.');}}
-    v.addEventListener('click',go);
-    v.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();go();}});
+  (function(){var v=document.querySelector('.venn');if(!v)return;
+    var tech=v.querySelector('.vc.tech'),world=v.querySelector('.vc.world');
+    v.classList.add('steps');v.tabIndex=0;v.setAttribute('role','button');v.setAttribute('aria-label','שני העולמות שלי');
+    function inC(el,x,y){var r=el.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,R=r.width/2;return (x-cx)*(x-cx)+(y-cy)*(y-cy)<=R*R;}
+    function done(){if(['on-tech','on-world','on-mid'].every(function(c){return v.classList.contains(c);})){v.style.cursor='default';v.setAttribute('role','img');v.removeAttribute('tabindex');
+      v.setAttribute('aria-label','שני העולמות שלי: טכנולוגיה (UX, UI, Pixel perfect, Front end, אפליקציות, תכנות) והעולם הגדול (טיולים, נופים, קולינריה, Hospitality, תרבויות, אמנות). במפגש ביניהם: Pack & Board.');}}
+    v.addEventListener('click',function(e){var t=inC(tech,e.clientX,e.clientY),w=inC(world,e.clientX,e.clientY);
+      if(t&&w)v.classList.add('on-mid');else if(t)v.classList.add('on-tech');else if(w)v.classList.add('on-world');done();});
+    /* keyboard: Enter reveals the next area (right, left, middle) */
+    v.addEventListener('keydown',function(e){if(e.key!=='Enter'&&e.key!==' ')return;e.preventDefault();
+      var n=['on-tech','on-world','on-mid'].filter(function(c){return !v.classList.contains(c);})[0];if(n)v.classList.add(n);done();});
   })();
   </script>
 </section>
