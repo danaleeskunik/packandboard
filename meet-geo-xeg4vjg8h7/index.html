@@ -352,6 +352,7 @@ section[aria-labelledby="geo"] .live .side > ul.plain,section[aria-labelledby="g
 /* more room between the parts of the meeting */
 .wrap > section:not(:first-of-type){padding-top:90px}
 @media (max-width:640px){.wrap > section:not(:first-of-type){padding-top:40px}}
+.vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .shot-a{display:block}
 .shot-a:hover .shot{filter:brightness(1.04)}
 .appx > details > summary{font-size:16px}
@@ -373,7 +374,7 @@ section[aria-labelledby="geo"] .live .side > ul.plain,section[aria-labelledby="g
 
 
 <section aria-labelledby="who">
-  <h2 id="who">מי אני</h2>
+  <h2 id="who" class="vh">מי אני</h2>
   <div class="venn" role="img" aria-label="שני העולמות שלי: טכנולוגיה (UX, UI, Pixel perfect, Front end, אפליקציות, תכנות) והעולם הגדול (טיולים, נופים, קולינריה, Hospitality, תרבויות, אמנות). במפגש ביניהם: Pack &amp; Board.">
     <div class="vc tech" aria-hidden="true"><span style="left:58%;top:17%;transform:translate(-50%,-50%)">UX</span><span style="left:70%;top:30%;transform:translate(-50%,-50%)">אפליקציות</span><span style="left:73%;top:44%;transform:translate(-50%,-50%)">Pixel perfect</span><span style="left:74%;top:58%;transform:translate(-50%,-50%)">Front end</span><span style="left:68%;top:72%;transform:translate(-50%,-50%)">תכנות</span><span style="left:57%;top:85%;transform:translate(-50%,-50%)">UI</span></div>
     <div class="vc world" aria-hidden="true"><span style="left:42%;top:17%;transform:translate(-50%,-50%)">טיולים</span><span style="left:30%;top:30%;transform:translate(-50%,-50%)">נופים</span><span style="left:27%;top:44%;transform:translate(-50%,-50%)">קולינריה</span><span style="left:26%;top:58%;transform:translate(-50%,-50%)">Hospitality</span><span style="left:32%;top:72%;transform:translate(-50%,-50%)">תרבויות</span><span style="left:43%;top:85%;transform:translate(-50%,-50%)">אמנות</span></div>
