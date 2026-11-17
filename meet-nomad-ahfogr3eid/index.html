@@ -174,7 +174,7 @@ footer{margin-top:44px;color:var(--ink2);font-size:14px}
 .q-empty{margin:auto 8px;text-align:center;background:#fff;border-radius:12px;padding:10px 12px;font-size:11px;line-height:1.5;color:#5A6B7E;box-shadow:0 1px 2px rgba(14,30,60,.08)}
 .q-sys1{display:none}.qsim.asked .q-empty{display:none}.qsim.asked .q-sys1{display:flex}
 /* private chat simulation: the real app screens, step by step */
-.q2-ctl{display:flex;gap:8px;align-items:center}.q2-prev,.q2-next{min-width:42px;padding-inline:0;font-size:20px;line-height:1}
+.q2-ctl{display:flex;gap:8px;align-items:center}.q2-prev,.q2-next{width:44px;min-width:44px;padding:0;justify-content:center}.q2-prev svg,.q2-next svg{width:20px;height:20px;display:block}
 .q2-dots{display:flex;gap:6px;margin:-6px 0 16px}.q2-dots i{width:22px;height:4px;border-radius:2px;background:var(--line);transition:background .3s}.q2-dots i.on{background:var(--blue)}
 .q2-stage{display:flex;justify-content:center;gap:clamp(16px,5vw,64px);flex-wrap:wrap}
 .q2-ph{margin:0;width:min(270px,100%);transition:opacity .4s,transform .4s}.q2-ph.idle{opacity:.45;transform:scale(.97)}
@@ -550,7 +550,7 @@ footer{margin-top:44px;color:var(--ink2);font-size:14px}
     <p class="sub" style="margin-top:10px">ההודעה נכנסת לאפליקציה של כל המשתתפים מיד. ההתראה על מסך הנעילה היא חלק מהפיילוט.</p>
   </div>
 <!-- /pab-sim -->
-  <!-- pab-q --><div class="sim qsim2"><div class="sim-head"><h3>סימולציה: צ׳אט פרטי עם המדריך</h3><div class="q2-ctl"><button class="btn ghost q2-prev" type="button" aria-label="שלב קודם">›</button><button class="btn ghost q2-next" type="button" aria-label="שלב הבא">‹</button><button class="btn ghost q2-play" type="button">הפעלה מחדש</button></div></div>
+  <!-- pab-q --><div class="sim qsim2"><div class="sim-head"><h3>סימולציה: צ׳אט פרטי עם המדריך</h3><div class="q2-ctl"><button class="btn ghost q2-prev" type="button" aria-label="שלב קודם"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button><button class="btn ghost q2-next" type="button" aria-label="שלב הבא"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button><button class="btn ghost q2-play" type="button">הפעלה מחדש</button></div></div>
 <p class="sim-step q2-step" aria-live="polite"></p><div class="q2-dots" aria-hidden="true"></div>
 <div class="q2-stage"><figure class="q2-ph q2-t"><div class="q2-fr"><img alt="הטלפון של רונית" src=""></div><figcaption><span class="q2-who">מטיילת</span> הטלפון של רונית</figcaption></figure><figure class="q2-ph q2-g"><div class="q2-fr"><img alt="הטלפון של המדריך" src=""></div><figcaption><span class="q2-who g">מדריך</span> הטלפון של המדריך</figcaption></figure></div>
 <p class="sub" style="margin-top:10px">כל משתתף מקבל צ׳אט פרטי עם המדריך בתוך האפליקציה של הטיול. רק השניים רואים את השיחה. המסכים צולמו מהאפליקציה עצמה.</p></div><!-- /pab-q -->
