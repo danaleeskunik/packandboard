@@ -342,6 +342,9 @@ header.top.gb{position:relative;padding-top:8px}
 @media (min-width:700px){section[aria-labelledby="geo"] .gvid{min-height:calc(100svh + 60px);margin-bottom:0}}
 /* under the agency's demo: only the postcards (the phone's script still needs the buttons, so they are hidden, not removed) */
 section[aria-labelledby="geo"] .live .side > ul.plain,section[aria-labelledby="geo"] .live .side > p.line,section[aria-labelledby="geo"] .live .side > .acts{display:none}
+/* more room between the parts of the meeting */
+.wrap > section:not(:first-of-type){padding-top:90px}
+@media (max-width:640px){.wrap > section:not(:first-of-type){padding-top:40px}}
 .shot-a{display:block}
 .shot-a:hover .shot{filter:brightness(1.04)}
 .appx > details > summary{font-size:16px}
