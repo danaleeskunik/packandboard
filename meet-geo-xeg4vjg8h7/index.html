@@ -338,6 +338,8 @@ header.top.gb{position:relative;padding-top:8px}
 .gq{margin-inline-start:auto;display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:var(--ink2);font-size:12px;line-height:1.3}
 .gq svg{display:block;width:84px;height:84px;border-radius:6px;flex:none}
 .gq:hover span{color:var(--blue)}
+/* while the video plays, the demos below it stay out of view */
+@media (min-width:700px){section[aria-labelledby="geo"] .gvid{min-height:calc(100svh + 60px);margin-bottom:0}}
 .shot-a{display:block}
 .shot-a:hover .shot{filter:brightness(1.04)}
 .appx > details > summary{font-size:16px}
