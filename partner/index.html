@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="es" dir="ltr" translate="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="google" content="notranslate">
+<meta name="theme-color" content="#17352A">
+<title>Crear un viaje · Pack &amp; Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&family=Miriam+Libre:wght@700&display=swap" rel="stylesheet">
+<!-- A partner's tour builder (Pack & Board API): pick one of the partner's ready tours, a start date and, if needed, other hotels -> a trip app link.
+     The partner's API key comes once in the link (#k=...), is kept on this device only, and goes to the API as Bearer. Nothing else is stored here
+     except the list of trips made on this device. Main Pack & Board design (agent-builder/app/styles.css). Test: ?api=http://127.0.0.1:<port> on localhost. -->
+<style>
+:root{--ground:#F7F2E8;--stock:#FFFFFF;--ink:#1F2A24;--ink-2:#4B5A51;--muted:#5F6B63;--hair:#E2D9C4;--hair-2:#EFE8D8;--line:#CFC4AB;--hover:#F3EDE0;
+  --brand:#1F5E48;--brand-dark:#17352A;--brand-tint:#E3F0E8;--warn:#7A5300;--warn-tint:#FBF1DC;--bad:#A3242E;--r:14px;
+  --f-display:'Miriam Libre','Heebo',serif;--f-ui:'Heebo',system-ui,sans-serif}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--f-ui);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;min-height:100vh}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid #7FB7A0;outline-offset:2px}
+.top{background:var(--brand-dark);color:#fff}
+.top-in{max-width:760px;margin:0 auto;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.partner-logo{height:30px;width:auto;max-width:200px;display:block}
+.partner-name{font:800 18px/1.2 var(--f-ui)}
+.lang{display:flex;background:rgba(255,255,255,.14);border-radius:999px;padding:3px;gap:2px}
+.lang button{border:0;background:transparent;color:#fff;font-weight:700;font-size:13px;padding:6px 12px;border-radius:999px;cursor:pointer;min-height:32px}
+.lang button[aria-pressed="true"]{background:rgba(255,255,255,.3)}
+main{max-width:760px;margin:0 auto;padding:24px 16px 48px}
+h1{margin:0 0 4px;font:800 30px/1.15 var(--f-ui);letter-spacing:-.01em;color:var(--brand-dark)}
+.lead{margin:0 0 22px;color:var(--muted)}
+.card{background:var(--stock);border-radius:var(--r);border:1px solid var(--hair);padding:20px;margin-bottom:16px}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.field:last-child{margin-bottom:0}
+label,.lbl{font-size:14px;font-weight:600;color:var(--ink-2)}
+.hint{font-size:13px;color:var(--muted)}
+.inp{min-height:48px;border:1px solid var(--line);border-radius:8px;background:var(--stock);padding:10px 14px;width:100%}
+.inp:focus{border-color:var(--brand)}
+/* dropdowns: our own arrow, set well in from the field edge (Dana) */
+select.inp{-webkit-appearance:none;appearance:none;padding-inline-end:46px;background-repeat:no-repeat;background-size:14px 14px;background-position:right 18px center;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231F2A24' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}.row2 .field{margin-bottom:0}.row2+*{margin-top:16px}
+@media (max-width:560px){.row2{grid-template-columns:1fr}}
+.summary{margin-top:16px;padding:12px 14px;border-radius:10px;background:var(--brand-tint);color:var(--brand-dark);font-weight:600;font-size:15px}
+details.hotels{border-top:1px solid var(--hair-2);margin-top:4px;padding-top:12px}
+details.hotels summary{cursor:pointer;font-weight:700;color:var(--brand);list-style:none;display:flex;align-items:center;gap:8px;min-height:44px}
+details.hotels summary::-webkit-details-marker{display:none}
+details.hotels summary::before{content:'+';display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:12px;background:var(--brand-tint);font-weight:800}
+details.hotels[open] summary::before{content:'−'}
+.stay{display:grid;grid-template-columns:150px 1fr;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid var(--hair-2)}
+.stay:last-child{border-bottom:0}
+.stay .town{font-weight:700;line-height:1.3}
+.stay .town small{display:block;font-weight:500;color:var(--muted);font-size:12.5px}
+@media (max-width:560px){.stay{grid-template-columns:1fr;gap:4px}}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:0 26px;border-radius:999px;border:0;background:var(--brand);color:#fff;font-weight:700;font-size:16px;text-decoration:none;cursor:pointer}
+.btn:hover{background:var(--brand-dark)}
+.btn[disabled]{opacity:.55;cursor:default}
+.btn.ghost{background:transparent;color:var(--brand-dark);box-shadow:inset 0 0 0 2px var(--hair)}
+.btn.ghost:hover{box-shadow:inset 0 0 0 2px var(--brand);background:transparent}
+.btn.small{min-height:44px;padding:0 18px;font-size:15px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.result{border-width:2px}
+.result.ok{border-color:#9CC9B2}
+.result.wait{border-color:#E4C98E;background:#FFFCF4}
+.status{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:800;padding:4px 11px;border-radius:999px;background:var(--brand-tint);color:var(--brand-dark)}
+.status.wait{background:var(--warn-tint);color:var(--warn)}
+.linkbox{display:flex;gap:8px;margin:12px 0}
+.linkbox input{flex:1;min-width:0;font-size:14px;color:var(--ink-2);direction:ltr}
+.err{color:var(--bad);font-weight:600;margin-top:10px}
+.recent h2{margin:0 0 6px;font:800 20px/1.2 var(--f-ui);color:var(--brand-dark)}
+.trip{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--hair-2)}
+.trip:last-child{border-bottom:0}
+.trip b{display:block;line-height:1.35}
+.trip small{color:var(--muted)}
+.trip .tr-act{display:flex;gap:6px;flex-shrink:0;align-items:center}
+.icon{width:44px;height:44px;border-radius:22px;border:0;box-shadow:inset 0 0 0 1.5px var(--hair);background:transparent;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink);text-decoration:none}
+.icon:hover{background:var(--hover)}
+.gate{text-align:center;padding:48px 20px}
+.foot{margin-top:28px;display:flex;align-items:center;justify-content:center;gap:8px;color:var(--muted);font-size:13px}
+.foot img{height:22px}
+[hidden]{display:none !important}
+</style>
+</head>
+<body>
+<header class="top"><div class="top-in">
+  <div id="who"><span class="partner-name">Pack &amp; Board</span></div>
+  <div class="lang" role="group" aria-label="Idioma / Language"><button type="button" data-l="es" aria-pressed="true">ES</button><button type="button" data-l="en" aria-pressed="false">EN</button></div>
+</div></header>
+
+<main>
+  <section id="gate" class="card gate" hidden>
+    <h1 data-t="gateT"></h1>
+    <p class="lead" data-t="gateP" style="margin:8px auto 0;max-width:460px"></p>
+  </section>
+
+  <section id="app" hidden>
+    <h1 data-t="title"></h1>
+    <p class="lead" data-t="lead"></p>
+
+    <form id="form" class="card" novalidate>
+      <div class="field">
+        <label for="tpl" data-t="tour"></label>
+        <select id="tpl" class="inp" required></select>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="start" data-t="start"></label>
+          <input id="start" class="inp" type="date" required>
+        </div>
+        <div class="field">
+          <label for="ref" data-t="ref"></label>
+          <input id="ref" class="inp" type="text" maxlength="80" autocomplete="off">
+        </div>
+      </div>
+      <div id="summary" class="summary" hidden></div>
+      <details class="hotels" id="hotels">
+        <summary data-t="hotels"></summary>
+        <p class="hint" data-t="hotelsHint" style="margin:0 0 6px"></p>
+        <div id="stays"></div>
+      </details>
+      <div class="actions" style="margin-top:18px">
+        <button class="btn" id="go" type="submit" data-t="create"></button>
+      </div>
+      <div class="err" id="err" role="alert" hidden></div>
+    </form>
+
+    <section id="result" class="card result" hidden aria-live="polite"></section>
+
+    <section class="card recent" id="recent" hidden>
+      <h2 data-t="recent"></h2>
+      <p class="hint" data-t="recentHint" style="margin:0 0 6px"></p>
+      <div id="trips"></div>
+    </section>
+  </section>
+
+  <div class="foot"><span data-t="by"></span><img src="/assets/pab-wordmark.png" alt="Pack &amp; Board"></div>
+</main>
+
+<script>
+(function(){
+  'use strict';
+  var T = {
+    es: { title:'Crear un viaje', lead:'Elige el viaje, la fecha de salida y, si quieres, otros hoteles. Recibes el enlace de la app para los viajeros.',
+      tour:'Viaje', start:'Fecha de salida', ref:'Grupo o referencia (opcional)', hotels:'Cambiar hoteles (opcional)',
+      hotelsHint:'Déjalo vacío para usar el texto del programa ("hotel o casa rural seleccionada…").', create:'Crear el viaje', creating:'Creando…',
+      summary:function(n,a,b){ return n+' días · '+a+' – '+b; }, night:'noche', nights:'noches',
+      ok:'Listo: el viaje está publicado', wait:'Enviado a revisión', waitP:'Pack & Board lo revisa antes de publicarlo. El enlace funcionará en cuanto esté aprobado: puedes copiarlo ya.',
+      okP:'Envía este enlace a los viajeros. Se abre en el móvil, sin descargar nada.', copy:'Copiar', copied:'Copiado', open:'Abrir', wa:'WhatsApp',
+      waText:'Vuestro viaje, en el móvil: ', recent:'Viajes creados en este dispositivo', recentHint:'Solo se guardan aquí, en este navegador.',
+      stPublished:'Publicado', stWait:'En revisión', refresh:'Actualizar estado', remove:'Quitar de la lista',
+      gateT:'Falta el enlace de acceso', gateP:'Abre esta página con el enlace personal que te envió Pack & Board (incluye todo lo que va después de #).',
+      errDate:'Elige la fecha de salida.', errTpl:'Elige un viaje.', errKey:'El enlace de acceso no es válido o se ha cambiado. Pide uno nuevo a Pack & Board.',
+      errNet:'No hay conexión. Inténtalo de nuevo.', errQuota:'Se ha alcanzado el máximo de viajes de este mes.', errRate:'Demasiados viajes en poco tiempo. Espera unos minutos.',
+      errGeneric:'No se pudo crear el viaje: ', by:'Creado con', past:'La fecha ya ha pasado.', none:'Todavía no hay viajes preparados para tu agencia.' },
+    en: { title:'Create a trip', lead:'Choose the tour, the start date and, if you like, other hotels. You get the app link for the travellers.',
+      tour:'Tour', start:'Start date', ref:'Group or reference (optional)', hotels:'Change hotels (optional)',
+      hotelsHint:'Leave empty to use the program text ("a selected hotel or rural house…").', create:'Create the trip', creating:'Creating…',
+      summary:function(n,a,b){ return n+' days · '+a+' – '+b; }, night:'night', nights:'nights',
+      ok:'Done: the trip is published', wait:'Sent for review', waitP:'Pack & Board checks it before it goes live. The link works as soon as it is approved: you can copy it now.',
+      okP:'Send this link to the travellers. It opens on the phone, with nothing to download.', copy:'Copy', copied:'Copied', open:'Open', wa:'WhatsApp',
+      waText:'Your trip, on your phone: ', recent:'Trips created on this device', recentHint:'They are only kept here, in this browser.',
+      stPublished:'Published', stWait:'In review', refresh:'Refresh status', remove:'Remove from the list',
+      gateT:'The access link is missing', gateP:'Open this page with the personal link Pack & Board sent you (including everything after #).',
+      errDate:'Choose the start date.', errTpl:'Choose a tour.', errKey:'The access link is not valid or was changed. Ask Pack & Board for a new one.',
+      errNet:'No connection. Please try again.', errQuota:'This month’s trip limit is reached.', errRate:'Too many trips in a short time. Please wait a few minutes.',
+      errGeneric:'The trip could not be created: ', by:'Built with', past:'This date has already passed.', none:'There are no tours ready for your agency yet.' } };
+  var MON = { es:['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'], en:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] };
+  var WD = { es:['dom','lun','mar','mié','jue','vie','sáb'], en:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] };
+  var store = { get:function(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }, set:function(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} } };
+  var KEY_K='packandboard.partner.key', LANG_K='packandboard.partner.lang', TRIPS_K='packandboard.partner.trips';
+  var API='https://pab-api.dana-lees.workers.dev';
+  var q=/[?&]api=([^&]+)/.exec(location.search); if(q && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) API=decodeURIComponent(q[1]);
+  var lang = store.get(LANG_K, 'es');   /* Spanish first; the switch is remembered on this device */
+  var key = null, templates = [], me = null;
+  var $ = function(id){ return document.getElementById(id); };
+  function t(k){ return T[lang][k]; }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+  /* the key: from the link once (then removed from the address bar), afterwards from this device */
+  var m=/[#&]k=(pab_[a-z0-9]{20,60})/.exec(location.hash||'');
+  if(m){ key=m[1]; store.set(KEY_K,key); history.replaceState(null,'',location.pathname+location.search); } else key=store.get(KEY_K,null);
+
+  function api(method, path, body){
+    return fetch(API+path,{ method:method, headers:{ 'authorization':'Bearer '+key, 'content-type':'application/json' }, body: body?JSON.stringify(body):undefined })
+      .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){ j.__status=r.status; return j; }); });
+  }
+  function addDays(iso,n){ var d=new Date(iso+'T12:00:00Z'); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); }
+  function fmt(iso){ var d=new Date(iso+'T12:00:00Z'); return lang==='es' ? WD.es[d.getUTCDay()]+' '+d.getUTCDate()+' '+MON.es[d.getUTCMonth()]+' '+d.getUTCFullYear() : WD.en[d.getUTCDay()]+', '+MON.en[d.getUTCMonth()]+' '+d.getUTCDate()+', '+d.getUTCFullYear(); }
+  function current(){ return templates.filter(function(x){ return x.id===$('tpl').value; })[0]; }
+
+  function paintTexts(){
+    document.documentElement.lang=lang;
+    [].forEach.call(document.querySelectorAll('[data-t]'),function(el){ var v=t(el.getAttribute('data-t')); if(typeof v==='string') el.textContent=v; });
+    [].forEach.call(document.querySelectorAll('.lang button'),function(b){ b.setAttribute('aria-pressed', String(b.getAttribute('data-l')===lang)); });
+    document.title=t('title')+' · '+(me && me.name ? me.name : 'Pack & Board');
+    paintTemplates(); paintSummary(); paintStays(); paintTrips();
+    if(lastResult) showResult(lastResult);
+  }
+  function paintTemplates(){
+    var sel=$('tpl'), keep=sel.value;
+    sel.innerHTML = templates.length ? templates.map(function(x){ return '<option value="'+esc(x.id)+'">'+esc((x.name&&(x.name[lang]||x.name.en||x.name.es))||x.id)+'</option>'; }).join('') : '<option value="">'+esc(t('none'))+'</option>';
+    if(keep && templates.some(function(x){ return x.id===keep; })) sel.value=keep;
+  }
+  function paintSummary(){
+    var x=current(), s=$('start').value, el=$('summary');
+    if(!x || !s){ el.hidden=true; return; }
+    el.hidden=false; el.textContent=t('summary')(x.days, fmt(s), fmt(addDays(s,x.days-1))) + (s < new Date().toISOString().slice(0,10) ? ' · '+t('past') : '');
+  }
+  var typed={};   /* what was typed per stay, kept when the language changes */
+  function paintStays(){
+    var x=current(), box=$('stays'); [].forEach.call(box.querySelectorAll('input'),function(i){ typed[i.name]=i.value; });
+    if(!x || !x.stays.length){ $('hotels').hidden=true; box.innerHTML=''; return; }
+    $('hotels').hidden=false;
+    var s=$('start').value;
+    box.innerHTML = x.stays.map(function(st){
+      var when = st.nights.map(function(n){ return s ? fmt(addDays(s,n-1)).replace(/ \d{4}$|, \d{4}$/,'') : '#'+n; }).join(', ');
+      var ph = ((st.default||{})[lang]||'').replace(/\*\*/g,'');
+      return '<div class="stay"><label class="town" for="h_'+esc(st.key)+'">'+esc(st.town)+'<small>'+esc((st.nights.length>1?t('nights'):t('night'))+' · '+when)+'</small></label>'+
+        '<input class="inp" id="h_'+esc(st.key)+'" name="'+esc(st.key)+'" maxlength="80" autocomplete="off" placeholder="'+esc(ph)+'" value="'+esc(typed[st.key]||'')+'"></div>';
+    }).join('');
+  }
+
+  var lastResult=null;
+  function showResult(r){
+    lastResult=r; var box=$('result'), ok=r.status==='published';
+    box.hidden=false; box.className='card result '+(ok?'ok':'wait');
+    box.innerHTML='<span class="status'+(ok?'':' wait')+'">'+esc(ok?t('stPublished'):t('stWait'))+'</span>'+
+      '<h2 style="margin:10px 0 4px;font:800 22px/1.2 var(--f-ui);color:var(--brand-dark)">'+esc(ok?t('ok'):t('wait'))+'</h2>'+
+      '<p style="margin:0;color:var(--ink-2)">'+esc(ok?t('okP'):t('waitP'))+'</p>'+
+      '<div class="linkbox"><input class="inp" id="link" readonly value="'+esc(r.link)+'" aria-label="Link"><button type="button" class="btn small" id="copy">'+esc(t('copy'))+'</button></div>'+
+      '<div class="actions"><a class="btn ghost small" target="_blank" rel="noopener" href="'+esc(r.link)+'">'+esc(t('open'))+'</a>'+
+      '<a class="btn ghost small" target="_blank" rel="noopener" href="https://wa.me/?text='+encodeURIComponent(t('waText')+r.link)+'">'+esc(t('wa'))+'</a></div>';
+    $('copy').onclick=function(){ var b=this, done=function(){ b.textContent=t('copied'); setTimeout(function(){ b.textContent=t('copy'); },1800); };
+      if(navigator.clipboard) navigator.clipboard.writeText(r.link).then(done,function(){ $('link').select(); document.execCommand('copy'); done(); }); else { $('link').select(); document.execCommand('copy'); done(); } };
+  }
+
+  function paintTrips(){
+    var list=store.get(TRIPS_K,[]); $('recent').hidden=!list.length;
+    $('trips').innerHTML=list.map(function(x,i){
+      return '<div class="trip"><div><b>'+esc(x.ref||x.tplName&&x.tplName[lang]||x.tpl)+'</b><small>'+esc(fmt(x.start))+' · '+esc(x.status==='published'?t('stPublished'):t('stWait'))+'</small></div>'+
+        '<div class="tr-act"><button type="button" class="icon" data-i="'+i+'" data-a="refresh" aria-label="'+esc(t('refresh'))+'" title="'+esc(t('refresh'))+'"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg></button>'+
+        '<button type="button" class="icon" data-i="'+i+'" data-a="copy" aria-label="'+esc(t('copy'))+'" title="'+esc(t('copy'))+'"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>'+
+        '<button type="button" class="icon" data-i="'+i+'" data-a="remove" aria-label="'+esc(t('remove'))+'" title="'+esc(t('remove'))+'"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/></svg></button></div></div>';
+    }).join('');
+  }
+  $('trips').addEventListener('click',function(e){
+    var b=e.target.closest('button[data-a]'); if(!b) return; var list=store.get(TRIPS_K,[]), i=+b.getAttribute('data-i'), x=list[i]; if(!x) return;
+    var a=b.getAttribute('data-a');
+    if(a==='remove'){ list.splice(i,1); store.set(TRIPS_K,list); paintTrips(); return; }
+    if(a==='copy'){ if(navigator.clipboard) navigator.clipboard.writeText(x.link); b.style.background='var(--brand-tint)'; setTimeout(function(){ b.style.background=''; },1200); return; }
+    if(a==='refresh') api('GET','/v1/trips/'+x.id).then(function(r){ if(r.__status===200){ x.status=r.status; store.set(TRIPS_K,list); paintTrips(); } });
+  });
+
+  function error(msg){ var e=$('err'); e.hidden=!msg; e.textContent=msg||''; }
+  $('form').addEventListener('submit',function(e){
+    e.preventDefault(); error('');
+    var x=current(), s=$('start').value;
+    if(!x) return error(t('errTpl')); if(!s) return error(t('errDate'));
+    var hotels={}; [].forEach.call($('stays').querySelectorAll('input'),function(i){ if(i.value.trim()) hotels[i.name]=i.value.trim(); });
+    var go=$('go'); go.disabled=true; go.textContent=t('creating');
+    api('POST','/v1/trips/from-template',{ template:x.id, start:s, hotels:hotels, reference:$('ref').value.trim() }).then(function(r){
+      go.disabled=false; go.textContent=t('create');
+      if(r.__status===201){ var list=store.get(TRIPS_K,[]); list.unshift({ id:r.trip_id, link:r.link, status:r.status, tpl:x.id, tplName:x.name, start:s, ref:$('ref').value.trim(), at:Date.now() }); store.set(TRIPS_K,list.slice(0,30)); paintTrips(); showResult(r); $('result').scrollIntoView({behavior:'smooth',block:'start'}); return; }
+      if(r.__status===401) return error(t('errKey'));
+      if(r.error==='monthly_quota_reached') return error(t('errQuota'));
+      if(r.error==='rate_limited') return error(t('errRate'));
+      error(t('errGeneric')+((r.details||[]).join('; ')||r.error||r.__status));
+    }, function(){ go.disabled=false; go.textContent=t('create'); error(t('errNet')); });
+  });
+  $('tpl').addEventListener('change',function(){ typed={}; paintSummary(); paintStays(); });
+  $('start').addEventListener('input',function(){ paintSummary(); paintStays(); });
+  [].forEach.call(document.querySelectorAll('.lang button'),function(b){ b.addEventListener('click',function(){ lang=b.getAttribute('data-l'); store.set(LANG_K,lang); paintTexts(); }); });
+
+  function gate(){ $('gate').hidden=false; $('app').hidden=true; paintTexts(); }
+  if(!key) return gate();
+  Promise.all([api('GET','/v1/me'), api('GET','/v1/templates')]).then(function(res){
+    if(res[0].__status===401 || res[0].__status===403){ try{ localStorage.removeItem(KEY_K); }catch(e){} return gate(); }
+    me=res[0]; templates=(res[1].templates||[]);
+    var b=me.brand||{}, who=$('who');
+    who.innerHTML = b.logo_url && b.logo_dark ? '<img class="partner-logo" alt="'+esc(me.name)+'" referrerpolicy="no-referrer" src="'+esc(b.logo_url)+'" onerror="this.outerHTML=\'<span class=partner-name>'+esc(me.name).replace(/'/g,'')+'</span>\'">' : '<span class="partner-name">'+esc(me.name)+'</span>';
+    $('app').hidden=false; paintTexts();
+  }, function(){ $('app').hidden=false; paintTexts(); error(t('errNet')); });
+})();
+</script>
+</body>
+</html>
