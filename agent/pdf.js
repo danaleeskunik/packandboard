@@ -175,6 +175,7 @@ ${cover}<div class="sheet">${flights}${hotels}${days}${transfersSec}${contacts}<
 const SYM = { ILS: '₪', USD: '$', EUR: '€', JPY: '¥', GBP: '£', THB: '฿' };
 const SEIGAIHA = (c) => `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='48' height='24' viewBox='0 0 48 24'><g fill='none' stroke='${c}' stroke-width='1.3' opacity='.55'><path d='M0 24a24 24 0 0 1 48 0'/><path d='M6 24a18 18 0 0 1 36 0'/><path d='M12 24a12 12 0 0 1 24 0'/><path d='M18 24a6 6 0 0 1 12 0'/><path d='M-24 12a24 24 0 0 1 48 0M24 12a24 24 0 0 1 48 0'/><path d='M-18 12a18 18 0 0 1 36 0M30 12a18 18 0 0 1 36 0'/><path d='M-12 12a12 12 0 0 1 24 0M36 12a12 12 0 0 1 24 0'/></g></svg>`)}")`;
 
+const AZULEJO = (c) => `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 36 36'><rect width='36' height='36' fill='${c}'/><g fill='none' stroke='#fff' stroke-width='1.2' opacity='.6'><path d='M18 3 L33 18 L18 33 L3 18 Z'/><circle cx='18' cy='18' r='6'/><path d='M0 0 L6 0 Q3 3 0 6 Z M36 0 L30 0 Q33 3 36 6 Z M0 36 L6 36 Q3 33 0 30 Z M36 36 L30 36 Q33 33 36 30 Z'/></g><circle cx='18' cy='18' r='2' fill='#fff' opacity='.75'/></svg>`)}")`;          // Andalusian tile band, for Spain (2026-11-19)
 export function buildQuoteHtml(t, pack) {
   if (!t.stays.length || !t.startDate) return null;
   const q = M.quoteOf(t), tot = M.quoteTotals(t), qs = (pack && pack.quote) || {};
@@ -182,6 +183,8 @@ export function buildQuoteHtml(t, pack) {
   const line = qs.line || '#E3DDD2', tint = qs.tint || '#EEF3EF', L = qs.labels || {};
   const name = (s) => he(s.label) || s.dest;
   const color = (s) => s.color || accent;
+  // A light stay colour (yellow, sand) can't be read as text on white: day numbers then use a darker shade of it.
+  const textColor = (c) => { const m = /^#([0-9a-f]{6})$/i.exec(c || ''); if (!m) return c; const v = [0, 2, 4].map((i) => parseInt(m[1].substr(i, 2), 16) / 255).map((x) => x <= .03928 ? x / 12.92 : Math.pow((x + .055) / 1.055, 2.4)); const L = .2126 * v[0] + .7152 * v[1] + .0722 * v[2]; return L > .3 ? `color-mix(in srgb,${c} 55%,${ink})` : c; };
   const country = (t.country || (pack && pack.nameHe) || '').trim();
   const first = D(t.startDate), N = M.totalNights(t), last = addD(first, N);
   const family = he(t.client && t.client.name).trim();
@@ -200,7 +203,7 @@ export function buildQuoteHtml(t, pack) {
 
   const logo = t.branding && M.safeUrl(t.branding.logoUrl) ? `<img class="logo" src="${esc(M.safeUrl(t.branding.logoUrl))}" alt="${esc(agency)}">` : agency ? `<div class="agency">${esc(agency)}</div>` : '';
   const stamp = qs.stamp ? `<div class="stamp" aria-hidden="true">${esc(qs.stamp)}</div>` : '';
-  const head = `<header class="hd">${qs.motif === 'seigaiha' ? '<div class="motif"></div>' : ''}<div class="in">${logo}<div class="meta"><span>הצעת מחיר <bdi>${esc(number)}</bdi></span><span>${esc(longDate(issued))}</span></div>
+  const head = `<header class="hd">${qs.motif === 'seigaiha' || qs.motif === 'azulejo' ? '<div class="motif"></div>' : ''}<div class="in">${logo}<div class="meta"><span>הצעת מחיר <bdi>${esc(number)}</bdi></span><span>${esc(longDate(issued))}</span></div>
     ${stamp}<p class="eye">הצעת מחיר לטיול</p><h1>${esc(t.title || country || 'הטיול')}</h1>
     <p class="sub"><bdi>${short(first)}–${short(last)}.${last.getUTCFullYear()}</bdi> · ${N + 1} ימים · ${esc(cities)}</p>
     ${family ? `<p class="for">עבור <b>${esc(family)}</b>${paxText ? ' · ' + esc(paxText) : ''}</p>` : ''}</div></header>`;
@@ -218,7 +221,7 @@ export function buildQuoteHtml(t, pack) {
   t.stays.forEach((s) => {
     const a = start, z = addD(start, s.nights); start = z;
     const h = M.shownHotel(s) || s.hotels[0];
-    hrows += `<div class="ht" style="--c:${esc(color(s))}"><div class="hc"><b>${esc(name(s))}</b><span class="muted"><bdi>${short(a)}–${short(z)}</bdi> · ${s.nights} לילות</span></div>
+    hrows += `<div class="ht" style="--c:${esc(color(s))}"><div class="hc"><b>${esc(name(s))}</b><span class="muted"><bdi>${short(a)}–${short(z)}</bdi> · ${s.nights === 1 ? 'לילה אחד' : s.nights + ' לילות'}</span></div>
       <div class="hn">${h && h.name ? `<bdi>${esc(h.name)}</bdi>` : '<span class="muted">יפורט בהמשך</span>'}${h && h.area ? `<span class="muted"> · ${esc(h.area)}</span>` : ''}${h && h.why ? `<div class="why">${esc(h.why)}</div>` : ''}</div></div>`;
   });
   const hotels = `<section><h2>${tag('hotels')}מלונות</h2><div class="hts">${hrows}</div></section>`;
@@ -229,7 +232,7 @@ export function buildQuoteHtml(t, pack) {
     const st = t.stays.find((s) => s.dest === info.dest), st2 = info.dest2 ? t.stays.find((s) => s.dest === info.dest2) : null;
     const where = st2 ? name(st) + ' ← ' + name(st2) : name(st);
     const title = he(day.title).trim();
-    drows += `<li style="--c:${esc(color(st2 || st))}"><span class="dn">${n + 1}</span><span class="dd">${wd(dt)} ${short(dt)}</span><span class="dw">${esc(where)}</span><span class="dt">${esc(title)}</span></li>`;
+    drows += `<li style="--c:${esc(color(st2 || st))};--t:${esc(textColor(color(st2 || st)))}"><span class="dn">${n + 1}</span><span class="dd">${wd(dt)} ${short(dt)}</span><span class="dw">${esc(where)}</span><span class="dt">${esc(title)}</span></li>`;
   });
   const days = `<section><h2>${tag('days')}המסלול, יום אחר יום</h2><ol class="days">${drows}</ol></section>`;
 
@@ -253,7 +256,7 @@ body{margin:0;background:${paper};color:${ink};font:15px/1.6 'Heebo',system-ui,s
 h1,h2,h3{font-family:'Miriam Libre','Heebo',serif;margin:0}
 .muted{color:color-mix(in srgb,${ink} 58%,${paper})}.ltr{direction:ltr;unicode-bidi:isolate}bdi{unicode-bidi:isolate}
 .hd{position:relative;margin:0 -18px 18px;padding:0 18px;border-bottom:3px solid ${accent};background:${paper}}
-.hd .motif{height:58px;margin:0 -18px;background:${qs.motif === 'seigaiha' ? SEIGAIHA(accent) : accent};background-size:48px 24px;${qs.motif === 'seigaiha' ? '' : 'opacity:.9;'}}
+.hd .motif{height:58px;margin:0 -18px;background:${qs.motif === 'seigaiha' ? SEIGAIHA(accent) : qs.motif === 'azulejo' ? AZULEJO(accent) : accent};background-size:${qs.motif === 'azulejo' ? '36px 36px' : '48px 24px'};${qs.motif === 'seigaiha' ? '' : 'opacity:.9;'}}
 .hd .in{position:relative;padding:22px 0 22px}
 .logo{max-height:52px;max-width:180px;display:block;margin-bottom:12px}.agency{font-weight:700;margin-bottom:10px}
 .hd .meta{position:absolute;top:22px;inset-inline-end:0;text-align:end;display:flex;flex-direction:column;font-size:13px;color:color-mix(in srgb,${ink} 62%,${paper})}
@@ -277,7 +280,7 @@ h2::before{content:"";width:5px;height:22px;border-radius:3px;background:${accen
 .hc{display:flex;flex-direction:column}.why{font-size:14px;margin-top:4px;color:color-mix(in srgb,${ink} 70%,${paper})}
 .days{list-style:none;margin:0;padding:0;background:#fff;border:1px solid ${line};border-radius:12px;overflow:hidden}
 .days li{display:grid;grid-template-columns:34px 74px 130px minmax(0,1fr);gap:10px;align-items:baseline;padding:9px 14px;border-top:1px solid ${line}}
-.days li:first-child{border-top:0}.dn{font:700 15px/1 'Miriam Libre',serif;color:var(--c)}.dd{font-size:14px;color:color-mix(in srgb,${ink} 62%,${paper})}.dw{font-weight:600}
+.days li:first-child{border-top:0}.dn{font:700 15px/1 'Miriam Libre',serif;color:var(--t,var(--c))}.dd{font-size:14px;color:color-mix(in srgb,${ink} 62%,${paper})}.dw{font-weight:600}
 table{width:100%;border-collapse:collapse;background:#fff;border:1px solid ${line};border-radius:12px;overflow:hidden}
 th,td{padding:10px 14px;text-align:start;border-top:1px solid ${line};vertical-align:top}th{background:${tint};font-size:13px;border-top:0}
 td.c,th.c{text-align:center;width:70px}td.e,th.e{text-align:end;white-space:nowrap;width:120px}
