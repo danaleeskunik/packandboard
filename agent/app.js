@@ -1,8 +1,8 @@
 // Agent itinerary builder: the screens (PLAN.md tasks A3-A8). Plain JS, no build step.
 // State lives in S; every change to the trip goes through commit() (undo + autosave) or edit() (typing: autosave only).
-import * as M from './model.js?v=20261119r';
-import { createStore, takeSecret, forgetSecret, Conflict, NoAccess } from './store.js?v=20261119r';
-import { buildPdfHtml, buildQuoteHtml, loadPack } from './pdf.js?v=20261119r';
+import * as M from './model.js?v=20261119s';
+import { createStore, takeSecret, forgetSecret, Conflict, NoAccess } from './store.js?v=20261119s';
+import { buildPdfHtml, buildQuoteHtml, loadPack } from './pdf.js?v=20261119s';
 
 const S = {
   store: null, me: null, trips: [], filter: 'all', q: '', menuFor: null,

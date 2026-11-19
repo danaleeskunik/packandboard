@@ -1,7 +1,7 @@
 // The client PDF, made in the browser from the trip as it is now (PLAN.md A10). The same layout and rules as
 // scripts/agent_trip_to_pdf.py (Dana's publish step makes the final file there); here the agent sees it any time and can
 // print or "save as PDF". Rules: every agent text escaped, prices only when showPrices is on, no booking numbers (never in the trip file).
-import * as M from './model.js?v=20261119r';
+import * as M from './model.js?v=20261119s';
 
 const WD = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
 const MONTHS = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
@@ -295,5 +295,5 @@ tfoot td{font-weight:700;background:${tint}}tfoot .pp td{font-weight:600;backgro
   const fileName = `הצעת מחיר-${country || 'טיול'}-${family || ''}-${short(first)}.${first.getUTCFullYear()}`.replace(/[\\/:*?"<>|]+/g, ' ');
   return `<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(fileName)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&family=Miriam+Libre:wght@400;700&display=swap" rel="stylesheet"><style>${css}</style></head><body>
-<div class="page">${head}${big}${flights}${days}${hotels}${price}${incl}${terms}${foot}</div></body></html>`;
+<div class="page">${head}${flights}${days}${hotels}${incl}${price}${big}${terms}${foot}</div></body></html>`;
 }
