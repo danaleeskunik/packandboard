@@ -508,3 +508,72 @@ export function allStrings(v, out = []) {
   else if (v && typeof v === 'object') Object.values(v).forEach((x) => allStrings(x, out));
   return out;
 }
+
+// ---------- the price quote for the client (Dana 2026-11-19) ----------
+// trip.quote = { currency, lines: [{ id, label, note, qty, price, src }], includes: [..], excludes: [..], notes, validUntil, perPerson, number, issued }
+// Prices are the agent's totals for the client; a line total is qty x price. Nothing here is a booking number or a private field.
+export function travellersCount(trip) { return (trip.client && trip.client.travelers && trip.client.travelers.length) || 0; }
+
+export function quoteOf(trip) {
+  const q = trip.quote || {};
+  return {
+    currency: q.currency || 'ILS', lines: Array.isArray(q.lines) ? q.lines : [], includes: Array.isArray(q.includes) ? q.includes : [],
+    excludes: Array.isArray(q.excludes) ? q.excludes : [], notes: q.notes || '', validUntil: q.validUntil || '', perPerson: q.perPerson !== false,
+    number: q.number || '', issued: q.issued || '',
+  };
+}
+
+export function quoteNum(v) { const n = parseFloat(String(v == null ? '' : v).replace(/,/g, '')); return isNaN(n) ? null : n; }
+
+export function quoteTotals(trip) {
+  const q = quoteOf(trip);
+  let total = 0, priced = 0;
+  q.lines.forEach((l) => { const p = quoteNum(l.price), n = quoteNum(l.qty); if (p != null) { total += p * (n == null ? 1 : n); priced++; } });
+  const pax = travellersCount(trip);
+  return { total, priced, lines: q.lines.length, pax, perPerson: pax ? total / pax : null };
+}
+
+export function setQuote(trip, patch) { const t = clone(trip); t.quote = Object.assign(quoteOf(trip), patch); return t; }
+
+export function setQuoteLine(trip, id, patch) {
+  const q = quoteOf(trip);
+  return setQuote(trip, { lines: q.lines.map((l) => (l.id === id ? Object.assign({}, l, patch) : l)) });
+}
+
+export function addQuoteLine(trip, line = {}) {
+  const q = quoteOf(trip);
+  return setQuote(trip, { lines: q.lines.concat([Object.assign({ id: uid('q'), label: '', note: '', qty: 1, price: '' }, line)]) });
+}
+
+export function removeQuoteLine(trip, id) { const q = quoteOf(trip); return setQuote(trip, { lines: q.lines.filter((l) => l.id !== id) }); }
+
+// fills the lines the trip already knows: the flights (one per traveller), each chosen hotel (one per night), and priced
+// activities and transfers. A line that is already there (same src) is not added again. Prices in another currency are left
+// empty with a note, so the agent converts them (no exchange rate is guessed).
+export function quoteFill(trip) {
+  const q = quoteOf(trip), have = new Set(q.lines.map((l) => l.src).filter(Boolean)), add = [], cur = q.currency;
+  const pax = travellersCount(trip) || 1;
+  const fl = trip.flights || {};
+  if (!have.has('flights')) {
+    const route = [fl.out && fl.out.from, fl.out && fl.out.to].filter(Boolean).join('–');
+    add.push({ label: 'טיסות הלוך וחזור' + (route ? ' ' + route : ''), note: 'כולל מזוודה ומיסים', qty: pax, price: '', src: 'flights' });
+  }
+  trip.stays.forEach((s) => {
+    const h = shownHotel(s) || s.hotels[0];
+    const key = 'stay:' + s.id; if (have.has(key)) return;
+    const name = (s.label && s.label.he) || s.dest;
+    const pr = h && h.pricePerNight != null && h.pricePerNight !== '' ? quoteNum(h.pricePerNight) : null;
+    const same = !h || !h.currency || h.currency === cur;
+    add.push({ label: (h && h.name ? h.name + ' · ' : 'מלון · ') + name, note: s.nights + ' לילות' + (pr != null && !same ? ' (במקור ' + pr + ' ' + h.currency + ' ללילה)' : ''),
+      qty: s.nights, price: pr != null && same ? pr : '', src: key });
+  });
+  trip.days.forEach((d) => d.items.forEach((it) => {
+    if (it.price == null || it.price === '' || it.kind === 'tip') return;
+    const key = 'item:' + it.id; if (have.has(key)) return;
+    const same = !it.currency || it.currency === cur;
+    const title = (it.title && it.title.he) || (it.transfer && [it.transfer.from, it.transfer.to].filter(Boolean).join(' ← ')) || 'פעילות';
+    add.push({ label: title, note: same ? '' : 'במקור ' + it.price + ' ' + it.currency, qty: pax, price: same ? it.price : '', src: key });
+  }));
+  const t = setQuote(trip, { lines: q.lines.concat(add.map((l) => Object.assign({ id: uid('q') }, l))) });
+  return { trip: t, added: add.length };
+}

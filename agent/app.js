@@ -1,8 +1,8 @@
 // Agent itinerary builder: the screens (PLAN.md tasks A3-A8). Plain JS, no build step.
 // State lives in S; every change to the trip goes through commit() (undo + autosave) or edit() (typing: autosave only).
-import * as M from './model.js?v=20261115h';
-import { createStore, takeSecret, forgetSecret, Conflict, NoAccess } from './store.js?v=20261115h';
-import { buildPdfHtml, loadPack } from './pdf.js?v=20261115h';
+import * as M from './model.js?v=20261119q';
+import { createStore, takeSecret, forgetSecret, Conflict, NoAccess } from './store.js?v=20261119q';
+import { buildPdfHtml, buildQuoteHtml, loadPack } from './pdf.js?v=20261119q';
 
 const S = {
   store: null, me: null, trips: [], filter: 'all', q: '', menuFor: null,
@@ -262,13 +262,14 @@ function topTrip() {
     ${step('hotels', '02', 'מלונות', st.hotels, c.stays ? c.staysWithHotel + ' מתוך ' + c.stays : label[st.hotels])}
     ${step('days', '03', 'ימים', st.days, c.days ? c.filledDays + ' מתוך ' + c.days : label[st.days])}
     ${step('transfers', '04', 'הגעה', st.transfers, c.pendingTransfers ? c.pendingTransfers + ' לאשר' : label[st.transfers])}
-    <li class="later"><button type="button" disabled aria-describedby="later-5"><span class="state" aria-hidden="true"></span><span><span class="code">05</span> <span class="nm">אישור לקוח</span><span class="st" id="later-5">בקרוב</span></span></button></li>
-    ${step('publish', '06', 'פרסום', S.row.status === 'published' ? 'done' : S.row.status === 'submitted' ? 'work' : 'empty', (STATUS[S.row.status] || STATUS.draft)[0])}
+    ${(() => { const qt = M.quoteTotals(d); const qst = !qt.lines ? 'empty' : qt.priced >= qt.lines ? 'done' : 'work'; return step('quote', '05', 'הצעת מחיר', qst, qt.priced ? money(qt.total, M.quoteOf(d).currency) : label[qst]); })()}
+    <li class="later"><button type="button" disabled aria-describedby="later-5"><span class="state" aria-hidden="true"></span><span><span class="code">06</span> <span class="nm">אישור לקוח</span><span class="st" id="later-5">בקרוב</span></span></button></li>
+    ${step('publish', '07', 'פרסום', S.row.status === 'published' ? 'done' : S.row.status === 'submitted' ? 'work' : 'empty', (STATUS[S.row.status] || STATUS.draft)[0])}
   </ol></div></nav>`;
 }
 
 function viewTrip(step) {
-  const body = step === 'hotels' ? viewHotels() : step === 'days' ? viewDays() : step === 'transfers' ? viewTransfers() : step === 'publish' ? viewPublish() : viewStructure();
+  const body = step === 'quote' ? viewQuote() : step === 'hotels' ? viewHotels() : step === 'days' ? viewDays() : step === 'transfers' ? viewTransfers() : step === 'publish' ? viewPublish() : viewStructure();
   return topTrip() + `<main><div class="wrap">${body}</div></main>`;
 }
 
@@ -346,6 +347,65 @@ function viewHotels() {
     <p class="sub">מלון אחד לכל יעד. רק מלון "נבחר" או "הוזמן" מופיע אצל הלקוח.</p>
     <div class="card" style="padding:4px 18px;margin-bottom:16px"><div class="toggle"><button class="sw" type="button" role="switch" aria-checked="${!!t.showPrices}" aria-labelledby="sp-l" data-act="prices"></button><span id="sp-l"><b>להציג מחירים ללקוח</b><br><span class="muted" style="font-size:14px">${t.showPrices ? 'דלוק: המחירים יופיעו באפליקציה וב-PDF.' : 'כבוי: המחירים נשמרים אצלך, ולא נכנסים לאפליקציה ול-PDF.'}</span></span></div></div>
     <div class="hotels">${cards}</div>${nextStep('days', 'לבניית הימים')}`;
+}
+
+// ---------- step 5: the price quote for the client ----------
+function money(n, cur) { return Math.round(n).toLocaleString('he-IL') + ' ' + ({ ILS: '₪', USD: '$', EUR: '€', JPY: '¥', GBP: '£', THB: '฿' }[cur] || cur); }
+function viewQuote() {
+  const t = S.t, q = M.quoteOf(t), tot = M.quoteTotals(t);
+  if (!t.stays.length) return `<p class="eyebrow">שלב 05</p><h1 class="display">הצעת מחיר</h1><div class="empty-state">קודם מוסיפים יעדים בשלב המבנה. ההצעה נבנית מהם.<br><a class="btn" href="#/t/${S.row.id}/structure">למבנה</a></div>`;
+  const row = (l, i) => `<div class="qline" role="group" aria-label="שורה ${i + 1}">
+      <div class="field qlab"><label for="ql-${l.id}">מה</label><input id="ql-${l.id}" class="inp" value="${esc(l.label || '')}" placeholder="למשל טיסות הלוך וחזור" data-f="quote-line" data-k="label" data-id="${l.id}"></div>
+      <div class="field qnote"><label for="qn-${l.id}">פירוט (רשות)</label><input id="qn-${l.id}" class="inp" value="${esc(l.note || '')}" placeholder="למשל 3 לילות, ארוחת בוקר" data-f="quote-line" data-k="note" data-id="${l.id}"></div>
+      <div class="field qqty"><label for="qq-${l.id}">כמות</label><input id="qq-${l.id}" class="inp ltr" inputmode="decimal" value="${esc(l.qty == null ? '' : l.qty)}" data-f="quote-line" data-k="qty" data-id="${l.id}"></div>
+      <div class="field qpr"><label for="qp-${l.id}">מחיר ליחידה</label><input id="qp-${l.id}" class="inp ltr" inputmode="decimal" value="${esc(l.price == null ? '' : l.price)}" placeholder="0" data-f="quote-line" data-k="price" data-id="${l.id}"></div>
+      <div class="qsum" id="qs-${l.id}" aria-live="polite">${lineSum(l, q.currency)}</div>
+      <button class="icon-btn qdel" type="button" data-act="q-del" data-id="${l.id}" aria-label="מחיקת השורה ${esc(l.label || String(i + 1))}">${icon('M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3')}</button>
+    </div>`;
+  return `<p class="eyebrow">שלב 05</p><h1 class="display">הצעת מחיר</h1>
+    <p class="sub">הצעת המחיר שהלקוח מקבל, בעיצוב של היעד: הטיסות, הימים, המלונות והמחיר. מתחילים במילוי מהטיול, ומשלימים מחירים.</p>
+    <div class="card qset">
+      <div class="field"><label for="q-cur">מטבע</label><select id="q-cur" class="inp" data-f="quote" data-k="currency">${CURRENCIES.map((c) => `<option${q.currency === c ? ' selected' : ''}>${c}</option>`).join('')}</select></div>
+      <div class="field"><label for="q-valid">בתוקף עד</label><input id="q-valid" class="inp ltr" type="date" value="${esc(q.validUntil)}" data-f="quote" data-k="validUntil"></div>
+      <div class="toggle"><button class="sw" type="button" role="switch" aria-checked="${q.perPerson}" aria-labelledby="qpp-l" data-act="q-pp"></button><span id="qpp-l"><b>להציג מחיר לאדם</b><br><span class="muted" style="font-size:14px">${tot.pax ? tot.pax + ' נוסעים בטיול' : 'אין נוסעים בטיול'}</span></span></div>
+    </div>
+    <div class="card qlines">
+      <div class="qh"><h2>פירוט המחיר</h2><div class="grow"></div><button class="btn ghost sm" type="button" data-act="q-fill">${icon('M12 5v14M5 12h14')}מילוי מהטיול</button></div>
+      ${q.lines.length ? q.lines.map(row).join('') : '<p class="muted" style="margin:6px 0 12px">עוד אין שורות. "מילוי מהטיול" מוסיף את הטיסות, המלונות והפעילויות שיש להן מחיר.</p>'}
+      <div class="qfoot"><button class="btn ghost sm" type="button" data-act="q-add">${icon('M12 5v14M5 12h14')}שורה חדשה</button><div class="grow"></div>
+        <div class="qtot" id="q-tot" aria-live="polite">${totText(t)}</div></div>
+    </div>
+    <div class="g2" style="margin-top:16px">
+      <div class="field"><label for="q-inc">המחיר כולל (שורה לכל דבר)</label><textarea id="q-inc" class="inp" data-f="quote" data-k="includes" placeholder="טיסות ומיסים&#10;מלונות עם ארוחת בוקר&#10;JR Pass ל-7 ימים">${esc(q.includes.join('\n'))}</textarea></div>
+      <div class="field"><label for="q-exc">המחיר לא כולל (שורה לכל דבר)</label><textarea id="q-exc" class="inp" data-f="quote" data-k="excludes" placeholder="ביטוח נסיעות&#10;ארוחות צהריים וערב">${esc(q.excludes.join('\n'))}</textarea></div>
+    </div>
+    <div class="field" style="margin-top:14px"><label for="q-notes">תנאים והערות (רשות)</label><textarea id="q-notes" class="inp" data-f="quote" data-k="notes" placeholder="למשל מקדמה של 30% באישור, ויתרה עד 30 יום לפני היציאה">${esc(q.notes)}</textarea></div>
+    <div class="next-step"><button class="btn" type="button" data-act="q-preview">${icon('M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6')}תצוגת הצעת המחיר</button></div>`;
+}
+function lineSum(l, cur) { const p = M.quoteNum(l.price), n = M.quoteNum(l.qty); return p == null ? '' : money(p * (n == null ? 1 : n), cur); }
+function totText(t) {
+  const q = M.quoteOf(t), tot = M.quoteTotals(t);
+  if (!tot.priced) return '<span class="muted">סך הכל יופיע כשיהיו מחירים</span>';
+  return `<span>סך הכל <b>${esc(money(tot.total, q.currency))}</b></span>${q.perPerson && tot.pax > 1 ? `<span class="muted">${esc(money(tot.perPerson, q.currency))} לאדם</span>` : ''}`;
+}
+function paintQuote() {
+  if (route().step !== 'quote') return;
+  const q = M.quoteOf(S.t); q.lines.forEach((l) => { const el = document.getElementById('qs-' + l.id); if (el) el.textContent = lineSum(l, q.currency); });
+  const tt = document.getElementById('q-tot'); if (tt) tt.innerHTML = totText(S.t);
+}
+function showDoc(html, title, back) {
+  const box = document.createElement('div');
+  box.className = 'pdf-view'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true'); box.setAttribute('aria-label', title);
+  box.innerHTML = `<div class="pdf-bar"><b>${esc(title)}</b><span class="muted-on-dark">לפי מה שמולא עד עכשיו</span><div class="grow"></div>
+    <button class="btn sm" type="button" data-pdf="print">הדפסה או שמירה כ-PDF</button><button class="btn sm ghost-dark" type="button" data-pdf="close">סגירה</button></div><iframe title="${esc(title)}"></iframe>`;
+  document.body.appendChild(box);
+  $('#app').inert = true;
+  const fr = box.querySelector('iframe'); fr.srcdoc = html;
+  const close = () => { box.remove(); $('#app').inert = false; const b = $(back); if (b) b.focus(); document.removeEventListener('keydown', onKey, true); };
+  const onKey = (e) => { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
+  document.addEventListener('keydown', onKey, true);
+  box.addEventListener('click', (e) => { const b = e.target.closest('[data-pdf]'); if (!b) return; if (b.dataset.pdf === 'close') close(); else fr.contentWindow.print(); });
+  box.querySelector('[data-pdf="print"]').focus();
 }
 
 function nextStep(step, text, inline) {
@@ -796,6 +856,16 @@ const ACT = {
     box.addEventListener('click', (e) => { const b = e.target.closest('[data-pdf]'); if (!b) return; if (b.dataset.pdf === 'close') close(); else fr.contentWindow.print(); });
     box.querySelector('[data-pdf="print"]').focus();
   },
+  'q-add': () => commit(M.addQuoteLine(S.t)),
+  'q-del': (el) => commit(M.removeQuoteLine(S.t, el.dataset.id), 'השורה נמחקה'),
+  'q-pp': () => commit(M.setQuote(S.t, { perPerson: !M.quoteOf(S.t).perPerson })),
+  'q-fill': () => { const r = M.quoteFill(S.t); if (!r.added) { toast('כל מה שיש בטיול כבר בהצעה.'); return; } commit(r.trip, 'נוספו ' + r.added + ' שורות מהטיול'); },
+  'q-preview': async () => {
+    const pack = await loadPack(S.t.country);
+    let t = S.t; if (!M.quoteOf(t).issued) { t = M.setQuote(t, { issued: new Date().toISOString().slice(0, 10) }); edit(t); }
+    const html = buildQuoteHtml(t, pack); if (!html) { toast('קודם מוסיפים יעדים ולילות.'); return; }
+    showDoc(html, 'הצעת מחיר', '[data-act="q-preview"]');
+  },
   side: (el) => { S.side = el.dataset.v; try { localStorage.setItem('packandboard.agent.side', S.side); } catch (e) {} render(); },
   'lib-new': () => { S.dlg = { type: 'lib-new' }; render(); },
   'lib-all': (el) => { S.libAll = el.dataset.v === '1'; render(); },
@@ -852,6 +922,8 @@ document.addEventListener('input', (e) => {
   if (f === 'hotel') { const s = S.t.stays.find((x) => x.id === el.dataset.id); return edit(M.setHotel(S.t, s.id, Object.assign({}, s.hotels[0] || { state: 'proposed' }, { [el.dataset.k]: v }))); }
   if (f === 'hotel-ref') { const id = el.dataset.id; return editPrivate((p) => { p.bookings = p.bookings || {}; p.bookings[id] = { ref: v }; }); }
   if (f === 'item') return itemInput(el);
+  if (f === 'quote-line') { const k = el.dataset.k; edit(M.setQuoteLine(S.t, el.dataset.id, { [k]: v })); return paintQuote(); }
+  if (f === 'quote') { const k = el.dataset.k; if (k === 'currency' || k === 'validUntil') return; edit(M.setQuote(S.t, { [k]: k === 'includes' || k === 'excludes' ? v.split('\n') : v })); return; }
 });
 function itemInput(el) {
   {
@@ -892,6 +964,7 @@ document.addEventListener('change', (e) => {
     if (k === 'tr.mode' || k === 'currency') { itemInput(el); render(); }
   }
   if (f === 'hotel' && el.tagName === 'SELECT') render();
+  if (f === 'quote' && (el.dataset.k === 'currency' || el.dataset.k === 'validUntil')) { commit(M.setQuote(S.t, { [el.dataset.k]: el.value })); }
 });
 
 // forms (dialogs and the add-destination row)

@@ -38,5 +38,22 @@
    "חסימת כרטיס אשראי",
    "לרשום את מספר מוקד החסימה מגב הכרטיס לפני היציאה."
   ]
- ]
+ ],
+ "quote": {
+  "paper": "#F8F3EA",
+  "ink": "#1E1D1B",
+  "accent": "#C02436",
+  "line": "#E6DCCD",
+  "tint": "#F7E4E4",
+  "motif": "seigaiha",
+  "stamp": "旅",
+  "labels": {
+   "flights": "航空",
+   "days": "旅程",
+   "hotels": "宿",
+   "price": "料金",
+   "terms": "条件"
+  },
+  "greeting": "נשמח לצאת איתכם לדרך"
+ }
 }
