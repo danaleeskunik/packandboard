@@ -1,7 +1,7 @@
 // The client PDF, made in the browser from the trip as it is now (PLAN.md A10). The same layout and rules as
 // scripts/agent_trip_to_pdf.py (Dana's publish step makes the final file there); here the agent sees it any time and can
 // print or "save as PDF". Rules: every agent text escaped, prices only when showPrices is on, no booking numbers (never in the trip file).
-import * as M from './model.js?v=20261119q';
+import * as M from './model.js?v=20261119r';
 
 const WD = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
 const MONTHS = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
@@ -200,7 +200,7 @@ export function buildQuoteHtml(t, pack) {
 
   const logo = t.branding && M.safeUrl(t.branding.logoUrl) ? `<img class="logo" src="${esc(M.safeUrl(t.branding.logoUrl))}" alt="${esc(agency)}">` : agency ? `<div class="agency">${esc(agency)}</div>` : '';
   const stamp = qs.stamp ? `<div class="stamp" aria-hidden="true">${esc(qs.stamp)}</div>` : '';
-  const head = `<header class="hd"><div class="motif"></div><div class="in">${logo}<div class="meta"><span>הצעת מחיר <bdi>${esc(number)}</bdi></span><span>${esc(longDate(issued))}</span></div>
+  const head = `<header class="hd">${qs.motif === 'seigaiha' ? '<div class="motif"></div>' : ''}<div class="in">${logo}<div class="meta"><span>הצעת מחיר <bdi>${esc(number)}</bdi></span><span>${esc(longDate(issued))}</span></div>
     ${stamp}<p class="eye">הצעת מחיר לטיול</p><h1>${esc(t.title || country || 'הטיול')}</h1>
     <p class="sub"><bdi>${short(first)}–${short(last)}.${last.getUTCFullYear()}</bdi> · ${N + 1} ימים · ${esc(cities)}</p>
     ${family ? `<p class="for">עבור <b>${esc(family)}</b>${paxText ? ' · ' + esc(paxText) : ''}</p>` : ''}</div></header>`;
