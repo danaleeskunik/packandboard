@@ -3268,5 +3268,14 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
   if(typeof applyLanguage==='function'){ var al=applyLanguage; window.applyLanguage=function(){ var x=al.apply(this,arguments); renderDocs(); paint(); return x; }; }
 })();
 </script>
+<script>
+(function(){
+  var t=(window.__PAB&&window.__PAB.trip)||{};
+  [['out','flOutNum','flOutDatetime'],['back','flBackNum','flBackDatetime']].forEach(function(x){
+    if(t[x[1]] || t[x[2]]) return;
+    var el=document.getElementById('fl-'+x[0]+'-datetime'), box=el&&el.parentNode&&el.parentNode.parentNode; if(box) box.style.display='none';
+  });
+})();
+</script>
 </body>
 </html>

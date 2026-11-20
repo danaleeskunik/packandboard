@@ -3361,5 +3361,14 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
   document.addEventListener('keydown',function(e){ if(e.key==='Escape') a2hsClose(); });
 })();
 </script><!-- /pab-a2hs -->
+<script>
+(function(){
+  var t=(window.__PAB&&window.__PAB.trip)||{};
+  [['out','flOutNum','flOutDatetime'],['back','flBackNum','flBackDatetime']].forEach(function(x){
+    if(t[x[1]] || t[x[2]]) return;
+    var el=document.getElementById('fl-'+x[0]+'-datetime'), box=el&&el.parentNode&&el.parentNode.parentNode; if(box) box.style.display='none';
+  });
+})();
+</script>
 </body>
 </html>
