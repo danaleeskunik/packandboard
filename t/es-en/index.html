@@ -3089,6 +3089,25 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
 </script>
 <script>
 (function(){
+  var t=(window.__PAB&&window.__PAB.trip)||{};
+  [['out','flOutNum','flOutDatetime'],['back','flBackNum','flBackDatetime']].forEach(function(x){
+    if(t[x[1]] || t[x[2]]) return;
+    var el=document.getElementById('fl-'+x[0]+'-datetime'), box=el&&el.parentNode&&el.parentNode.parentNode; if(box) box.style.display='none';
+  });
+})();
+</script>
+<script>
+(function(){
+  function even(){ var nav=document.querySelector('.home-nav'); if(!nav) return;
+    var tiles=[].slice.call(nav.querySelectorAll('.home-tile')); tiles.forEach(function(b){ b.classList.remove('pab-wide'); });
+    var small=tiles.filter(function(b){ var c=getComputedStyle(b); return c.display!=='none' && c.gridColumn.replace(/\s/g,'')!=='1/-1'; });
+    if(small.length%2) small[small.length-1].classList.add('pab-wide'); }
+  var st=document.createElement('style'); st.textContent='.home-nav .home-tile.pab-wide{grid-column:1 / -1}'; document.head.appendChild(st);
+  even(); setTimeout(even,300);
+})();
+</script>
+<script>
+(function(){
   var P=window.__PAB||{}, docs=P.docs||[]; if(!docs.length || !document.getElementById('doc-list')) return;
   var L=function(){ var l=(typeof CURRENT_LANG!=='undefined'&&CURRENT_LANG)||document.documentElement.lang||'he'; return /^en/.test(l)?'en':(/^es/.test(l)?'es':'he'); };
   var T={desc:{he:'המסמכים לטיול: כרטיסים, שוברים וויזות. לחיצה על מסמך פותחת אותו.',en:'The documents for your trip: tickets, vouchers and visas. Tap one to open it.',es:'Los documentos del viaje: billetes, bonos y visados. Toca uno para abrirlo.'},
@@ -3361,14 +3380,5 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
   document.addEventListener('keydown',function(e){ if(e.key==='Escape') a2hsClose(); });
 })();
 </script><!-- /pab-a2hs -->
-<script>
-(function(){
-  var t=(window.__PAB&&window.__PAB.trip)||{};
-  [['out','flOutNum','flOutDatetime'],['back','flBackNum','flBackDatetime']].forEach(function(x){
-    if(t[x[1]] || t[x[2]]) return;
-    var el=document.getElementById('fl-'+x[0]+'-datetime'), box=el&&el.parentNode&&el.parentNode.parentNode; if(box) box.style.display='none';
-  });
-})();
-</script>
 </body>
 </html>

@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-<!-- pab-prepaint --><style>html:not(.pab-ready) body{visibility:hidden}html:not(.pab-ready){background:#F6F0E8}</style><script>(function(){function go(){requestAnimationFrame(function(){document.documentElement.classList.add("pab-ready")})}if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",go);else go();setTimeout(function(){document.documentElement.classList.add("pab-ready")},2500)})();</script><!-- /pab-prepaint -->
-
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <script>
 /* Pack & Board: turns a STRUCTURED trip (from the pab-api worker) into what the app page needs: its theme, its text blocks (the same markup the Python builders make, ported
@@ -12,13 +10,27 @@
   'use strict';
   var HE_WD = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
   var HE_MONTH = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
+  var EN_WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], ES_WD = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+  var EN_MON3 = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], ES_MON3 = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  var ES_MONTH = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  /* the words the renderer writes itself, per language (the rest of the app's words are the app's own) */
+  var L = {
+    he: { day: 'יום', tip: 'טיפ', forecast: 'תחזית ל', flights: 'טיסות', out: 'הלוך', back: 'חזור', landing: 'נחיתה: ', general: 'כללי', footer: 'מדריך טיול דיגיטלי אישי', days: 'ימים', items: 'פריטים', from: '', labelW: 62 },
+    en: { day: 'Day', tip: 'Good to know', forecast: 'Forecast for ', flights: 'Flights', out: 'Outbound', back: 'Return', landing: 'Landing: ', general: 'General', footer: 'Personal digital trip guide', days: 'days', items: 'dishes', from: 'from ', labelW: 82 },
+    es: { day: 'Día', tip: 'Bueno saber', forecast: 'Previsión para ', flights: 'Vuelos', out: 'Ida', back: 'Vuelta', landing: 'Llegada: ', general: 'General', footer: 'Guía de viaje digital', days: 'días', items: 'platos', from: 'desde las ', labelW: 82 } };
+  var LANG = 'he';
+  function W() { return L[LANG] || L.he; }
   var EN_MONTH = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function bold(s) { return esc(s).replace(/\*\*(.+?)\*\*/g, function (_, t) { return '<bdi><b style="font-weight:700;color:var(--navy-800)">' + t + '</b></bdi>'; }); }
   function mapsUrl(q) { return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q); }
   function parts(d) { var p = d.split('-'); return { y: +p[0], m: +p[1], d: +p[2] }; }
-  function weekday(d) { var p = parts(d); return HE_WD[new Date(Date.UTC(p.y, p.m - 1, p.d)).getUTCDay()]; }
+  function dow(d) { var p = parts(d); return new Date(Date.UTC(p.y, p.m - 1, p.d)).getUTCDay(); }
+  function weekday(d) { return HE_WD[dow(d)]; }
+  /* the date on a day card / in the program, in the trip's language */
+  function dayLabel(d) { var p = parts(d); if (LANG === 'es') return ES_WD[dow(d)] + ' ' + p.d + ' ' + ES_MON3[p.m - 1]; if (LANG === 'en') return EN_WD[dow(d)] + ', ' + EN_MON3[p.m - 1] + ' ' + p.d; return weekday(d).replace('׳', "'") + ' ' + p.d + '.' + p.m; }
+  function timeLabel(t) { if (!t) return ''; if (LANG === 'en') { var h = +t.slice(0, 2), mi = t.slice(3); return (h % 12 || 12) + ':' + mi + (h < 12 ? ' AM' : ' PM'); } return t; }
   function hhmm(iso) { var m = /T(\d{2}:\d{2})/.exec(iso || ''); return m ? m[1] : ''; }
 
   /* ---- colours ---- */
@@ -57,39 +69,49 @@
   function nice(x) { var p = Math.pow(10, Math.floor(Math.log10(x))), n = x / p; return Math.max(1, Math.round((n < 1.5 ? 1 : n < 3.5 ? 2 : n < 7.5 ? 5 : 10) * p)); }
   function currency(code) {
     var c = CUR[code] || CUR.USD, code2 = CUR[code] ? code : 'USD', u = 1 / c[1];
-    return { code: code2, symbol: c[0], presets: [nice(u), nice(u * 5), nice(u * 20), nice(u * 100)], defaultRateUSD: c[1], defaultRateILS: +(c[1] * 3.7).toFixed(6), label: { he: code2, en: code2 } };
+    return { code: code2, symbol: c[0], presets: [nice(u), nice(u * 5), nice(u * 20), nice(u * 100)], defaultRateUSD: c[1], defaultRateILS: +(c[1] * 3.7).toFixed(6), label: { he: code2, en: code2, es: code2 } };
   }
 
   /* ---- markup (ported from geo_lib.py) ---- */
-  function row(label, text) { return '<div data-dir-flip style="display:flex;gap:11px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--border-hair)"><div style="flex:0 0 62px;font:var(--fw-bold) var(--text-13-5)/1.6 var(--font-ui);color:var(--ink-6)">' + esc(label) + '</div><div style="flex:1;font:var(--fw-medium) var(--text-15-5)/var(--lh-body) var(--font-ui);color:var(--ink-2);text-wrap:pretty">' + bold(text) + '</div></div>'; }
-  function tip(text) { return '<div style="padding-top:10px;border-top:1px solid var(--border-hair)"><div style="display:flex;gap:11px;padding:13px 15px;border-radius:10px;background:var(--orange-50);border-inline-start:4px solid var(--orange-500)"><div style="font:var(--fw-heavy) var(--text-14)/1.5 var(--font-ui);color:var(--orange-600);white-space:nowrap">טיפ</div><div style="font:var(--fw-semibold) var(--text-15-5)/var(--lh-snug) var(--font-ui);color:var(--orange-700)">' + bold(text) + '</div></div></div>'; }
-  function chips(places) { if (!places.length) return ''; return '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px">' + places.map(function (p) { return '<a href="' + esc(mapsUrl(p.query || p.name)) + '" target="_blank" rel="noopener" style="min-height:36px;padding:8px 14px;background:var(--surface-muted);color:var(--blue-600);border-radius:var(--radius-pill);font:var(--fw-bold) var(--text-13)/1.2 var(--font-ui);text-decoration:none">' + esc(p.name) + '</a>'; }).join('') + '</div>'; }
+  function row(label, text) { return '<div data-dir-flip style="display:flex;gap:11px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--border-hair)"><div style="flex:0 0 ' + W().labelW + 'px;font:var(--fw-bold) var(--text-13-5)/1.6 var(--font-ui);color:var(--ink-6)">' + esc(label) + '</div><div style="flex:1;font:var(--fw-medium) var(--text-15-5)/var(--lh-body) var(--font-ui);color:var(--ink-2);text-wrap:pretty">' + bold(text) + '</div></div>'; }
+  function tip(text) { return '<div data-dir-flip style="padding-top:10px;border-top:1px solid var(--border-hair)"><div style="display:flex;gap:11px;padding:13px 15px;border-radius:10px;background:var(--orange-50);border-inline-start:4px solid var(--orange-500)"><div style="font:var(--fw-heavy) var(--text-14)/1.5 var(--font-ui);color:var(--orange-600);white-space:nowrap">' + esc(W().tip) + '</div><div style="font:var(--fw-semibold) var(--text-15-5)/var(--lh-snug) var(--font-ui);color:var(--orange-700)">' + bold(text) + '</div></div></div>'; }
+  function chips(places) { if (!places.length) return ''; return '<div data-dir-flip style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px">' + places.map(function (p) { return '<a href="' + esc(mapsUrl(p.query || p.name)) + '" target="_blank" rel="noopener" style="min-height:36px;padding:8px 14px;background:var(--surface-muted);color:var(--blue-600);border-radius:var(--radius-pill);font:var(--fw-bold) var(--text-13)/1.2 var(--font-ui);text-decoration:none">' + esc(p.name) + '</a>'; }).join('') + '</div>'; }
   function daycard(n, color, d) {
-    var p = parts(d.date), date = weekday(d.date).replace('׳', "'") + ' ' + p.d + '.' + p.m;
-    var h = '<div data-daycard="' + n + '" style="background:var(--surface-card);border:1px solid var(--border-card);border-inline-start:5px solid ' + color + ';border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);padding:18px 22px;margin-bottom:16px;scroll-margin-top:16px;position:relative;z-index:0;overflow:hidden"><span class="day-watermark" aria-hidden="true">' + ('0' + n).slice(-2) + '</span>';
-    h += '<div data-dir-flip style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:8px"><h3 style="margin:0;font:var(--type-card-title);color:var(--ink-1)">יום ' + n + ' · ' + esc(d.title) + '</h3><span style="background:var(--blue-100);color:var(--blue-600);border-radius:var(--radius-pill);padding:5px 12px;font:var(--fw-heavy) var(--text-13)/1.2 var(--font-num);white-space:nowrap">' + date + '</span></div>';
+    var date = dayLabel(d.date) + (d.km ? ' · ' + d.km + ' km' : '');
+    var h = '<div data-daycard="' + n + '" data-dir-flip style="background:var(--surface-card);border:1px solid var(--border-card);border-inline-start:5px solid ' + color + ';border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);padding:18px 22px;margin-bottom:16px;scroll-margin-top:16px;position:relative;z-index:0;overflow:hidden"><span class="day-watermark" aria-hidden="true">' + ('0' + n).slice(-2) + '</span>';
+    h += '<div data-dir-flip style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:8px"><h3 style="margin:0;font:var(--type-card-title);color:var(--ink-1)">' + W().day + ' ' + n + ' · ' + esc(d.title) + '</h3><span style="background:var(--blue-100);color:var(--blue-600);border-radius:var(--radius-pill);padding:5px 12px;font:var(--fw-heavy) var(--text-13)/1.2 var(--font-num);white-space:nowrap">' + date + '</span></div>';
     d.rows.forEach(function (r) { h += row(r.label, r.text); });
     if (d.tip) h += tip(d.tip);
     return h + chips(d.places || []) + '</div>';
   }
   function pill(n, d, c) { var p = parts(d.date), w = weekday(d.date); return '<button data-pill="' + n + '" onclick="selectDay(this)" style="flex:0 0 58px;height:76px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border:none;border-radius:16px;background:var(--surface-muted);cursor:pointer;font-family:var(--font-ui)"><span data-i18n-wd="' + w + '" style="font:var(--fw-bold) var(--text-11)/1 var(--font-ui);color:var(--ink-7)">' + w + '</span><span style="font:var(--fw-black) var(--text-19)/1 var(--font-num);color:var(--ink-1)">' + p.d + '</span><span style="width:6px;height:6px;border-radius:50%;background:' + c + '"></span></button>'; }
   function legendItem(c, t) { return '<span style="display:flex;align-items:center;gap:6px;font:var(--type-meta);color:var(--ink-6)"><span style="width:9px;height:9px;border-radius:50%;background:' + c + '"></span><span>' + esc(t) + '</span></span>'; }
-  function bcardRaw(title, bodyHtml) { return '<div style="background:var(--surface-card);border:1px solid var(--border-card);border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);padding:18px 20px"><h3 style="margin:0 0 8px;font:var(--type-card-title);color:var(--navy-800);text-align:start">' + esc(title) + '</h3><p style="margin:0;font:var(--type-body);color:var(--ink-4)">' + bodyHtml + '</p></div>'; }
+  function bcardRaw(title, bodyHtml) { return '<div data-dir-flip style="background:var(--surface-card);border:1px solid var(--border-card);border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);padding:18px 20px"><h3 style="margin:0 0 8px;font:var(--type-card-title);color:var(--navy-800);text-align:start">' + esc(title) + '</h3><p style="margin:0;font:var(--type-body);color:var(--ink-4)">' + bodyHtml + '</p></div>'; }
   function bcard(title, body) { return bcardRaw(title, bold(body)); }
-  function packGroup(title, items, i) { var h = '<div><div style="font:var(--fw-heavy) var(--text-13-5)/1.2 var(--font-ui);letter-spacing:var(--track-eyebrow);color:var(--blue-600);padding-bottom:10px;border-bottom:1px solid var(--border-rule)">' + esc(title) + '</div>'; items.forEach(function (t, k) { h += '<label style="display:flex;align-items:center;gap:11px;min-height:44px;padding:6px 0;cursor:pointer"><input type="checkbox" data-pack="api_p' + i + '_' + (k + 1) + '" onchange="savePack()"><span style="font:var(--fw-semibold) var(--text-16)/1.5 var(--font-ui);color:var(--ink-2)">' + esc(t) + '</span></label>'; }); return h + '</div>'; }
-  function itemBlock(t, p) { return '<div style="padding:16px 0;border-bottom:1px solid var(--border-hair);"><h4 style="margin:0 0 5px;font:var(--type-card-title);color:var(--navy-800)">' + esc(t) + '</h4><p style="margin:0;font:var(--fw-medium) var(--text-15)/var(--lh-body) var(--font-ui);color:var(--ink-4)">' + bold(p) + '</p></div>'; }
-  function phoneCard(tel, t) { return '<a href="tel:' + esc(tel) + '" style="background:var(--surface-card);border:1px solid var(--border-card);border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);padding:18px 20px;text-decoration:none;display:block"><div style="font:var(--fw-heavy) var(--text-13-5)/1.2 var(--font-ui);letter-spacing:var(--track-eyebrow);color:var(--red-600)">' + esc(t) + '</div><div dir="ltr" style="margin-top:8px;font:var(--fw-black) var(--text-22)/1.2 var(--font-num);color:var(--navy-800);text-align:right">' + esc(tel) + '</div></a>'; }
-  function weatherCard(slug, name) { return '<div data-weather-city="' + slug + '" style="background:var(--surface-muted);border-radius:12px;padding:12px 16px"><div style="font:var(--fw-bold) var(--text-15)/1.3 var(--font-ui);color:var(--navy-800);margin-bottom:8px">תחזית ל' + esc(name) + '</div><div data-weather-body style="font:var(--fw-medium) var(--text-13)/1.4 var(--font-ui);color:var(--ink-6)"></div></div>'; }
-  function appsGroup() { var links = [['Google Maps', 'https://maps.google.com/'], ['Google Translate', 'https://translate.google.com/'], ['WhatsApp', 'https://www.whatsapp.com/']];
-    return '<div style="margin-bottom:20px"><div style="font:var(--fw-heavy) var(--text-13-5)/1.2 var(--font-ui);letter-spacing:var(--track-eyebrow);color:var(--blue-600);padding-bottom:10px;border-bottom:1px solid var(--border-rule);margin-bottom:12px">כללי</div><div data-dir-flip style="display:flex;flex-wrap:wrap;gap:10px">' +
-      links.map(function (l) { return '<a href="' + l[1] + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;min-height:44px;background:var(--surface-card);border:1px solid var(--border-card);border-radius:10px;padding:11px 15px;text-decoration:none;font:var(--fw-bold) var(--text-14-5)/1.3 var(--font-ui);color:var(--ink-2);box-shadow:0 2px 8px rgba(0,0,0,.06)">' + l[0] + '</a>'; }).join('') + '</div></div>'; }
+  function packGroup(title, items, i) { var h = '<div data-dir-flip><div style="font:var(--fw-heavy) var(--text-13-5)/1.2 var(--font-ui);letter-spacing:var(--track-eyebrow);color:var(--blue-600);padding-bottom:10px;border-bottom:1px solid var(--border-rule)">' + esc(title) + '</div>'; items.forEach(function (t, k) { h += '<label style="display:flex;align-items:center;gap:11px;min-height:44px;padding:6px 0;cursor:pointer"><input type="checkbox" data-pack="api_p' + i + '_' + (k + 1) + '" onchange="savePack()"><span style="font:var(--fw-semibold) var(--text-16)/1.5 var(--font-ui);color:var(--ink-2)">' + esc(t) + '</span></label>'; }); return h + '</div>'; }
+  function itemBlock(t, p) { return '<div data-dir-flip style="padding:16px 0;border-bottom:1px solid var(--border-hair);"><h4 style="margin:0 0 5px;font:var(--type-card-title);color:var(--navy-800)">' + esc(t) + '</h4><p style="margin:0;font:var(--fw-medium) var(--text-15)/var(--lh-body) var(--font-ui);color:var(--ink-4)">' + bold(p) + '</p></div>'; }
+  function phoneCard(tel, t) { return '<a href="tel:' + esc(tel) + '" data-dir-flip style="background:var(--surface-card);border:1px solid var(--border-card);border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);padding:18px 20px;text-decoration:none;display:block"><div style="font:var(--fw-heavy) var(--text-13-5)/1.2 var(--font-ui);letter-spacing:var(--track-eyebrow);color:var(--red-600)">' + esc(t) + '</div><div dir="ltr" style="margin-top:8px;font:var(--fw-black) var(--text-22)/1.2 var(--font-num);color:var(--navy-800);text-align:' + (LANG === 'he' ? 'right' : 'left') + '">' + esc(tel) + '</div></a>'; }
+  function weatherCard(slug, name) { return '<div data-weather-city="' + slug + '" data-dir-flip style="background:var(--surface-muted);border-radius:12px;padding:12px 16px"><div style="font:var(--fw-bold) var(--text-15)/1.3 var(--font-ui);color:var(--navy-800);margin-bottom:8px">' + esc(W().forecast) + esc(name) + '</div><div data-weather-body style="font:var(--fw-medium) var(--text-13)/1.4 var(--font-ui);color:var(--ink-6)"></div></div>'; }
+  function appsGroup(title, links) {
+    title = title || W().general; links = links || [['Google Maps', 'https://maps.google.com/'], ['Google Translate', 'https://translate.google.com/'], ['WhatsApp', 'https://www.whatsapp.com/']];
+    return '<div data-dir-flip style="margin-bottom:20px"><div style="font:var(--fw-heavy) var(--text-13-5)/1.2 var(--font-ui);letter-spacing:var(--track-eyebrow);color:var(--blue-600);padding-bottom:10px;border-bottom:1px solid var(--border-rule);margin-bottom:12px">' + esc(title) + '</div><div data-dir-flip style="display:flex;flex-wrap:wrap;gap:10px">' +
+      links.map(function (l) { return '<a href="' + esc(l[1]) + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;min-height:44px;background:var(--surface-card);border:1px solid var(--border-card);border-radius:10px;padding:11px 15px;text-decoration:none;font:var(--fw-bold) var(--text-14-5)/1.3 var(--font-ui);color:var(--ink-2);box-shadow:0 2px 8px rgba(0,0,0,.06)">' + esc(l[0]) + '</a>'; }).join('') + '</div></div>'; }
 
+  function foodGroup(g, color) { var h = '<div data-dir-flip style="background:var(--surface-card);border:1px solid var(--border-card);border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);padding:8px 14px 6px;margin-bottom:18px"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:' + color + ';color:#fff;border-radius:12px;padding:13px 16px;margin:8px 0 4px"><span style="font:var(--fw-black) var(--text-19)/1.2 var(--font-ui)">' + esc(g.group) + '</span><span style="background:rgba(255,255,255,.22);border-radius:var(--radius-pill);padding:4px 11px;font:var(--fw-bold) var(--text-12)/1.2 var(--font-ui)">' + g.items.length + ' ' + esc(W().items) + '</span></div>';
+    g.items.forEach(function (x) { h += '<div style="padding:14px 0;border-bottom:1px solid var(--border-hair)"><h4 style="margin:0 0 5px;font:var(--type-card-title);color:var(--navy-800)">' + esc(x.title) + '</h4><p style="margin:0;font:var(--fw-medium) var(--text-15)/var(--lh-body) var(--font-ui);color:var(--ink-4)">' + bold(x.text) + '</p></div>'; });
+    return h + '</div>'; }
+  function checkGroup(g, i) { var h = '<div data-dir-flip style="margin-bottom:18px"><div style="font:var(--fw-heavy) var(--text-13-5)/1.2 var(--font-ui);letter-spacing:var(--track-eyebrow);color:var(--blue-600);padding-bottom:10px;border-bottom:1px solid var(--border-rule)">' + esc(g.group) + '</div>';
+    g.items.forEach(function (t, k) { h += '<label style="display:flex;align-items:center;gap:11px;min-height:44px;padding:6px 0;cursor:pointer"><input type="checkbox" data-attr="api_c' + i + '_' + (k + 1) + '" onchange="saveAttr()"><span style="font:var(--fw-semibold) var(--text-16)/1.5 var(--font-ui);color:var(--ink-2)">' + esc(t) + '</span></label>'; });
+    return h + '</div>'; }
+  function programBits(e) { if (!e || !e.date) return null; var when = e.when || (dayLabel(e.date) + (e.time ? ' · ' + W().from + timeLabel(e.time) : '')); return { when: when, num: e.place || '', route: e.note || '\u00a0', landing: e.detail || '\u00a0', iso: e.iso || (e.date + 'T12:00:00'), landIso: e.iso || '' }; }
   function heroDates(t) {
     var a = parts(t.dates.start), b = parts(t.dates.end), n = Math.round((Date.UTC(b.y, b.m - 1, b.d) - Date.UTC(a.y, a.m - 1, a.d)) / 86400000) + 1;
+    if (t.language === 'es') return (a.m === b.m && a.y === b.y ? a.d + '–' + b.d + ' ' + ES_MONTH[a.m - 1] : a.d + ' ' + ES_MONTH[a.m - 1] + ' – ' + b.d + ' ' + ES_MONTH[b.m - 1]) + ' ' + b.y + ' · ' + n + ' días';
     if (t.language === 'en') return (a.m === b.m && a.y === b.y ? a.d + '–' + b.d + ' ' + EN_MONTH[a.m - 1] : a.d + ' ' + EN_MONTH[a.m - 1] + ' – ' + b.d + ' ' + EN_MONTH[b.m - 1]) + ' ' + b.y + ' · ' + n + ' days';
     return (a.m === b.m && a.y === b.y ? a.d + '–' + b.d + ' ב' + HE_MONTH[a.m - 1] : a.d + ' ב' + HE_MONTH[a.m - 1] + ' – ' + b.d + ' ב' + HE_MONTH[b.m - 1]) + ' ' + b.y + ' · ' + n + ' ימים';
   }
-  function flightBits(f) { var p = f.dep ? parts(f.dep.slice(0, 10)) : null; return { when: p ? weekday(f.dep.slice(0, 10)) + ' ' + p.d + '.' + p.m + (hhmm(f.dep) ? ' · ' + hhmm(f.dep) : '') : '', num: f.number || f.to, route: f.from + ' ← ' + f.to, landing: f.arr ? 'נחיתה: ' + (function () { var q = parts(f.arr.slice(0, 10)); return weekday(f.arr.slice(0, 10)) + ' ' + q.d + '.' + q.m; })() + (hhmm(f.arr) ? ' · ' + hhmm(f.arr) : '') : '', iso: f.dep || '', landIso: f.arr || '' }; }
+  function flightBits(f) { var p = f.dep ? parts(f.dep.slice(0, 10)) : null, dl = function (x) { var q = parts(x); return LANG === 'he' ? weekday(x) + ' ' + q.d + '.' + q.m : dayLabel(x); };
+    return { when: p ? dl(f.dep.slice(0, 10)) + (hhmm(f.dep) ? ' · ' + hhmm(f.dep) : '') : '', num: f.number || f.to, route: f.from + (LANG === 'he' ? ' ← ' : ' → ') + f.to, landing: f.arr ? W().landing + dl(f.arr.slice(0, 10)) + (hhmm(f.arr) ? ' · ' + hhmm(f.arr) : '') : '', iso: f.dep || '', landIso: f.arr || '' }; }
 
   var ILLUSTRATION = '<svg viewBox="0 0 400 130" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg"><circle cx="310" cy="38" r="17" fill="#fff" opacity=".8"/><path d="M-10 108 C40 76 110 70 170 92 C220 72 290 78 410 104 L410 130 L-10 130Z" fill="var(--navy-800)" opacity=".18"/><path d="M-10 122 C60 100 140 104 200 116 C260 108 330 106 410 118 L410 130 L-10 130Z" fill="var(--navy-800)" opacity=".5"/><path d="M30 124 Q42 120 54 124" stroke="#fff" stroke-width="2" fill="none" opacity=".7"/></svg>';
   var WATERMARK = '<svg viewBox="0 0 120 90" xmlns="http://www.w3.org/2000/svg"><g fill="#fff"><path d="M10 80 L45 30 L65 58 L80 40 L112 80 Z"/></g></svg>';
@@ -97,34 +119,53 @@
   /** trip = the structured trip from the API, brand = {name, logo_url, colors}.  Returns everything the app needs under one destination key. */
   function build(trip, brand) {
     brand = brand || { name: '', logo_url: '', colors: [] };
-    var th = makeTheme(pickBase(trip, brand)), cityColor = {}, order = [];
-    trip.days.forEach(function (d) { var c = d.city || trip.title; if (!(c in cityColor)) { cityColor[c] = th.day[order.length % th.day.length]; order.push(c); } });
+    var langs = [trip.language || 'he'].concat(Object.keys(trip.translations || {}).filter(function (l) { return l !== trip.language && L[l]; }));
+    var main = buildOne(trip, brand);
+    if (langs.length === 1) { LANG = 'he'; return main; }
+    /* every text field becomes {es:…, en:…}: the app shows the one of the current language (trField) */
+    var per = {}; per[langs[0]] = main.trip;
+    langs.slice(1).forEach(function (l) { var t2 = Object.assign({}, trip.translations[l], { dates: trip.dates, language: l, destination: trip.translations[l].destination || trip.destination }); per[l] = buildOne(t2, brand, main.theme).trip; });
+    Object.keys(main.trip).forEach(function (k) { var v = main.trip[k]; if (typeof v !== 'string') return; if (langs.every(function (l) { return per[l][k] === v; })) return; var o = {}; langs.forEach(function (l) { o[l] = per[l][k]; }); main.trip[k] = o; });
+    main.languages = langs; main.eyebrow = {}; langs.forEach(function (l) { main.eyebrow[l] = l === trip.language ? (trip.eyebrow || '') : ((trip.translations[l] || {}).eyebrow || ''); });
+    LANG = 'he';
+    return main;
+  }
+  function buildOne(trip, brand, sharedTheme) {
+    LANG = L[trip.language] ? trip.language : 'he';
+    ['transit', 'food', 'checklist', 'apps', 'tips', 'packing', 'emergency', 'bookings', 'flights'].forEach(function (k) { if (!Array.isArray(trip[k])) trip[k] = []; });
+    var th = sharedTheme || makeTheme(pickBase(trip, brand)), cityColor = {}, order = [];
+    trip.days.forEach(function (d) { var c = d.region || d.city || trip.title; if (!(c in cityColor)) { cityColor[c] = th.day[order.length % th.day.length]; order.push(c); } });
     var cities = (trip.destination && trip.destination.cities) || [], coords = {}, wxPairs = [];
     cities.forEach(function (c, i) { if (c.lat != null && c.lng != null) { coords['c' + i] = [c.lat, c.lng]; wxPairs.push(['c' + i, c.name]); } });
     var pills = '', days = '', cityMap = {}, dayCities = {};
-    trip.days.forEach(function (d, i) { var c = cityColor[d.city || trip.title]; pills += pill(i + 1, d, c); days += daycard(i + 1, c, d); cityMap[String(i + 1)] = c; dayCities[String(i + 1)] = d.city ? d.city + (trip.destination && trip.destination.country ? ', ' + trip.destination.country : '') : ''; });
+    trip.days.forEach(function (d, i) { var c = cityColor[d.region || d.city || trip.title]; pills += pill(i + 1, d, c); days += daycard(i + 1, c, d); cityMap[String(i + 1)] = c; dayCities[String(i + 1)] = d.city ? d.city + (trip.destination && trip.destination.country ? ', ' + trip.destination.country : '') : ''; });
     var legend = order.map(function (c) { return legendItem(cityColor[c], c); }).join('');
     var out = trip.flights.filter(function (f) { return f.dir !== 'back'; })[0], back = trip.flights.filter(function (f) { return f.dir === 'back'; })[0];
     var fo = out ? flightBits(out) : null, fb = back ? flightBits(back) : null;
+    if (!fo && trip.program) fo = programBits(trip.program.start); if (!fb && trip.program) fb = programBits(trip.program.end);
     var bookings = '';
-    if (trip.flights.length) bookings += bcardRaw('טיסות', trip.flights.map(function (f) { var b = flightBits(f); return bold((f.dir === 'back' ? 'חזור' : 'הלוך') + ': ' + (b.when ? b.when + ' · ' : '') + (f.number ? f.number + ', ' : '') + f.from + ' ← ' + f.to + (b.landing ? ' (' + b.landing + ')' : '')); }).join('<br>'));
+    if (trip.flights.length) bookings += bcardRaw(W().flights, trip.flights.map(function (f) { var b = flightBits(f); return bold((f.dir === 'back' ? W().back : W().out) + ': ' + (b.when ? b.when + ' · ' : '') + (f.number ? f.number + ', ' : '') + f.from + ' ← ' + f.to + (b.landing ? ' (' + b.landing + ')' : '')); }).join('<br>'));
     trip.bookings.forEach(function (b) { bookings += bcard(b.title, b.body); });
     var tripObj = {
       heroTitle: /20\d\d/.test(trip.title) ? trip.title : trip.title + ' ' + parts(trip.dates.start).y, heroDates: heroDates(trip), heroCities: cities.map(function (c) { return c.name; }).join(' · '),
-      footer: 'מדריך טיול דיגיטלי אישי' + (brand.name ? ' · ' + brand.name : ''),
+      footer: W().footer + (brand.name ? ' · ' + brand.name : ''),
       flOutDatetime: fo ? fo.when : '', flOutNum: fo ? fo.num : '', flOutRoute: fo ? fo.route : '', flOutLanding: fo ? fo.landing : '', flOutISO: fo ? fo.iso : '', flOutLandingISO: fo ? fo.landIso : '',
       flBackDatetime: fb ? fb.when : '', flBackNum: fb ? fb.num : '', flBackRoute: fb ? fb.route : '', flBackLanding: fb ? fb.landing : '', flBackISO: fb ? fb.iso : '',
-      heroBookingRef: '', daysNote: '',
+      heroBookingRef: '', daysNote: trip.note ? '<div data-noprint data-dir-flip style="background:var(--blue-100);color:var(--blue-600);border-radius:12px;padding:12px 16px;margin:16px 0;font:var(--fw-bold) var(--text-13-5)/1.5 var(--font-ui);text-align:start">' + bold(trip.note) + '</div>' : '',
       pillsHtml: pills, legendHtml: legend, cityMap: cityMap, daysHtml: days, bookingsHtml: bookings,
       weatherHtml: wxPairs.map(function (p) { return weatherCard(p[0], p[1]); }).join(''),
       packingHtml: trip.packing.map(function (g, i) { return packGroup(g.group, g.items, i); }).join(''),
       tipsHtml: trip.tips.map(function (t) { return itemBlock(t.title, t.text); }).join(''),
-      transitHtml: '', emergencyHtml: trip.emergency.map(function (e) { return phoneCard(e.tel, e.label); }).join(''), appsHtml: appsGroup(), restaurantsHtml: '',
+      transitHtml: trip.transit.map(function (t) { return itemBlock(t.title, t.text); }).join(''),
+      emergencyHtml: trip.emergency.map(function (e) { return phoneCard(e.tel, e.label); }).join(''),
+      appsHtml: trip.apps.length ? trip.apps.map(function (g) { return appsGroup(g.group, g.links.map(function (l) { return [l.name, l.url]; })); }).join('') : appsGroup(),
+      restaurantsHtml: trip.food.map(function (g, i) { return foodGroup(g, th.day[i % th.day.length]); }).join(''),
+      attractionsHtml: trip.checklist.map(function (g, i) { return checkGroup(g, i); }).join(''),
     };
     var dest = { name: trip.title, stamp: ((trip.destination && trip.destination.country) || '').slice(0, 3).toUpperCase(), navy900: th.navy900, navy800: th.navy800, navy700: th.navy700, currency: currency(trip.currency),
       tiles: th.tiles, heroWatermark: WATERMARK, blue600: th.blue600, blue100: th.blue100, surfaceCanvas: th.surfaceCanvas, surfaceCard: th.surfaceCard, surfaceSunken: th.surfaceSunken, surfaceMuted: th.surfaceMuted,
       borderCard: th.borderCard, borderHair: th.borderHair, illustrationBg1: th.illustrationBg1, illustrationBg2: th.illustrationBg2, illustration: ILLUSTRATION };
-    return { dest: dest, trip: tripObj, dayCities: dayCities, coords: coords, theme: th, brand: brand, hasWeather: wxPairs.length > 0, hasPacking: trip.packing.length > 0, hasTips: trip.tips.length > 0, hasEmergency: trip.emergency.length > 0 };
+    return { hideTiles: trip.hide_tiles || [], dest: dest, trip: tripObj, dayCities: dayCities, coords: coords, theme: th, brand: brand, hasWeather: wxPairs.length > 0, hasPacking: trip.packing.length > 0, hasTips: trip.tips.length > 0, hasEmergency: trip.emergency.length > 0 };
   }
 
   root.PAB_RENDER = { build: build, makeTheme: makeTheme, contrast: contrast, esc: esc, bold: bold, currency: currency };
@@ -134,13 +175,17 @@
   var m=/^#([a-z0-9]{6,24})\.([a-z0-9]{16,40})$/.exec(location.hash||''), API='https://pab-api.dana-lees.workers.dev';
   var q=/[?&]api=([^&]+)/.exec(location.search); if(q && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) API=decodeURIComponent(q[1]);
   function stop(msg){ window.__PAB_STOP=true; document.write('<div style="visibility:visible;position:fixed;inset:0;z-index:99999;background:#F6F0E8;color:#2b2f25;font-family:Heebo,system-ui,sans-serif;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center"><div><h1 style="font-size:22px;margin:0 0 10px">Pack &amp; Board</h1><p style="font-size:17px;line-height:1.6;margin:0">'+msg+'</p></div></div>'); window.stop(); }
-  if(!m) return stop('הקישור לא שלם. פתחו אותו שוב מההודעה שקיבלתם, כולל כל מה שאחרי הסימן #.');
+  if(!m) return stop("הקישור לא שלם. פתחו אותו שוב מההודעה שקיבלתם, כולל כל מה שאחרי הסימן #.");
   var x=new XMLHttpRequest(); x.open('GET',API+'/v1/public/trips/'+m[1],false); x.setRequestHeader('Authorization','Bearer '+m[2]);
-  try{ x.send(); }catch(e){ return stop('אין חיבור לשרת. נסו שוב כשיש חיבור.'); }
-  if(x.status!==200) return stop(x.status===404?'הטיול לא נמצא, או שעוד לא אושר לפרסום.':'לא הצלחנו לטעון את הטיול. נסו שוב בעוד רגע.');
-  var d; try{ d=JSON.parse(x.responseText); window.__PAB=PAB_RENDER.build(d.trip,d.brand); window.__PAB.docs=Array.isArray(d.documents)?d.documents:[]; window.__PAB.docBase=API+'/v1/public/trips/'+m[1]+'/documents/'; window.__PAB.rk=m[2]; if(window.__PAB.docs.length) document.documentElement.classList.add('pab-has-docs'); }catch(e){ return stop('לא הצלחנו לקרוא את הטיול. פנו אל מי ששלח לכם את הקישור.'); }
+  try{ x.send(); }catch(e){ return stop("אין חיבור לשרת. נסו שוב כשיש חיבור."); }
+  if(x.status!==200) return stop(x.status===404?"הטיול לא נמצא, או שעוד לא אושר לפרסום.":"לא הצלחנו לטעון את הטיול. נסו שוב בעוד רגע.");
+  var d; try{ d=JSON.parse(x.responseText); window.__PAB=PAB_RENDER.build(d.trip,d.brand); window.__PAB.firstLang=d.trip.language; window.__PAB.hasProgram=!!d.trip.program;
+    window.__PAB.docs=Array.isArray(d.documents)?d.documents:[]; window.__PAB.docBase=API+'/v1/public/trips/'+m[1]+'/documents/'; window.__PAB.rk=m[2];
+    if(window.__PAB.docs.length) document.documentElement.classList.add('pab-has-docs'); }catch(e){ return stop("לא הצלחנו לקרוא את הטיול. פנו אל מי ששלח לכם את הקישור."); }
 })();
 </script>
+
+<!-- pab-prepaint --><style>html:not(.pab-ready) body{visibility:hidden}html:not(.pab-ready){background:#F6F0E8}</style><script>(function(){function go(){requestAnimationFrame(function(){document.documentElement.classList.add("pab-ready")})}if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",go);else go();setTimeout(function(){document.documentElement.classList.add("pab-ready")},2500)})();</script><!-- /pab-prepaint -->
 
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -442,6 +487,7 @@
 .home-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:var(--surface-card);border:1px solid var(--border-card);border-radius:16px;box-shadow:var(--shadow-card);padding:20px 10px;cursor:pointer;font-family:var(--font-ui);text-align:center;min-height:104px;transition:var(--transition-card)}
 .home-tile:hover{transform:var(--hover-lift);box-shadow:var(--shadow-card-hover)}
 .tile-icon{width:44px;height:44px;border-radius:var(--radius-13);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.home-tile[style*="var(--tile-1)"] .tile-label,.home-tile[style*="var(--tile-1)"] .tile-icon{color:var(--tile-1-ink,#fff)!important}.home-tile[style*="var(--tile-2)"] .tile-label,.home-tile[style*="var(--tile-2)"] .tile-icon{color:var(--tile-2-ink,#fff)!important}.home-tile[style*="var(--tile-3)"] .tile-label,.home-tile[style*="var(--tile-3)"] .tile-icon{color:var(--tile-3-ink,#fff)!important}.home-tile[style*="var(--tile-4)"] .tile-label,.home-tile[style*="var(--tile-4)"] .tile-icon{color:var(--tile-4-ink,#fff)!important}
 .tile-label{font:var(--fw-bold) var(--text-13-5)/1.3 var(--font-ui);color:var(--ink-2);min-height:36px;display:flex;align-items:center;justify-content:center}
 
 
@@ -467,7 +513,7 @@
 .scroll-fade-start{left:0;background:linear-gradient(to right, var(--surface-card), transparent)}
 .scroll-fade-end{right:0;background:linear-gradient(to left, var(--surface-card), transparent)}
 </style>
-<style>html:not(.pab-has-docs) button[onclick*="'documents'"],button[onclick*="'translate'"]{display:none !important}html.pab-has-docs #doc-input,html.pab-has-docs #doc-input+button{display:none !important}.dest-stamp.geo-stamp{width:auto;height:auto;top:14px;left:16px;border-radius:12px;padding:6px 12px;background:#fff;border:0;box-shadow:0 3px 12px rgba(0,0,0,.18)}.dest-stamp.geo-stamp::before{display:none}.dest-stamp.geo-stamp img{height:38px;width:auto;max-width:200px;display:block}[data-i18n="eyebrow"]{margin-top:30px}</style>
+<style>html:not(.pab-has-docs) button[onclick*="'documents'"],button[onclick*="'translate'"]{display:none !important}html.pab-has-docs #doc-input,html.pab-has-docs #doc-input+button{display:none !important}.dest-stamp.geo-stamp{width:auto;height:auto;top:14px;left:16px;border-radius:12px;padding:6px 12px;background:#fff;border:0;box-shadow:0 3px 12px rgba(0,0,0,.18)}.dest-stamp.geo-stamp::before{display:none}.dest-stamp.geo-stamp img{height:38px;width:auto;max-width:200px;display:block}[data-i18n="eyebrow"]{margin-top:30px}.pab-hero-logo{margin:30px 0 14px;line-height:0;display:flex;justify-content:center}.pab-hero-logo img{width:230px;max-width:70vw;height:auto;filter:drop-shadow(0 1px 3px rgba(0,0,0,.45))}.pab-hero-logo+[data-i18n="eyebrow"]{margin-top:0}</style>
 </head>
 <body>
 
@@ -1340,6 +1386,8 @@ function applyDestinationTheme(key){
   if(dest.illustrationBg1) root.setProperty('--illustration-bg-1', dest.illustrationBg1);
   if(dest.illustrationBg2) root.setProperty('--illustration-bg-2', dest.illustrationBg2);
   if(dest.tiles){ dest.tiles.forEach(function(c,i){ root.setProperty('--tile-'+(i+1), c); }); }
+  /* text colour on each tile: white unless the destination says otherwise (light tiles need dark text) */
+  [0,1,2,3].forEach(function(i){ root.setProperty('--tile-'+(i+1)+'-ink', (dest.tileInk && dest.tileInk[i]) || '#fff'); });
   var heroWm = document.getElementById('hero-watermark');
   if(heroWm && dest.heroWatermark) heroWm.innerHTML = dest.heroWatermark;
   root.setProperty('--hero-gradient', 'radial-gradient(120% 130% at 85% 0%, '+dest.navy700+' 0%, '+dest.navy800+' 60%, '+dest.navy900+' 100%)');
@@ -1462,7 +1510,7 @@ function applyTripDemo(key){
   var setText2 = function(id, val){ var el = document.getElementById(id); if(el && val) el.textContent = val; };
   var setHtml2 = function(id, val){ var el = document.getElementById(id); if(el && val) el.innerHTML = val; };
   setText2('hero-title', trField(t,'heroTitle'));
-  document.title = trField(t,'heroTitle') + (/20\d\d/.test(trField(t,'heroTitle')) ? '' : ' 2026');
+  document.title = trField(t,'heroTitle') + (/20\d\d/.test(trField(t,'heroTitle')) ? '' : ' ' + ((/^20\d\d/.exec(t.flOutLandingISO || t.flOutISO || '') || ['2026'])[0]));   // the trip's own year (was always 2026)
   setText2('hero-dates', trField(t,'heroDates'));
   setText2('hero-cities', trField(t,'heroCities'));
   setText2('app-footer', trField(t,'footer'));
@@ -2779,8 +2827,29 @@ hydrateFromSupabase();
   document.addEventListener('click',function(e){
     var a=e.target.closest&&e.target.closest('a'); if(!a) return;
     var h=a.getAttribute('href')||'';
-    if(isMaps(h)&&phone()){ e.preventDefault(); location.href=h; }
+    if(isMaps(h)&&phone()){ e.preventDefault(); leave(h); return; }
+    /* every other outside link (a hotel's site, a booking page...): on a phone in a regular browser or inside WhatsApp it opens in
+       the SAME tab, so the phone's Back button returns to the app (in a new tab people did not find their way back; Dana, 2026-11-08).
+       Opened from the home-screen icon, the phone already shows outside sites in a sheet with a Done / X button over the app: keep that.
+       Desktop keeps the new tab. */
+    if(a.target==='_blank'&&phone()&&!standalone()&&!e.defaultPrevented&&outside(h)){ e.preventDefault(); leave(h); }
   },true);
+  /* leaving in the same tab: remember the open screen and the scroll, so Back lands where the visitor was, not on the home screen */
+  var RK='pab.return';
+  function openScreen(){ if(typeof SCREENS==='undefined') return ''; for(var i=0;i<SCREENS.length;i++){ var el=document.querySelector('[data-screen="'+SCREENS[i]+'"]'); if(el&&el.style.display==='block') return SCREENS[i]; } return ''; }
+  function leave(h){ try{ sessionStorage.setItem(RK, JSON.stringify({p:location.pathname, s:openScreen(), y:window.scrollY, t:Date.now()})); }catch(_){} location.href=h; }
+  setTimeout(function(){
+    /* the note is NOT removed here: coming back, the page may be reloaded once more by the blank-page fix below, and that load must restore too */
+    var r=null; try{ r=JSON.parse(sessionStorage.getItem(RK)||'null'); }catch(_){}
+    if(!r||r.p!==location.pathname||Date.now()-r.t>3*3600*1000) return;
+    if(r.s&&typeof showScreen==='function') showScreen(r.s);
+    setTimeout(function(){ try{ window.scrollTo({top:r.y||0, left:0, behavior:'instant'}); }catch(_){ window.scrollTo(0, r.y||0); } }, 60);   /* instant: the app scrolls smoothly by default */
+  }, 80);
+  /* the visitor's next tap or key means they are back in the app: forget the note (pointerdown comes before the click that may set a new one) */
+  function forget(){ try{ sessionStorage.removeItem(RK); }catch(_){} }
+  document.addEventListener('pointerdown',forget,true); document.addEventListener('keydown',forget,true);
+  function standalone(){ return navigator.standalone===true||!!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches); }
+  function outside(h){ if(!/^https?:\/\//i.test(h)) return false; try{ return new URL(h,location.href).origin!==location.origin; }catch(_){ return false; } }
   var NAV_SVG='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l19-9-9 19-2-8z"/></svg>';
   var cst=document.createElement('style');
   cst.textContent='.pab-chip{display:inline-flex;align-items:stretch;border-radius:999px;overflow:hidden}.pab-chip>a{display:inline-flex;align-items:center}'+
@@ -2992,13 +3061,103 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
 </script>
 <!-- /pab-a11y -->
 <script>
+(function(){ var hide=(window.__PAB && window.__PAB.hideTiles) || []; [].forEach.call(document.querySelectorAll('.home-tile'),function(b){ var o=b.getAttribute('onclick')||''; hide.forEach(function(x){ if(o.indexOf("showScreen('"+x+"')")>-1) b.style.setProperty('display','none','important'); }); }); })();
 (function(){
   var b=window.__PAB && window.__PAB.brand; if(!b || !b.logo_url) return;
+  if(b.logo_dark){   /* a logo made for a dark background: big and clean in the hero, above the line over the title (as in the ZocoCamino demo) */
+    var e=document.querySelector('[data-i18n="eyebrow"]'); if(!e) return;
+    var a=document.createElement('div'); a.className='pab-hero-logo'; var im=document.createElement('img'); im.src=b.logo_url; im.alt=b.name||''; im.referrerPolicy='no-referrer'; im.onerror=function(){ a.remove(); }; a.appendChild(im);
+    e.parentNode.insertBefore(a,e); var st0=document.querySelector('.dest-stamp'); if(st0) st0.style.display='none'; return;
+  }
   var st=document.querySelector('.dest-stamp'); if(!st) return;
   var d=document.createElement('div'); d.className='dest-stamp geo-stamp';
   var i=document.createElement('img'); i.src=b.logo_url; i.alt=b.name||''; i.referrerPolicy='no-referrer'; d.appendChild(i);
   var sp=document.createElement('span'); sp.id='dest-stamp-text'; sp.hidden=true; d.appendChild(sp);
   st.parentNode.replaceChild(d,st);
+})();
+</script>
+<script>
+(function(){
+  var t=(window.__PAB&&window.__PAB.trip)||{};
+  [['out','flOutNum','flOutDatetime'],['back','flBackNum','flBackDatetime']].forEach(function(x){
+    if(t[x[1]] || t[x[2]]) return;
+    var el=document.getElementById('fl-'+x[0]+'-datetime'), box=el&&el.parentNode&&el.parentNode.parentNode; if(box) box.style.display='none';
+  });
+})();
+</script>
+<script>
+(function(){
+  function even(){ var nav=document.querySelector('.home-nav'); if(!nav) return;
+    var tiles=[].slice.call(nav.querySelectorAll('.home-tile')); tiles.forEach(function(b){ b.classList.remove('pab-wide'); });
+    var small=tiles.filter(function(b){ var c=getComputedStyle(b); return c.display!=='none' && c.gridColumn.replace(/\s/g,'')!=='1/-1'; });
+    if(small.length%2) small[small.length-1].classList.add('pab-wide'); }
+  var st=document.createElement('style'); st.textContent='.home-nav .home-tile.pab-wide{grid-column:1 / -1}'; document.head.appendChild(st);
+  even(); setTimeout(even,300);
+})();
+</script>
+<script>
+(function(){
+  var P=window.__PAB||{}, docs=P.docs||[]; if(!docs.length || !document.getElementById('doc-list')) return;
+  var L=function(){ var l=(typeof CURRENT_LANG!=='undefined'&&CURRENT_LANG)||document.documentElement.lang||'he'; return /^en/.test(l)?'en':(/^es/.test(l)?'es':'he'); };
+  var T={desc:{he:'המסמכים לטיול: כרטיסים, שוברים וויזות. לחיצה על מסמך פותחת אותו.',en:'The documents for your trip: tickets, vouchers and visas. Tap one to open it.',es:'Los documentos del viaje: billetes, bonos y visados. Toca uno para abrirlo.'},
+    open:{he:'פתיחה',en:'Open',es:'Abrir'},bk:{he:'פתיחת המסמך',en:'Open the document',es:'Abrir el documento'},close:{he:'סגירה',en:'Close',es:'Cerrar'},
+    fail:{he:'לא הצלחנו לפתוח את המסמך. בודקים חיבור לאינטרנט ומנסים שוב.',en:'The document could not be opened. Check the connection and try again.',es:'No se pudo abrir el documento. Revisa la conexión e inténtalo de nuevo.'}};
+  var K={flight:{he:'טיסה',en:'Flight',es:'Vuelo'},hotel:{he:'מלון',en:'Hotel',es:'Hotel'},train:{he:'רכבת',en:'Train',es:'Tren'},entry:{he:'כניסה',en:'Entry ticket',es:'Entrada'},
+    visa:{he:'ויזה',en:'Visa',es:'Visado'},car:{he:'רכב',en:'Car',es:'Coche'},transfer:{he:'העברה',en:'Transfer',es:'Traslado'},insurance:{he:'ביטוח',en:'Insurance',es:'Seguro'},other:{he:'מסמך',en:'Document',es:'Documento'}};
+  var t=function(k){ return T[k][L()]; }, esc=function(x){ return String(x||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); };
+  var FILE='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><polyline points="14,3 14,8 19,8"/></svg>';
+  var cache={};
+  function blob(d){ if(cache[d.n]) return Promise.resolve(cache[d.n]);
+    return fetch(P.docBase+d.n,{headers:{Authorization:'Bearer '+P.rk}}).then(function(r){ if(!r.ok) throw new Error('x'); return r.blob(); })
+      .then(function(b){ return (cache[d.n]=URL.createObjectURL(b)); }); }
+  function closeV(){ var v=document.getElementById('doc-viewer'); if(v) v.remove(); }
+  function open(d){
+    var android=/android/i.test(navigator.userAgent), w=(android&&d.type==='application/pdf')?window.open('','_blank'):null;
+    blob(d).then(function(u){
+      if(w){ w.location.href=u; return; }
+      closeV(); var img=/^image\//.test(d.type), v=document.createElement('div'); v.id='doc-viewer'; v.setAttribute('role','dialog'); v.setAttribute('aria-label',d.name);
+      v.style.cssText='position:fixed;inset:0;z-index:9999;background:#111;display:flex;flex-direction:column';
+      v.innerHTML='<div style="flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:calc(8px + env(safe-area-inset-top,0px)) 12px 8px;background:#1c1c1e">'+
+        '<button type="button" aria-label="'+t('close')+'" style="flex:0 0 44px;width:44px;height:44px;border:none;border-radius:999px;background:rgba(255,255,255,.14);color:#fff;cursor:pointer;font-size:20px">✕</button>'+
+        '<div style="flex:1;min-width:0;color:#fff;font:var(--fw-bold) var(--text-14)/1.3 var(--font-ui);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(d.name)+'</div></div>'+
+        '<div style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:auto">'+(img?'<img src="'+u+'" alt="" style="max-width:100%;max-height:100%;object-fit:contain">':'<iframe src="'+u+'" title="'+esc(d.name)+'" style="border:0;width:100%;height:100%;background:#fff"></iframe>')+'</div>';
+      v.querySelector('button').addEventListener('click',closeV); document.body.appendChild(v);
+      document.addEventListener('keydown',function k(e){ if(e.key==='Escape'){ closeV(); document.removeEventListener('keydown',k); } });
+    }).catch(function(){ if(w) w.close(); alert(t('fail')); });
+  }
+  window.renderDocs=function(){
+    var list=document.getElementById('doc-list'), empty=document.getElementById('doc-empty'), de=document.querySelector('[data-i18n="docsDesc"]');
+    if(de) de.textContent=t('desc'); if(empty) empty.style.display='none'; list.innerHTML='';
+    docs.forEach(function(d){ var k=K[d.kind]||K.other, b=document.createElement('button'); b.type='button'; b.className='pab-doc-row';
+      b.style.cssText='display:flex;align-items:center;gap:10px;width:100%;text-align:start;cursor:pointer;background:var(--surface-sunken);border:1px solid var(--border-card);border-radius:12px;padding:10px 12px;color:inherit;font:inherit';
+      b.innerHTML='<span style="flex:0 0 44px;width:44px;height:44px;border-radius:8px;background:var(--blue-100);color:var(--blue-600);display:flex;align-items:center;justify-content:center">'+FILE+'</span>'+
+        '<span style="flex:1;min-width:0"><span style="display:block;font:var(--fw-bold) var(--text-14)/1.3 var(--font-ui);color:var(--ink-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(d.name)+'</span>'+
+        '<span style="display:inline-block;margin-top:3px;padding:2px 8px;border-radius:999px;background:var(--surface-muted);color:var(--ink-5);font:var(--fw-bold) var(--text-12)/1.3 var(--font-ui)">'+esc(k[L()])+'</span></span>'+
+        '<span style="flex:0 0 auto;color:var(--blue-600);font:var(--fw-bold) var(--text-13)/1 var(--font-ui)">'+t('open')+'</span>';
+      b.addEventListener('click',function(){ open(d); }); list.appendChild(b); });
+  };
+  // the card of the booking a document belongs to (data-booking, or the card whose text holds it: a flight number, a hotel name)
+  var painting=false;
+  function norm(x){ return String(x||'').toLowerCase().replace(/\s+/g,' ').trim(); }
+  function paint(){ if(painting) return; painting=true;
+    try{ [].forEach.call(document.querySelectorAll('.pab-bk-doc'),function(n){ n.remove(); });
+      var g=document.getElementById('bookings-grid'), cards=[].slice.call(document.querySelectorAll('[data-booking]'));
+      if(g) [].forEach.call(g.children,function(c){ if(cards.indexOf(c)<0) cards.push(c); });
+      var f=document.getElementById('home-flight-card'); if(f&&cards.indexOf(f)<0) cards.push(f);
+      var by=[]; docs.forEach(function(d){ var k=norm(d.booking); if(k.length<3) return;
+        var hit=cards.filter(function(x){ return norm(x.getAttribute('data-booking'))===k; }); if(!hit.length) hit=cards.filter(function(x){ return norm(x.textContent).indexOf(k)>=0; });
+        hit.forEach(function(c){ var e=by.filter(function(y){ return y.c===c; })[0]; if(!e){ e={c:c,d:[]}; by.push(e); } e.d.push(d); }); });
+      by.forEach(function(e){ var box=document.createElement('div'); box.className='pab-bk-doc'; box.style.cssText='display:flex;flex-wrap:wrap;gap:8px;margin-top:12px';
+        e.d.forEach(function(d){ var b=document.createElement('button'); b.type='button';
+          b.style.cssText='display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:8px 14px;border:none;cursor:pointer;background:var(--blue-100);color:var(--blue-600);border-radius:999px;font:var(--fw-bold) var(--text-13)/1 var(--font-ui)';
+          b.innerHTML=FILE.replace('width="20" height="20"','width="16" height="16"')+'<span>'+esc(e.d.length>1?d.name:t('bk'))+'</span>'; b.setAttribute('aria-label',t('bk')+': '+d.name);
+          b.addEventListener('click',function(ev){ ev.stopPropagation(); open(d); }); box.appendChild(b); });
+        e.c.appendChild(box); });
+    } finally { painting=false; } }
+  var pt=null; ['bookings-grid','home-flight-card'].forEach(function(id){ var el=document.getElementById(id);
+    if(el&&window.MutationObserver) new MutationObserver(function(ms){ if(painting) return; if(ms.every(function(m){ return [].every.call(m.addedNodes.length?m.addedNodes:m.removedNodes,function(n){ return n.classList&&n.classList.contains('pab-bk-doc'); }); })) return; clearTimeout(pt); pt=setTimeout(paint,120); }).observe(el,{childList:true,subtree:true}); });
+  renderDocs(); paint(); setTimeout(paint,600);
+  if(typeof applyLanguage==='function'){ var al=applyLanguage; window.applyLanguage=function(){ var x=al.apply(this,arguments); renderDocs(); paint(); return x; }; }
 })();
 </script>
 <!-- pab-a2hs --><style>
@@ -3033,6 +3192,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
   background:var(--blue-100);color:var(--blue-600)}
 #a2hs-sheet .a2hs-done{width:100%;min-height:48px;margin-top:12px;border:none;border-radius:14px;background:var(--blue-600);color:#fff;
   font:var(--fw-bold) var(--text-16)/1 var(--font-ui);cursor:pointer}
+#a2hs-banner[hidden]{display:none !important}
 @media print{#a2hs-banner,#a2hs-sheet{display:none !important}}
 </style><div id="a2hs-banner" data-noprint hidden><span class="a2hs-badge"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M12 8v6M9 11h6"/><path d="M11 18.5h2"/></svg></span><div class="a2hs-txt"><div class="a2hs-t">הוסיפו למסך הבית</div><div class="a2hs-s">ונפתח בלחיצה אחת.</div></div><button type="button" class="a2hs-how" onclick="a2hsOpen()">איך?</button></div><div id="a2hs-sheet" role="dialog" aria-modal="true" aria-labelledby="a2hs-title"><div class="a2hs-bg" onclick="a2hsClose()"></div><div class="a2hs-panel"><div class="a2hs-grab"></div><h3 id="a2hs-title">הוספה למסך הבית</h3><p class="a2hs-sub">פעם אחת, ואחר כך האפליקציה תמיד בהישג יד.</p><div class="a2hs-tabs" role="tablist"><button type="button" role="tab" data-os="ios" onclick="a2hsTab('ios')">אייפון</button><button type="button" role="tab" data-os="android" onclick="a2hsTab('android')">אנדרואיד</button></div><div data-os-panel="ios"><ol class="a2hs-steps"><li><span class="a2hs-n">1</span><span>פותחים את הקישור ב-<b>Safari</b>.</span></li><li><span class="a2hs-n">2</span><span>לוחצים על כפתור השיתוף <span class="a2hs-ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 7l4-4 4 4"/><path d="M12 3v12"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg></span> בתחתית המסך. בגרסאות חדשות הוא מאחורי שלוש הנקודות <b>•••</b>.</span></li><li><span class="a2hs-n">3</span><span>גוללים למטה ובוחרים <span class="a2hs-ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg></span> <b>הוספה למסך הבית</b>. לא רואים? לוחצים קודם על <b>עוד</b>.</span></li><li><span class="a2hs-n">4</span><span>לוחצים <b>הוסף</b>. זהו!</span></li></ol></div><div data-os-panel="android" hidden><ol class="a2hs-steps"><li><span class="a2hs-n">1</span><span>פותחים את הקישור ב-<b>Chrome</b>. נפתח בתוך וואטסאפ? לוחצים <span class="a2hs-ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></span> ואז <b style="white-space:nowrap">פתיחה ב-Chrome</b>.</span></li><li><span class="a2hs-n">2</span><span>לוחצים על שלוש הנקודות <span class="a2hs-ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></span> למעלה.</span></li><li><span class="a2hs-n">3</span><span>בוחרים <b>הוספה למסך הבית</b> או <b style="white-space:nowrap">התקנת אפליקציה</b>.</span></li><li><span class="a2hs-n">4</span><span>מאשרים. זהו!</span></li></ol></div><button type="button" class="a2hs-done" onclick="a2hsClose()">הבנתי</button></div></div><script>
 (function(){
@@ -3040,7 +3200,11 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
   var b=document.getElementById('a2hs-banner'), pr=document.querySelector('button[onclick="window.print()"]');
   var spot = document.getElementById('app-footer') || (pr && pr.closest('div[data-noprint]'));
   if(spot && spot.parentNode){ spot.parentNode.insertBefore(b, spot); }
-  if(!standalone) b.hidden=false;
+  // only on the main screen (Dana 2026-11-17: not on every page): hidden while a screen (days, documents...) is open
+  function onHome(){ var n=document.querySelector('.home-nav'); return !n || n.style.display!=='none'; }
+  function sync(){ b.hidden = standalone || !onHome(); }
+  ['showScreen','showHome'].forEach(function(f){ var o=window[f]; if(typeof o==='function') window[f]=function(){ var r=o.apply(this,arguments); sync(); return r; }; });
+  sync();
   window.a2hsTab=function(os){
     document.querySelectorAll('#a2hs-sheet [data-os]').forEach(function(t){ t.setAttribute('aria-selected', t.getAttribute('data-os')===os ? 'true':'false'); });
     document.querySelectorAll('#a2hs-sheet [data-os-panel]').forEach(function(p){ p.hidden = p.getAttribute('data-os-panel')!==os; });
@@ -3053,8 +3217,9 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
 <!-- pab-offline -->
 <script>
 (function(){
-  function lang(){ return (typeof CURRENT_LANG!=='undefined' && CURRENT_LANG==='en') ? 'en' : 'he'; }
-  function tx(he,en){ return lang()==='en' ? en : he; }
+  function lang(){ return (typeof CURRENT_LANG!=='undefined' && CURRENT_LANG && CURRENT_LANG!=='he') ? CURRENT_LANG : 'he'; }
+  /* Hebrew, English, or another language from window.PAB_TX[lang][english text] (e.g. Spanish in the ZocoCamino app); English when missing */
+  function tx(he,en){ var l=lang(); if(l==='he') return he; var d=window.PAB_TX&&window.PAB_TX[l]; return (d&&d[en])||en; }
   /* 1. the worker that keeps the app on the phone */
   if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
     window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
@@ -3076,7 +3241,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
   if(document.body) mount(); else document.addEventListener('DOMContentLoaded',mount);
   var tl=window.toggleLanguage; if(typeof tl==='function') window.toggleLanguage=function(){ var r=tl.apply(this,arguments); paint(); return r; };
   /* 3. the forecast: the last one that loaded stays on the phone and is shown as approximate, with its date */
-  try{ if(typeof UI_STRINGS!=='undefined') UI_STRINGS.weatherError={he:'אין חיבור כרגע, ולכן אין תחזית. תחזית ל-5 ימים תופיע כשיהיה חיבור. עד אז אפשר להסתמך על מזג האוויר הרגיל של העונה.',en:'No connection right now, so there is no forecast. The 5-day forecast appears when you are online. Until then, rely on the usual weather of the season.'}; }catch(e){}
+  try{ if(typeof UI_STRINGS!=='undefined') UI_STRINGS.weatherError={he:'אין חיבור כרגע, ולכן אין תחזית. תחזית ל-5 ימים תופיע כשיהיה חיבור. עד אז אפשר להסתמך על מזג האוויר הרגיל של העונה.',en:'No connection right now, so there is no forecast. The 5-day forecast appears when you are online. Until then, rely on the usual weather of the season.'}; var _w=UI_STRINGS.weatherError; _w.es=(window.PAB_TX&&window.PAB_TX.es&&window.PAB_TX.es[_w.en])||_w.en; }catch(e){}
   function fmt(t){ var d=new Date(t); return d.getDate()+'.'+(d.getMonth()+1)+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); }
   var f0=window.fetchCityForecast;
   if(typeof f0==='function'){
@@ -3201,80 +3366,6 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
     var sh0=window.showHome; if(typeof sh0==='function') window.showHome=function(){ var r=sh0.apply(this,arguments); card.style.display=gone?'none':''; return r; };
     var tl2=window.toggleLanguage; if(typeof tl2==='function') window.toggleLanguage=function(){ var r=tl2.apply(this,arguments); if(!busy) idle(); return r; };
   })();
-})();
-</script>
-<script>
-(function(){
-  var P=window.__PAB||{}, docs=P.docs||[]; if(!docs.length || !document.getElementById('doc-list')) return;
-  var L=function(){ var l=(typeof CURRENT_LANG!=='undefined'&&CURRENT_LANG)||document.documentElement.lang||'he'; return /^en/.test(l)?'en':(/^es/.test(l)?'es':'he'); };
-  var T={desc:{he:'המסמכים לטיול: כרטיסים, שוברים וויזות. לחיצה על מסמך פותחת אותו.',en:'The documents for your trip: tickets, vouchers and visas. Tap one to open it.',es:'Los documentos del viaje: billetes, bonos y visados. Toca uno para abrirlo.'},
-    open:{he:'פתיחה',en:'Open',es:'Abrir'},bk:{he:'פתיחת המסמך',en:'Open the document',es:'Abrir el documento'},close:{he:'סגירה',en:'Close',es:'Cerrar'},
-    fail:{he:'לא הצלחנו לפתוח את המסמך. בודקים חיבור לאינטרנט ומנסים שוב.',en:'The document could not be opened. Check the connection and try again.',es:'No se pudo abrir el documento. Revisa la conexión e inténtalo de nuevo.'}};
-  var K={flight:{he:'טיסה',en:'Flight',es:'Vuelo'},hotel:{he:'מלון',en:'Hotel',es:'Hotel'},train:{he:'רכבת',en:'Train',es:'Tren'},entry:{he:'כניסה',en:'Entry ticket',es:'Entrada'},
-    visa:{he:'ויזה',en:'Visa',es:'Visado'},car:{he:'רכב',en:'Car',es:'Coche'},transfer:{he:'העברה',en:'Transfer',es:'Traslado'},insurance:{he:'ביטוח',en:'Insurance',es:'Seguro'},other:{he:'מסמך',en:'Document',es:'Documento'}};
-  var t=function(k){ return T[k][L()]; }, esc=function(x){ return String(x||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); };
-  var FILE='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><polyline points="14,3 14,8 19,8"/></svg>';
-  var cache={};
-  function blob(d){ if(cache[d.n]) return Promise.resolve(cache[d.n]);
-    return fetch(P.docBase+d.n,{headers:{Authorization:'Bearer '+P.rk}}).then(function(r){ if(!r.ok) throw new Error('x'); return r.blob(); })
-      .then(function(b){ return (cache[d.n]=URL.createObjectURL(b)); }); }
-  function closeV(){ var v=document.getElementById('doc-viewer'); if(v) v.remove(); }
-  function open(d){
-    var android=/android/i.test(navigator.userAgent), w=(android&&d.type==='application/pdf')?window.open('','_blank'):null;
-    blob(d).then(function(u){
-      if(w){ w.location.href=u; return; }
-      closeV(); var img=/^image\//.test(d.type), v=document.createElement('div'); v.id='doc-viewer'; v.setAttribute('role','dialog'); v.setAttribute('aria-label',d.name);
-      v.style.cssText='position:fixed;inset:0;z-index:9999;background:#111;display:flex;flex-direction:column';
-      v.innerHTML='<div style="flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:calc(8px + env(safe-area-inset-top,0px)) 12px 8px;background:#1c1c1e">'+
-        '<button type="button" aria-label="'+t('close')+'" style="flex:0 0 44px;width:44px;height:44px;border:none;border-radius:999px;background:rgba(255,255,255,.14);color:#fff;cursor:pointer;font-size:20px">✕</button>'+
-        '<div style="flex:1;min-width:0;color:#fff;font:var(--fw-bold) var(--text-14)/1.3 var(--font-ui);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(d.name)+'</div></div>'+
-        '<div style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:auto">'+(img?'<img src="'+u+'" alt="" style="max-width:100%;max-height:100%;object-fit:contain">':'<iframe src="'+u+'" title="'+esc(d.name)+'" style="border:0;width:100%;height:100%;background:#fff"></iframe>')+'</div>';
-      v.querySelector('button').addEventListener('click',closeV); document.body.appendChild(v);
-      document.addEventListener('keydown',function k(e){ if(e.key==='Escape'){ closeV(); document.removeEventListener('keydown',k); } });
-    }).catch(function(){ if(w) w.close(); alert(t('fail')); });
-  }
-  window.renderDocs=function(){
-    var list=document.getElementById('doc-list'), empty=document.getElementById('doc-empty'), de=document.querySelector('[data-i18n="docsDesc"]');
-    if(de) de.textContent=t('desc'); if(empty) empty.style.display='none'; list.innerHTML='';
-    docs.forEach(function(d){ var k=K[d.kind]||K.other, b=document.createElement('button'); b.type='button'; b.className='pab-doc-row';
-      b.style.cssText='display:flex;align-items:center;gap:10px;width:100%;text-align:start;cursor:pointer;background:var(--surface-sunken);border:1px solid var(--border-card);border-radius:12px;padding:10px 12px;color:inherit;font:inherit';
-      b.innerHTML='<span style="flex:0 0 44px;width:44px;height:44px;border-radius:8px;background:var(--blue-100);color:var(--blue-600);display:flex;align-items:center;justify-content:center">'+FILE+'</span>'+
-        '<span style="flex:1;min-width:0"><span style="display:block;font:var(--fw-bold) var(--text-14)/1.3 var(--font-ui);color:var(--ink-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(d.name)+'</span>'+
-        '<span style="display:inline-block;margin-top:3px;padding:2px 8px;border-radius:999px;background:var(--surface-muted);color:var(--ink-5);font:var(--fw-bold) var(--text-12)/1.3 var(--font-ui)">'+esc(k[L()])+'</span></span>'+
-        '<span style="flex:0 0 auto;color:var(--blue-600);font:var(--fw-bold) var(--text-13)/1 var(--font-ui)">'+t('open')+'</span>';
-      b.addEventListener('click',function(){ open(d); }); list.appendChild(b); });
-  };
-  // the card of the booking a document belongs to (data-booking, or the card whose text holds it: a flight number, a hotel name)
-  var painting=false;
-  function norm(x){ return String(x||'').toLowerCase().replace(/\s+/g,' ').trim(); }
-  function paint(){ if(painting) return; painting=true;
-    try{ [].forEach.call(document.querySelectorAll('.pab-bk-doc'),function(n){ n.remove(); });
-      var g=document.getElementById('bookings-grid'), cards=[].slice.call(document.querySelectorAll('[data-booking]'));
-      if(g) [].forEach.call(g.children,function(c){ if(cards.indexOf(c)<0) cards.push(c); });
-      var f=document.getElementById('home-flight-card'); if(f&&cards.indexOf(f)<0) cards.push(f);
-      var by=[]; docs.forEach(function(d){ var k=norm(d.booking); if(k.length<3) return;
-        var hit=cards.filter(function(x){ return norm(x.getAttribute('data-booking'))===k; }); if(!hit.length) hit=cards.filter(function(x){ return norm(x.textContent).indexOf(k)>=0; });
-        hit.forEach(function(c){ var e=by.filter(function(y){ return y.c===c; })[0]; if(!e){ e={c:c,d:[]}; by.push(e); } e.d.push(d); }); });
-      by.forEach(function(e){ var box=document.createElement('div'); box.className='pab-bk-doc'; box.style.cssText='display:flex;flex-wrap:wrap;gap:8px;margin-top:12px';
-        e.d.forEach(function(d){ var b=document.createElement('button'); b.type='button';
-          b.style.cssText='display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:8px 14px;border:none;cursor:pointer;background:var(--blue-100);color:var(--blue-600);border-radius:999px;font:var(--fw-bold) var(--text-13)/1 var(--font-ui)';
-          b.innerHTML=FILE.replace('width="20" height="20"','width="16" height="16"')+'<span>'+esc(e.d.length>1?d.name:t('bk'))+'</span>'; b.setAttribute('aria-label',t('bk')+': '+d.name);
-          b.addEventListener('click',function(ev){ ev.stopPropagation(); open(d); }); box.appendChild(b); });
-        e.c.appendChild(box); });
-    } finally { painting=false; } }
-  var pt=null; ['bookings-grid','home-flight-card'].forEach(function(id){ var el=document.getElementById(id);
-    if(el&&window.MutationObserver) new MutationObserver(function(ms){ if(painting) return; if(ms.every(function(m){ return [].every.call(m.addedNodes.length?m.addedNodes:m.removedNodes,function(n){ return n.classList&&n.classList.contains('pab-bk-doc'); }); })) return; clearTimeout(pt); pt=setTimeout(paint,120); }).observe(el,{childList:true,subtree:true}); });
-  renderDocs(); paint(); setTimeout(paint,600);
-  if(typeof applyLanguage==='function'){ var al=applyLanguage; window.applyLanguage=function(){ var x=al.apply(this,arguments); renderDocs(); paint(); return x; }; }
-})();
-</script>
-<script>
-(function(){
-  var t=(window.__PAB&&window.__PAB.trip)||{};
-  [['out','flOutNum','flOutDatetime'],['back','flBackNum','flBackDatetime']].forEach(function(x){
-    if(t[x[1]] || t[x[2]]) return;
-    var el=document.getElementById('fl-'+x[0]+'-datetime'), box=el&&el.parentNode&&el.parentNode.parentNode; if(box) box.style.display='none';
-  });
 })();
 </script>
 </body>
