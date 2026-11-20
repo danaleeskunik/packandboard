@@ -1,8 +1,8 @@
 // Agent itinerary builder: the screens (PLAN.md tasks A3-A8). Plain JS, no build step.
 // State lives in S; every change to the trip goes through commit() (undo + autosave) or edit() (typing: autosave only).
-import * as M from './model.js?v=20261120b';
-import { createStore, takeSecret, forgetSecret, Conflict, NoAccess } from './store.js?v=20261120b';
-import { buildPdfHtml, buildQuoteHtml, loadPack } from './pdf.js?v=20261120b';
+import * as M from './model.js?v=20261120c';
+import { createStore, takeSecret, forgetSecret, Conflict, NoAccess } from './store.js?v=20261120c';
+import { buildPdfHtml, buildQuoteHtml, loadPack } from './pdf.js?v=20261120c';
 
 const S = {
   store: null, me: null, trips: [], filter: 'all', q: '', menuFor: null,
@@ -662,7 +662,7 @@ function viewDocs() {
   const docs = S.priv.docs || [], opts = M.docBookings(S.t), kindName = Object.fromEntries(M.DOC_KINDS);
   const list = docs.length ? `<ul class="docs">${docs.map((d) => `<li>
       <span class="doc-ic" aria-hidden="true">${icon('M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5')}</span>
-      <div class="grow"><b>${esc(d.name)}</b><div class="muted" style="font-size:13px">${esc(kindName[d.kind] || 'מסמך')}${d.label ? ' · ' + esc(d.label) : ''}</div></div>
+      <div class="grow"><b><bdi>${esc(d.name)}</bdi></b><div class="muted" style="font-size:13px">${esc(kindName[d.kind] || 'מסמך')}${d.label ? ' · ' + esc(d.label) : ''}</div></div>
       <button class="btn ghost sm" type="button" data-act="doc-open" data-id="${esc(d.id)}">פתיחה</button>
       <button class="icon-btn" type="button" data-act="doc-del" data-id="${esc(d.id)}" aria-label="מחיקת ${esc(d.name)}">${icon(I.trash)}</button></li>`).join('')}</ul>`
     : '<p class="muted" style="font-size:14px;margin:0 0 12px">עוד אין מסמכים.</p>';
@@ -671,7 +671,7 @@ function viewDocs() {
     <p class="muted" style="font-size:14px;margin:0 0 14px">כרטיסי טיסה, שוברי מלון, ויזות וכרטיסי כניסה. באפליקציה הם יופיעו במסך "מסמכים", וייפתחו גם מהכרטיס של ההזמנה. PDF או תמונה, עד 8MB.</p>
     ${list}
     <div class="docs-add">
-      <div class="field"><label for="doc-file">קובץ</label><input id="doc-file" class="inp" type="file" accept="application/pdf,image/*"></div>
+      <div class="field"><span class="lbl">קובץ</span><input id="doc-file" class="fpick" type="file" accept="application/pdf,image/*" data-f="doc-file"><label for="doc-file" class="btn ghost filebtn"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><polyline points="7,8 12,3 17,8"/><path d="M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg><span id="doc-file-name">בחירת קובץ</span></label></div>
       <div class="field"><label for="doc-booking">שייך להזמנה</label><select id="doc-booking" class="inp" data-f="doc-booking">
         ${opts.map((o, i) => `<option value="${i}">${esc(o.label)}</option>`).join('')}<option value="other">הזמנה אחרת</option></select></div>
       <div class="field"><label for="doc-other">הזמנה אחרת (למשל שם המוזיאון)</label><input id="doc-other" class="inp" maxlength="80"></div>
@@ -1002,6 +1002,7 @@ function itemInput(el) {
 }
 document.addEventListener('change', (e) => {
   const el = e.target, f = el.dataset.f; if (!f) return;
+  if (f === 'doc-file') { const n = el.files && el.files[0]; $('#doc-file-name').innerHTML = n ? '<bdi>' + esc(n.name) + '</bdi>' : 'בחירת קובץ'; return; }
   if (f === 'doc-booking') { const o = M.docBookings(S.t)[Number(el.value)]; const k = $('#doc-kind'); if (o && k) k.value = o.kind; return; }
   if (f === 'start') { if (/^\d{4}-\d{2}-\d{2}$/.test(el.value)) commit(M.setStartDate(S.t, el.value), 'תאריך ההתחלה השתנה'); return; }
   if (f === 'item') {

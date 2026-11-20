@@ -3130,7 +3130,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
       v.style.cssText='position:fixed;inset:0;z-index:9999;background:#111;display:flex;flex-direction:column';
       v.innerHTML='<div style="flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:calc(8px + env(safe-area-inset-top,0px)) 12px 8px;background:#1c1c1e">'+
         '<button type="button" aria-label="'+t('close')+'" style="flex:0 0 44px;width:44px;height:44px;border:none;border-radius:999px;background:rgba(255,255,255,.14);color:#fff;cursor:pointer;font-size:20px">✕</button>'+
-        '<div style="flex:1;min-width:0;color:#fff;font:var(--fw-bold) var(--text-14)/1.3 var(--font-ui);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(d.name)+'</div></div>'+
+        '<div style="flex:1;min-width:0;color:#fff;font:var(--fw-bold) var(--text-14)/1.3 var(--font-ui);overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><bdi>'+esc(d.name)+'</bdi></div></div>'+
         '<div style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:auto">'+(img?'<img src="'+u+'" alt="" style="max-width:100%;max-height:100%;object-fit:contain">':'<iframe src="'+u+'" title="'+esc(d.name)+'" style="border:0;width:100%;height:100%;background:#fff"></iframe>')+'</div>';
       v.querySelector('button').addEventListener('click',closeV); document.body.appendChild(v);
       document.addEventListener('keydown',function k(e){ if(e.key==='Escape'){ closeV(); document.removeEventListener('keydown',k); } });
@@ -3142,7 +3142,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
     docs.forEach(function(d){ var k=K[d.kind]||K.other, b=document.createElement('button'); b.type='button'; b.className='pab-doc-row';
       b.style.cssText='display:flex;align-items:center;gap:10px;width:100%;text-align:start;cursor:pointer;background:var(--surface-sunken);border:1px solid var(--border-card);border-radius:12px;padding:10px 12px;color:inherit;font:inherit';
       b.innerHTML='<span style="flex:0 0 44px;width:44px;height:44px;border-radius:8px;background:var(--blue-100);color:var(--blue-600);display:flex;align-items:center;justify-content:center">'+FILE+'</span>'+
-        '<span style="flex:1;min-width:0"><span style="display:block;font:var(--fw-bold) var(--text-14)/1.3 var(--font-ui);color:var(--ink-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(d.name)+'</span>'+
+        '<span style="flex:1;min-width:0"><span style="display:block;font:var(--fw-bold) var(--text-14)/1.3 var(--font-ui);color:var(--ink-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><bdi>'+esc(d.name)+'</bdi></span>'+
         '<span style="display:inline-block;margin-top:3px;padding:2px 8px;border-radius:999px;background:var(--surface-muted);color:var(--ink-5);font:var(--fw-bold) var(--text-12)/1.3 var(--font-ui)">'+esc(k[L()])+'</span></span>'+
         '<span style="flex:0 0 auto;color:var(--blue-600);font:var(--fw-bold) var(--text-13)/1 var(--font-ui)">'+t('open')+'</span>';
       b.addEventListener('click',function(){ open(d); }); list.appendChild(b); });
@@ -3161,7 +3161,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
       by.forEach(function(e){ var box=document.createElement('div'); box.className='pab-bk-doc'; box.style.cssText='display:flex;flex-wrap:wrap;gap:8px;margin-top:12px';
         e.d.forEach(function(d){ var b=document.createElement('button'); b.type='button';
           b.style.cssText='display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:8px 14px;border:none;cursor:pointer;background:var(--blue-100);color:var(--blue-600);border-radius:999px;font:var(--fw-bold) var(--text-13)/1 var(--font-ui)';
-          b.innerHTML=FILE.replace('width="20" height="20"','width="16" height="16"')+'<span>'+esc(e.d.length>1?d.name:t('bk'))+'</span>'; b.setAttribute('aria-label',t('bk')+': '+d.name);
+          b.innerHTML=FILE.replace('width="20" height="20"','width="16" height="16"')+'<span><bdi>'+esc(e.d.length>1?d.name:t('bk'))+'</bdi></span>'; b.setAttribute('aria-label',t('bk')+': '+d.name);
           b.addEventListener('click',function(ev){ ev.stopPropagation(); open(d); }); box.appendChild(b); });
         e.c.appendChild(box); });
     } finally { painting=false; } }

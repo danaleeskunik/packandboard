@@ -351,3 +351,10 @@ select.inp{-webkit-appearance:none;appearance:none;padding-inline-end:40px;backg
 .doc-ic{flex:0 0 36px;width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:var(--ground)}
 .docs-add{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 14px}
 @media (max-width:640px){.docs-add{grid-template-columns:minmax(0,1fr)}}
+
+/* file fields: our own button (never the browser's "Choose File"), with the chosen file's name on it */
+.fpick{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none}
+.filebtn{display:inline-flex;align-items:center;gap:8px;max-width:100%;cursor:pointer}
+.filebtn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fpick:focus-visible+.filebtn{outline:3px solid var(--brand);outline-offset:2px}
+.field .lbl{display:block;font-size:14px;font-weight:600;margin-bottom:6px}
