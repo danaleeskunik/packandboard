@@ -138,7 +138,7 @@
   var x=new XMLHttpRequest(); x.open('GET',API+'/v1/public/trips/'+m[1],false); x.setRequestHeader('Authorization','Bearer '+m[2]);
   try{ x.send(); }catch(e){ return stop('אין חיבור לשרת. נסו שוב כשיש חיבור.'); }
   if(x.status!==200) return stop(x.status===404?'הטיול לא נמצא, או שעוד לא אושר לפרסום.':'לא הצלחנו לטעון את הטיול. נסו שוב בעוד רגע.');
-  var d; try{ d=JSON.parse(x.responseText); window.__PAB=PAB_RENDER.build(d.trip,d.brand); }catch(e){ return stop('לא הצלחנו לקרוא את הטיול. פנו אל מי ששלח לכם את הקישור.'); }
+  var d; try{ d=JSON.parse(x.responseText); window.__PAB=PAB_RENDER.build(d.trip,d.brand); window.__PAB.docs=Array.isArray(d.documents)?d.documents:[]; window.__PAB.docBase=API+'/v1/public/trips/'+m[1]+'/documents/'; window.__PAB.rk=m[2]; if(window.__PAB.docs.length) document.documentElement.classList.add('pab-has-docs'); }catch(e){ return stop('לא הצלחנו לקרוא את הטיול. פנו אל מי ששלח לכם את הקישור.'); }
 })();
 </script>
 
@@ -467,7 +467,7 @@
 .scroll-fade-start{left:0;background:linear-gradient(to right, var(--surface-card), transparent)}
 .scroll-fade-end{right:0;background:linear-gradient(to left, var(--surface-card), transparent)}
 </style>
-<style>button[onclick*="'documents'"],button[onclick*="'translate'"]{display:none !important}.dest-stamp.geo-stamp{width:auto;height:auto;top:14px;left:16px;border-radius:12px;padding:6px 12px;background:#fff;border:0;box-shadow:0 3px 12px rgba(0,0,0,.18)}.dest-stamp.geo-stamp::before{display:none}.dest-stamp.geo-stamp img{height:38px;width:auto;max-width:200px;display:block}[data-i18n="eyebrow"]{margin-top:30px}</style>
+<style>html:not(.pab-has-docs) button[onclick*="'documents'"],button[onclick*="'translate'"]{display:none !important}html.pab-has-docs #doc-input,html.pab-has-docs #doc-input+button{display:none !important}.dest-stamp.geo-stamp{width:auto;height:auto;top:14px;left:16px;border-radius:12px;padding:6px 12px;background:#fff;border:0;box-shadow:0 3px 12px rgba(0,0,0,.18)}.dest-stamp.geo-stamp::before{display:none}.dest-stamp.geo-stamp img{height:38px;width:auto;max-width:200px;display:block}[data-i18n="eyebrow"]{margin-top:30px}</style>
 </head>
 <body>
 
@@ -3201,6 +3201,71 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
     var sh0=window.showHome; if(typeof sh0==='function') window.showHome=function(){ var r=sh0.apply(this,arguments); card.style.display=gone?'none':''; return r; };
     var tl2=window.toggleLanguage; if(typeof tl2==='function') window.toggleLanguage=function(){ var r=tl2.apply(this,arguments); if(!busy) idle(); return r; };
   })();
+})();
+</script>
+<script>
+(function(){
+  var P=window.__PAB||{}, docs=P.docs||[]; if(!docs.length || !document.getElementById('doc-list')) return;
+  var L=function(){ var l=(typeof CURRENT_LANG!=='undefined'&&CURRENT_LANG)||document.documentElement.lang||'he'; return /^en/.test(l)?'en':(/^es/.test(l)?'es':'he'); };
+  var T={desc:{he:'המסמכים לטיול: כרטיסים, שוברים וויזות. לחיצה על מסמך פותחת אותו.',en:'The documents for your trip: tickets, vouchers and visas. Tap one to open it.',es:'Los documentos del viaje: billetes, bonos y visados. Toca uno para abrirlo.'},
+    open:{he:'פתיחה',en:'Open',es:'Abrir'},bk:{he:'פתיחת המסמך',en:'Open the document',es:'Abrir el documento'},close:{he:'סגירה',en:'Close',es:'Cerrar'},
+    fail:{he:'לא הצלחנו לפתוח את המסמך. בודקים חיבור לאינטרנט ומנסים שוב.',en:'The document could not be opened. Check the connection and try again.',es:'No se pudo abrir el documento. Revisa la conexión e inténtalo de nuevo.'}};
+  var K={flight:{he:'טיסה',en:'Flight',es:'Vuelo'},hotel:{he:'מלון',en:'Hotel',es:'Hotel'},train:{he:'רכבת',en:'Train',es:'Tren'},entry:{he:'כניסה',en:'Entry ticket',es:'Entrada'},
+    visa:{he:'ויזה',en:'Visa',es:'Visado'},car:{he:'רכב',en:'Car',es:'Coche'},transfer:{he:'העברה',en:'Transfer',es:'Traslado'},insurance:{he:'ביטוח',en:'Insurance',es:'Seguro'},other:{he:'מסמך',en:'Document',es:'Documento'}};
+  var t=function(k){ return T[k][L()]; }, esc=function(x){ return String(x||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); };
+  var FILE='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><polyline points="14,3 14,8 19,8"/></svg>';
+  var cache={};
+  function blob(d){ if(cache[d.n]) return Promise.resolve(cache[d.n]);
+    return fetch(P.docBase+d.n,{headers:{Authorization:'Bearer '+P.rk}}).then(function(r){ if(!r.ok) throw new Error('x'); return r.blob(); })
+      .then(function(b){ return (cache[d.n]=URL.createObjectURL(b)); }); }
+  function closeV(){ var v=document.getElementById('doc-viewer'); if(v) v.remove(); }
+  function open(d){
+    var android=/android/i.test(navigator.userAgent), w=(android&&d.type==='application/pdf')?window.open('','_blank'):null;
+    blob(d).then(function(u){
+      if(w){ w.location.href=u; return; }
+      closeV(); var img=/^image\//.test(d.type), v=document.createElement('div'); v.id='doc-viewer'; v.setAttribute('role','dialog'); v.setAttribute('aria-label',d.name);
+      v.style.cssText='position:fixed;inset:0;z-index:9999;background:#111;display:flex;flex-direction:column';
+      v.innerHTML='<div style="flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:calc(8px + env(safe-area-inset-top,0px)) 12px 8px;background:#1c1c1e">'+
+        '<button type="button" aria-label="'+t('close')+'" style="flex:0 0 44px;width:44px;height:44px;border:none;border-radius:999px;background:rgba(255,255,255,.14);color:#fff;cursor:pointer;font-size:20px">✕</button>'+
+        '<div style="flex:1;min-width:0;color:#fff;font:var(--fw-bold) var(--text-14)/1.3 var(--font-ui);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(d.name)+'</div></div>'+
+        '<div style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:auto">'+(img?'<img src="'+u+'" alt="" style="max-width:100%;max-height:100%;object-fit:contain">':'<iframe src="'+u+'" title="'+esc(d.name)+'" style="border:0;width:100%;height:100%;background:#fff"></iframe>')+'</div>';
+      v.querySelector('button').addEventListener('click',closeV); document.body.appendChild(v);
+      document.addEventListener('keydown',function k(e){ if(e.key==='Escape'){ closeV(); document.removeEventListener('keydown',k); } });
+    }).catch(function(){ if(w) w.close(); alert(t('fail')); });
+  }
+  window.renderDocs=function(){
+    var list=document.getElementById('doc-list'), empty=document.getElementById('doc-empty'), de=document.querySelector('[data-i18n="docsDesc"]');
+    if(de) de.textContent=t('desc'); if(empty) empty.style.display='none'; list.innerHTML='';
+    docs.forEach(function(d){ var k=K[d.kind]||K.other, b=document.createElement('button'); b.type='button'; b.className='pab-doc-row';
+      b.style.cssText='display:flex;align-items:center;gap:10px;width:100%;text-align:start;cursor:pointer;background:var(--surface-sunken);border:1px solid var(--border-card);border-radius:12px;padding:10px 12px;color:inherit;font:inherit';
+      b.innerHTML='<span style="flex:0 0 44px;width:44px;height:44px;border-radius:8px;background:var(--blue-100);color:var(--blue-600);display:flex;align-items:center;justify-content:center">'+FILE+'</span>'+
+        '<span style="flex:1;min-width:0"><span style="display:block;font:var(--fw-bold) var(--text-14)/1.3 var(--font-ui);color:var(--ink-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(d.name)+'</span>'+
+        '<span style="display:inline-block;margin-top:3px;padding:2px 8px;border-radius:999px;background:var(--surface-muted);color:var(--ink-5);font:var(--fw-bold) var(--text-12)/1.3 var(--font-ui)">'+esc(k[L()])+'</span></span>'+
+        '<span style="flex:0 0 auto;color:var(--blue-600);font:var(--fw-bold) var(--text-13)/1 var(--font-ui)">'+t('open')+'</span>';
+      b.addEventListener('click',function(){ open(d); }); list.appendChild(b); });
+  };
+  // the card of the booking a document belongs to (data-booking, or the card whose text holds it: a flight number, a hotel name)
+  var painting=false;
+  function norm(x){ return String(x||'').toLowerCase().replace(/\s+/g,' ').trim(); }
+  function paint(){ if(painting) return; painting=true;
+    try{ [].forEach.call(document.querySelectorAll('.pab-bk-doc'),function(n){ n.remove(); });
+      var g=document.getElementById('bookings-grid'), cards=[].slice.call(document.querySelectorAll('[data-booking]'));
+      if(g) [].forEach.call(g.children,function(c){ if(cards.indexOf(c)<0) cards.push(c); });
+      var f=document.getElementById('home-flight-card'); if(f&&cards.indexOf(f)<0) cards.push(f);
+      var by=[]; docs.forEach(function(d){ var k=norm(d.booking); if(k.length<3) return;
+        var hit=cards.filter(function(x){ return norm(x.getAttribute('data-booking'))===k; }); if(!hit.length) hit=cards.filter(function(x){ return norm(x.textContent).indexOf(k)>=0; });
+        hit.forEach(function(c){ var e=by.filter(function(y){ return y.c===c; })[0]; if(!e){ e={c:c,d:[]}; by.push(e); } e.d.push(d); }); });
+      by.forEach(function(e){ var box=document.createElement('div'); box.className='pab-bk-doc'; box.style.cssText='display:flex;flex-wrap:wrap;gap:8px;margin-top:12px';
+        e.d.forEach(function(d){ var b=document.createElement('button'); b.type='button';
+          b.style.cssText='display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:8px 14px;border:none;cursor:pointer;background:var(--blue-100);color:var(--blue-600);border-radius:999px;font:var(--fw-bold) var(--text-13)/1 var(--font-ui)';
+          b.innerHTML=FILE.replace('width="20" height="20"','width="16" height="16"')+'<span>'+esc(e.d.length>1?d.name:t('bk'))+'</span>'; b.setAttribute('aria-label',t('bk')+': '+d.name);
+          b.addEventListener('click',function(ev){ ev.stopPropagation(); open(d); }); box.appendChild(b); });
+        e.c.appendChild(box); });
+    } finally { painting=false; } }
+  var pt=null; ['bookings-grid','home-flight-card'].forEach(function(id){ var el=document.getElementById(id);
+    if(el&&window.MutationObserver) new MutationObserver(function(ms){ if(painting) return; if(ms.every(function(m){ return [].every.call(m.addedNodes.length?m.addedNodes:m.removedNodes,function(n){ return n.classList&&n.classList.contains('pab-bk-doc'); }); })) return; clearTimeout(pt); pt=setTimeout(paint,120); }).observe(el,{childList:true,subtree:true}); });
+  renderDocs(); paint(); setTimeout(paint,600);
+  if(typeof applyLanguage==='function'){ var al=applyLanguage; window.applyLanguage=function(){ var x=al.apply(this,arguments); renderDocs(); paint(); return x; }; }
 })();
 </script>
 </body>

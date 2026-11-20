@@ -42,14 +42,6 @@ th{color:var(--ink2);font-weight:700;font-size:13.5px}
 .box{background:var(--tint);border-radius:14px;padding:14px 16px;margin:16px 0;font-size:16px}
 .try{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px;margin:16px 0}
 label{display:block;font-weight:700;font-size:15px;margin:0 0 6px;color:var(--brand)}
-/* file picker: our own button instead of the browser's "Choose Files" */
-.vh{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;border:0!important;opacity:0;overflow:hidden;clip:rect(0 0 0 0)}
-.filepick{position:relative;display:flex;align-items:center;gap:12px;flex-wrap:wrap;border:1.5px dashed #CFC5AC;border-radius:12px;background:#FDFBF6;padding:10px 12px;transition:border-color .15s,background .15s}
-.filepick.drag{border-color:var(--brand);background:var(--tint)}
-.filepick .pick{display:inline-flex;align-items:center;gap:8px;min-height:44px;margin:0;padding:0 18px;border-radius:999px;background:var(--brand);color:#fff;font-size:15px;cursor:pointer}
-.filepick .pick:hover{filter:brightness(1.12)}
-.filepick input:focus-visible + .pick{outline:3px solid var(--blue);outline-offset:2px}
-.fnames{color:var(--ink2);font-size:14.5px;min-width:0;overflow-wrap:anywhere}
 input,textarea{width:100%;font:inherit;font-size:15px;color:var(--ink);background:#FDFBF6;border:1px solid #CFC5AC;border-radius:10px;padding:10px 12px}
 input{direction:ltr;text-align:left}
 textarea{direction:ltr;text-align:left;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;line-height:1.55;min-height:260px;resize:vertical}
@@ -68,6 +60,12 @@ button:disabled{opacity:.55;cursor:wait}
 .result .lnk{display:block;direction:ltr;text-align:left;word-break:break-all;font-weight:700;margin:6px 0}
 .note{color:var(--ink2);font-size:14.5px;margin-top:10px}
 details{border-top:1px solid var(--line);padding:12px 0}
+.tdocs{margin-top:20px;border:1px dashed #CFC5AC;border-radius:14px;padding:14px 16px;background:#FDFBF6}
+.tdoc{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr) minmax(0,1fr);gap:8px;align-items:center;margin-top:10px}
+.tdoc b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14.5px}
+.tdoc select{width:100%;font:inherit;font-size:15px;color:var(--ink);background-color:#FDFBF6;border:1px solid #CFC5AC;border-radius:10px;padding:10px 12px;-webkit-appearance:none;appearance:none;padding-left:40px;background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);background-position:left 16px center,left 21px center;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+.tdoc input{direction:rtl;text-align:start}
+@media (max-width:640px){.tdoc{grid-template-columns:minmax(0,1fr)}}
 summary{cursor:pointer;font-weight:700;color:var(--brand)}
 .contact a{font-weight:700}
 </style>
@@ -86,22 +84,28 @@ summary{cursor:pointer;font-weight:700;color:var(--brand)}
 </ol>
 
 <h2 id="try">נסו עכשיו</h2>
-<p>הדביקו את מפתח ה-API שקיבלתם, צרפו את המסמכים ו/או הדביקו טקסט, ולחצו "יצירת טיול". המפתח נשלח ישירות לשרת שלנו ולא נשמר בדפדפן. המסמכים משמשים רק לבניית הטיול ואינם נשמרים.</p>
+<p>הדביקו את מפתח ה-API שקיבלתם, צרפו את המסמכים ו/או הדביקו טקסט, ולחצו "יצירת טיול". המפתח נשלח ישירות לשרת שלנו ולא נשמר בדפדפן.</p>
+<p>יש שני מקומות לקבצים. <b>חומרים לבניית הטיול</b> (תוכנית, מיילים, אישורים) נקראים רק כדי לבנות את הטיול ואינם נשמרים. <b>מסמכים לנוסעים</b> (כרטיסי טיסה, רכבת, כניסה למוזיאון, שוברים, ויזות) נשמרים בטיול: הנוסעים מוצאים אותם במסך "מסמכים", וגם בכרטיס של ההזמנה.</p>
 <div class="try">
 <label for="k">מפתח API</label>
 <input id="k" type="password" autocomplete="off" spellcheck="false" placeholder="pab_...">
-<label for="f" style="margin-top:16px">קבצים (PDF, Word, Excel, מייל eml, תמונה, טקסט)</label>
-<div class="filepick" id="fp">
-<input id="f" class="vh" type="file" multiple accept=".pdf,.docx,.xlsx,.eml,.txt,.csv,.png,.jpg,.jpeg,.webp">
-<label for="f" class="pick"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.5l-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l9.2-9.2a3.7 3.7 0 0 1 5.2 5.2l-9.2 9.2a1.8 1.8 0 0 1-2.6-2.6l8.5-8.5"/></svg>בחירת קבצים</label>
-<span class="fnames" id="fn">או גוררים לכאן קבצים</span>
-</div>
+<h3 style="margin:20px 0 4px">1. חומרים לבניית הטיול</h3>
+<p class="note" style="margin:0 0 10px">נקראים ונמחקים. לא נשמרים בטיול.</p>
+<label for="f">קבצים (PDF, Word, Excel, מייל eml, תמונה, טקסט)</label>
+<input id="f" type="file" multiple accept=".pdf,.docx,.xlsx,.eml,.txt,.csv,.png,.jpg,.jpeg,.webp" style="direction:rtl;text-align:start">
 <p class="note" id="fl"></p>
 <label for="x" style="margin-top:12px">או הדביקו טקסט (מייל, מסלול, פרטי הזמנה)</label>
 <textarea id="x" spellcheck="false" style="direction:rtl;text-align:start;font-family:inherit;font-size:15px;min-height:130px"></textarea>
 <label for="ti" style="margin-top:12px">שם הטיול (לא חובה, אחרת נקרא מהמסמכים)</label>
 <input id="ti" type="text" autocomplete="off" style="direction:rtl;text-align:start">
 <p class="note">אל תשלחו דרכונים או פרטי תשלום. מספרי כרטיס ודרכון שבטקסט מוסרים אוטומטית לפני הקריאה, אבל לא ניתן לסנן אותם מתוך קובצי PDF ותמונות.</p>
+<div class="tdocs">
+<h3 style="margin:0 0 4px">2. מסמכים לנוסעים (לא חובה)</h3>
+<p class="note" style="margin:0 0 10px">נשמרים בטיול. כרטיסי טיסה ורכבת, כניסות, שוברים וויזות. PDF או תמונה, עד 8 מסמכים, עד 8MB כל אחד.</p>
+<label for="td">מסמכים</label>
+<input id="td" type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp,.gif" style="direction:rtl;text-align:start">
+<div id="tdl"></div>
+</div>
 <div class="row">
 <button class="go" id="send" type="button">יצירת טיול</button>
 <button class="ghost" id="me" type="button">בדיקת מפתח</button>
@@ -122,6 +126,24 @@ summary{cursor:pointer;font-weight:700;color:var(--brand)}
        "title": "שם (לא חובה)", "reference": "מספר הזמנה שלכם",
        "brand": {"name": "החברה שלכם", "colors": ["#1F5F6B"]}}'</code></pre>
 <p>עד 8 קבצים ו-6MB בסך הכול. נתמכים PDF, <code>.docx</code>, <code>.xlsx</code>, <code>.eml</code> (כולל PDF מצורף), תמונות וטקסט. קבצי <code>.doc</code> ו-<code>.xls</code> ישנים: שמרו כ-docx/xlsx או PDF. התשובה זהה ליצירה מ-JSON ויש בה גם <code>notes</code> (מה הוסק או לא היה ברור) ו-<code>confidence</code>. הקריאה פתוחה עד כדקה. בביטחון נמוך הטיול ממתין לאישור גם אם החשבון מוגדר לפרסום מיידי.</p>
+
+<h2>מסמכים לנוסעים</h2>
+<p>שדה נפרד מ-<code>files</code>: <code>files</code> נקראים כדי לבנות את הטיול ונמחקים. <code>documents</code> <b>נשמרים בטיול</b>: הנוסעים מוצאים אותם במסך "מסמכים", ומסמך עם <code>booking</code> נפתח גם מהכרטיס של ההזמנה. עובד בכל דרכי היצירה (מסמכים, JSON ותבנית), ואפשר להוסיף אחר כך:</p>
+<pre tabindex="0"><code>"documents": [
+  {"name": "כרטיס טיסה הלוך", "data": "&lt;base64&gt;", "kind": "flight", "booking": "LY 395"},
+  {"name": "כניסה למוזיאון הפראדו", "data": "&lt;base64&gt;", "kind": "entry"}
+]
+
+curl -X POST https://pab-api.dana-lees.workers.dev/v1/trips/k3j9x0ab/documents \
+  -H "Authorization: Bearer $PAB_KEY" -H "Content-Type: application/json" \
+  -d '{"documents": [{"name": "שובר מלון", "data": "&lt;base64&gt;", "kind": "hotel", "booking": "Hotel Gracery"}]}'
+
+curl -X DELETE https://pab-api.dana-lees.workers.dev/v1/trips/k3j9x0ab/documents/2 -H "Authorization: Bearer $PAB_KEY"</code></pre>
+<ul>
+<li><code>kind</code>: <code>flight</code>, <code>train</code>, <code>entry</code>, <code>hotel</code>, <code>visa</code>, <code>car</code>, <code>transfer</code>, <code>insurance</code>, <code>other</code>.</li>
+<li><code>booking</code>: טקסט שמופיע בכרטיס ההזמנה, כמו מספר טיסה או שם המלון. בלעדיו המסמך מופיע רק במסך "מסמכים".</li>
+<li>PDF, JPEG, PNG, WEBP או GIF. עד 8 מסמכים לטיול, עד 8MB כל אחד. במחיקת הטיול נמחקים גם המסמכים.</li>
+</ul>
 
 <h2>יצירה מנתונים מובנים, עדכון ומחיקה</h2>
 <h3>יצירת טיול מ-JSON</h3>
@@ -171,7 +193,7 @@ summary{cursor:pointer;font-weight:700;color:var(--brand)}
 <tr><td>401</td><td>מפתח לא תקין.</td></tr>
 <tr><td>403</td><td>החשבון הושבת, או שאין לו הרשאה לפעולה.</td></tr>
 <tr><td>404</td><td>טיול לא קיים או שאינו שלכם.</td></tr>
-<tr><td>413</td><td>הבקשה גדולה מ-200KB.</td></tr>
+<tr><td>413</td><td>הבקשה גדולה מדי: 200KB לטיול, 8MB לחומרים לבניית הטיול, ועד 8MB לכל מסמך לנוסעים.</td></tr>
 <tr><td>422</td><td>הטיול לא תקין. <code>details</code> מפרט.</td></tr>
 <tr><td>429</td><td>עברתם את המכסה החודשית, או 30 בקשות בשעה.</td></tr>
 </table></div>
@@ -216,13 +238,6 @@ summary{cursor:pointer;font-weight:700;color:var(--brand)}
     else if(b.upstream_message && /credit balance/i.test(b.upstream_message)) show('bad',['הקריאה האוטומטית אינה זמינה כרגע. פנו אלינו.']);
     else show('bad',[ERR[b.error]||MSG[x.status]||('שגיאה '+x.status+(b.error?' ('+b.error+')':''))]);
   }
-  (function(){ var fp=$('fp'), inp=$('f');
-    function names(){ var n=Array.prototype.map.call(inp.files,function(f){return f.name;}); $('fn').textContent=n.length?n.join(' · '):'או גוררים לכאן קבצים'; }
-    inp.addEventListener('change',function(){ setTimeout(names,0); });   // after the size checks below, which may clear the choice
-    ['dragenter','dragover'].forEach(function(t){ fp.addEventListener(t,function(e){ e.preventDefault(); fp.classList.add('drag'); }); });
-    ['dragleave','drop'].forEach(function(t){ fp.addEventListener(t,function(e){ e.preventDefault(); fp.classList.remove('drag'); }); });
-    fp.addEventListener('drop',function(e){ if(!e.dataTransfer||!e.dataTransfer.files.length) return; inp.files=e.dataTransfer.files; inp.dispatchEvent(new Event('change')); });
-  })();
   $('f').onchange=function(){
     files=[]; var sel=Array.prototype.slice.call($('f').files), total=0; $('fl').textContent='';
     if(sel.length>8){ $('fl').textContent='עד 8 קבצים.'; $('f').value=''; return; }
@@ -231,9 +246,24 @@ summary{cursor:pointer;font-weight:700;color:var(--brand)}
     var left=sel.length; if(!left) return;
     sel.forEach(function(f){ var r=new FileReader(); r.onload=function(){ files.push({name:f.name,data:String(r.result).split(',')[1]||''}); if(--left===0) $('fl').textContent='נבחרו '+files.length+' קבצים.'; }; r.readAsDataURL(f); });
   };
+  // the travellers' documents: kept in the trip, each with its kind and the booking it belongs to
+  var tdocs=[], KINDS=[['flight','טיסה'],['train','רכבת'],['entry','כניסה'],['hotel','מלון'],['visa','ויזה'],['car','רכב'],['transfer','העברה'],['insurance','ביטוח'],['other','אחר']];
+  $('td').onchange=function(){
+    tdocs=[]; $('tdl').innerHTML=''; var sel=Array.prototype.slice.call($('td').files);
+    if(sel.length>8){ $('tdl').textContent='עד 8 מסמכים.'; $('td').value=''; return; }
+    if(sel.some(function(f){ return f.size>8*1024*1024; })){ $('tdl').textContent='כל מסמך עד 8MB.'; $('td').value=''; return; }
+    sel.forEach(function(f,i){ var d={name:f.name.replace(/\.[a-z0-9]+$/i,''),data:'',kind:/train|rail|רכבת/i.test(f.name)?'train':/visa|ויזה/i.test(f.name)?'visa':/hotel|voucher|מלון/i.test(f.name)?'hotel':'flight',booking:''}; tdocs.push(d);
+      var row=document.createElement('div'); row.className='tdoc';
+      row.innerHTML='<b></b><select aria-label="סוג המסמך">'+KINDS.map(function(k){ return '<option value="'+k[0]+'"'+(k[0]===d.kind?' selected':'')+'>'+k[1]+'</option>'; }).join('')+'</select><input type="text" aria-label="לאיזו הזמנה" placeholder="מספר טיסה או שם המלון (לא חובה)">';
+      row.querySelector('b').textContent=f.name; row.querySelector('select').onchange=function(){ d.kind=this.value; }; row.querySelector('input').oninput=function(){ d.booking=this.value.trim(); };
+      $('tdl').appendChild(row);
+      var r=new FileReader(); r.onload=function(){ d.data=String(r.result).split(',')[1]||''; }; r.readAsDataURL(f); });
+  };
   $('send').onclick=function(){
     var txt=$('x').value.trim(); if(!files.length && !txt){ show('bad',['צרפו קובץ או הדביקו טקסט.']); return; }
+    if(tdocs.some(function(d){ return !d.data; })){ show('bad',['המסמכים עוד נטענים. נסו שוב בעוד רגע.']); return; }
     var body={files:files,text:txt}; if($('ti').value.trim()) body.title=$('ti').value.trim();
+    if(tdocs.length) body.documents=tdocs.map(function(d){ var o={name:d.name,data:d.data,kind:d.kind}; if(d.booking) o.booking=d.booking; return o; });
     call('POST','/v1/trips/from-documents',JSON.stringify(body),'קוראים את המסמכים ובונים את הטיול. זה לוקח עד דקה...').then(done);
   };
   $('sendj').onclick=function(){
