@@ -1,8 +1,8 @@
 // Agent itinerary builder: the screens (PLAN.md tasks A3-A8). Plain JS, no build step.
 // State lives in S; every change to the trip goes through commit() (undo + autosave) or edit() (typing: autosave only).
-import * as M from './model.js?v=20261120a';
-import { createStore, takeSecret, forgetSecret, Conflict, NoAccess } from './store.js?v=20261120a';
-import { buildPdfHtml, buildQuoteHtml, loadPack } from './pdf.js?v=20261120a';
+import * as M from './model.js?v=20261120b';
+import { createStore, takeSecret, forgetSecret, Conflict, NoAccess } from './store.js?v=20261120b';
+import { buildPdfHtml, buildQuoteHtml, loadPack } from './pdf.js?v=20261120b';
 
 const S = {
   store: null, me: null, trips: [], filter: 'all', q: '', menuFor: null,
@@ -626,6 +626,7 @@ function viewPublish() {
   const pub = r.published || {};
   return `<p class="eyebrow">שלב 06</p><h1 class="display">פרסום</h1>
     <p class="sub">כשהכל מוכן שולחים לדנה. אחרי שהיא מאשרת, מקבלים כאן את הקישור לאפליקציה ואת ה-PDF.</p>
+    ${viewDocs()}
     <div class="layout2">
       <section class="card" style="padding:6px 18px" aria-labelledby="ck-h">
         <h2 id="ck-h" class="sr">מה בדקנו</h2>
@@ -654,6 +655,48 @@ function viewPublish() {
         </div>` : ''}
       </aside>
     </div>`;
+}
+
+// ---------- documents for the travellers (tickets, vouchers, visas) ----------
+function viewDocs() {
+  const docs = S.priv.docs || [], opts = M.docBookings(S.t), kindName = Object.fromEntries(M.DOC_KINDS);
+  const list = docs.length ? `<ul class="docs">${docs.map((d) => `<li>
+      <span class="doc-ic" aria-hidden="true">${icon('M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5')}</span>
+      <div class="grow"><b>${esc(d.name)}</b><div class="muted" style="font-size:13px">${esc(kindName[d.kind] || 'מסמך')}${d.label ? ' · ' + esc(d.label) : ''}</div></div>
+      <button class="btn ghost sm" type="button" data-act="doc-open" data-id="${esc(d.id)}">פתיחה</button>
+      <button class="icon-btn" type="button" data-act="doc-del" data-id="${esc(d.id)}" aria-label="מחיקת ${esc(d.name)}">${icon(I.trash)}</button></li>`).join('')}</ul>`
+    : '<p class="muted" style="font-size:14px;margin:0 0 12px">עוד אין מסמכים.</p>';
+  return `<section class="card" style="padding:18px;margin-bottom:20px" aria-labelledby="docs-h">
+    <h2 id="docs-h" style="margin-bottom:6px">מסמכים לנוסעים</h2>
+    <p class="muted" style="font-size:14px;margin:0 0 14px">כרטיסי טיסה, שוברי מלון, ויזות וכרטיסי כניסה. באפליקציה הם יופיעו במסך "מסמכים", וייפתחו גם מהכרטיס של ההזמנה. PDF או תמונה, עד 8MB.</p>
+    ${list}
+    <div class="docs-add">
+      <div class="field"><label for="doc-file">קובץ</label><input id="doc-file" class="inp" type="file" accept="application/pdf,image/*"></div>
+      <div class="field"><label for="doc-booking">שייך להזמנה</label><select id="doc-booking" class="inp" data-f="doc-booking">
+        ${opts.map((o, i) => `<option value="${i}">${esc(o.label)}</option>`).join('')}<option value="other">הזמנה אחרת</option></select></div>
+      <div class="field"><label for="doc-other">הזמנה אחרת (למשל שם המוזיאון)</label><input id="doc-other" class="inp" maxlength="80"></div>
+      <div class="field"><label for="doc-kind">סוג המסמך</label><select id="doc-kind" class="inp">
+        ${M.DOC_KINDS.map(([k, l]) => `<option value="${k}"${opts[0] && opts[0].kind === k ? ' selected' : ''}>${l}</option>`).join('')}</select></div>
+      <div class="field"><label for="doc-name">השם שהנוסעים יראו (רשות)</label><input id="doc-name" class="inp" maxlength="80" placeholder="למשל: כרטיס טיסה הלוך"></div>
+      <div class="row" style="align-items:flex-end"><button class="btn" type="button" data-act="doc-add">${icon(I.plus)}הוספת המסמך</button></div>
+    </div>
+  </section>`;
+}
+async function docAdd() {
+  const f = $('#doc-file'), file = f && f.files && f.files[0];
+  if (!file) { toast('בוחרים קובץ קודם'); return; }
+  if (file.size > 8 * 1024 * 1024) { toast('הקובץ גדול מ-8MB'); return; }
+  if (!/^(application\/pdf|image\/)/.test(file.type || '')) { toast('רק PDF או תמונה'); return; }
+  const opts = M.docBookings(S.t), sel = $('#doc-booking').value, other = $('#doc-other').value.trim();
+  const o = sel === 'other' ? { booking: other, label: other } : opts[Number(sel)];
+  if (!o || !o.booking) { toast('כותבים לאיזו הזמנה המסמך שייך'); $('#doc-other').focus(); return; }
+  const name = $('#doc-name').value.trim() || file.name.replace(/\.[a-z0-9]+$/i, '');
+  const btn = $('[data-act="doc-add"]'); if (btn) btn.disabled = true;
+  try {
+    const path = await S.store.uploadDoc(S.me.id, S.row.id, file);
+    editPrivate((p) => { p.docs = p.docs || []; p.docs.push({ id: M.uid('doc'), name, path, size: file.size, booking: o.booking, label: o.label, kind: $('#doc-kind').value }); });
+    render(); toast('המסמך נוסף');
+  } catch (e) { if (btn) btn.disabled = false; toast(e.status === 403 || e.status === 400 ? 'המסמכים עוד לא מופעלים. כתבו לדנה.' : 'ההעלאה נכשלה. כדאי לנסות שוב.'); }
 }
 
 // ---------- dialogs ----------
@@ -886,6 +929,18 @@ const ACT = {
     try { S.row = Object.assign(S.row, await S.store.setStatus(S.row.id, 'submitted', { note_to_dana: note })); S.version = S.row.version; render(); toast('נשלח לדנה'); }
     catch (e) { toast('לא נשלח. כדאי לנסות שוב.'); }
   },
+  'doc-add': () => docAdd(),
+  'doc-open': async (el) => {
+    const d = (S.priv.docs || []).find((x) => x.id === el.dataset.id); if (!d) return;
+    const w = window.open('', '_blank');
+    try { const u = await S.store.docLink(d.path); if (w) w.location.href = u; else location.href = u; } catch (e) { if (w) w.close(); toast('לא הצלחנו לפתוח את הקובץ'); }
+  },
+  'doc-del': async (el) => {
+    const d = (S.priv.docs || []).find((x) => x.id === el.dataset.id); if (!d) return;
+    if (!confirm('למחוק את "' + d.name + '"?')) return;
+    editPrivate((p) => { p.docs = (p.docs || []).filter((x) => x.id !== d.id); });
+    S.store.deleteDoc(d.path); render(); toast('המסמך נמחק');
+  },
   'copy-link': async () => { try { await navigator.clipboard.writeText(S.priv.clientLink); toast('הקישור הועתק'); } catch (e) { toast('לא הצלחנו להעתיק'); } },
 };
 const clone = (o) => JSON.parse(JSON.stringify(o));
@@ -947,6 +1002,7 @@ function itemInput(el) {
 }
 document.addEventListener('change', (e) => {
   const el = e.target, f = el.dataset.f; if (!f) return;
+  if (f === 'doc-booking') { const o = M.docBookings(S.t)[Number(el.value)]; const k = $('#doc-kind'); if (o && k) k.value = o.kind; return; }
   if (f === 'start') { if (/^\d{4}-\d{2}-\d{2}$/.test(el.value)) commit(M.setStartDate(S.t, el.value), 'תאריך ההתחלה השתנה'); return; }
   if (f === 'item') {
     const it = findItem(el.dataset.id), k = el.dataset.k;

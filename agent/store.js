@@ -74,6 +74,22 @@ export function createStore(secret) {
     async savePrivate(tripId, agentId, data) {
       return call('POST', '/rest/v1/agent_trip_private?on_conflict=trip_id', { body: { trip_id: tripId, agent_id: agentId, data }, prefer: 'resolution=merge-duplicates,return=minimal' });
     },
+    // documents for the travellers: the private bucket agent-docs, folder <agent>/<trip>/ (supabase_agent_docs.sql)
+    async uploadDoc(agentId, tripId, file) {
+      const path = agentId + '/' + tripId + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '-' + (file.name || 'file').replace(/[^a-zA-Z0-9._-]/g, '_');
+      let r;
+      try { r = await fetch(SUPABASE_URL + '/storage/v1/object/agent-docs/' + path, { method: 'POST', headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'x-pab-agent': secret, 'Content-Type': file.type || 'application/octet-stream' }, body: file }); }
+      catch (e) { throw new Error('offline'); }
+      if (!r.ok) { const err = new Error('HTTP ' + r.status); err.status = r.status; throw err; }
+      return path;
+    },
+    async deleteDoc(path) {
+      await fetch(SUPABASE_URL + '/storage/v1/object/agent-docs/' + path, { method: 'DELETE', headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'x-pab-agent': secret } }).catch(() => {});
+    },
+    async docLink(path) {             // a link for 10 minutes, to open the file
+      const j = await call('POST', '/storage/v1/object/sign/agent-docs/' + path, { body: { expiresIn: 600 } });
+      return SUPABASE_URL + '/storage/v1' + j.signedURL;
+    },
     async listSnippets() {
       return call('GET', '/rest/v1/agent_snippets?select=id,dest,category,data&order=updated_at.desc');
     },

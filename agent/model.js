@@ -577,3 +577,32 @@ export function quoteFill(trip) {
   const t = setQuote(trip, { lines: q.lines.concat(add.map((l) => Object.assign({ id: uid('q') }, l))) });
   return { trip: t, added: add.length };
 }
+
+// ---------- documents for the travellers (tickets, vouchers, visas) ----------
+// The files sit in the private bucket agent-docs; the private part keeps the list: priv.docs = [{id, name, path, size, booking, label, kind}].
+// When the trip becomes an app, scripts/agent_trip_docs.py copies them into the app's Documents. `booking` is text that is on
+// the app's booking card (a flight number, a hotel name, the transfers card), so the file also opens from that card.
+export const DOC_KINDS = [['flight', 'טיסה'], ['hotel', 'מלון'], ['train', 'רכבת'], ['entry', 'כניסה'], ['visa', 'ויזה'],
+  ['car', 'רכב'], ['transfer', 'העברה'], ['insurance', 'ביטוח'], ['other', 'אחר']];
+const TRANSFERS_CARD = 'ההעברות בטיול';                      // the title of the transfers card in the app (agent_trip_to_app.py)
+const DOC_MODE = { flight: ['flight', 'טיסה'], train: ['train', 'רכבת'], shinkansen: ['train', 'שינקנסן'], driver: ['transfer', 'נהג פרטי'],
+  taxi: ['transfer', 'מונית'], car: ['car', 'רכב שכור'], transit: ['transfer', 'תחבורה ציבורית'], other: ['transfer', 'העברה'] };
+export function docBookings(trip) {
+  const out = [], seen = new Set();
+  const add = (o) => { const k = o.booking + '|' + o.label; if (!seen.has(k)) { seen.add(k); out.push(o); } };
+  const fl = trip.flights || {};
+  [['out', 'טיסה הלוך'], ['back', 'טיסה חזור']].forEach(([k, l]) => { const f = fl[k]; if (!f) return;
+    const route = f.from && f.to ? f.from + ' ← ' + f.to : '';
+    add({ booking: (f.number || '').trim() || 'טיסות', label: [l, f.number, route].filter(Boolean).join(' · '), kind: 'flight' }); });
+  for (const s of trip.stays || []) { const h = shownHotel(s); if (h && h.name && h.name.trim()) add({ booking: h.name.trim(), label: 'מלון · ' + h.name.trim(), kind: 'hotel' }); }
+  // trains and private drivers are booked leg by leg; a rental car is one booking, however many legs it drives (taxis, transit, walks are not booked)
+  let car = false;
+  (trip.days || []).forEach((d, i) => { for (const it of d.items || []) {
+    const tr = it.transfer; if (!tr || !tr.from || !tr.to) continue;
+    if (tr.mode === 'car') { car = true; continue; }
+    if (!['train', 'shinkansen', 'driver', 'other'].includes(tr.mode)) continue;
+    const m = DOC_MODE[tr.mode];
+    add({ booking: TRANSFERS_CARD, label: m[1] + ' · ' + tr.from + ' ← ' + tr.to + ' (' + shortDate(addDays(trip.startDate, i)) + ')', kind: m[0] }); } });
+  if (car) add({ booking: TRANSFERS_CARD, label: 'רכב שכור', kind: 'car' });
+  return out;
+}
