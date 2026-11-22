@@ -1,15 +1,13 @@
 {
-  "name": "הטיול שלך · Pack & Board",
-  "short_name": "הטיול שלי",
+  "name": "הטיול לצפון איטליה",
   "lang": "he",
   "dir": "rtl",
   "start_url": "./?family=dori",
   "scope": "./",
   "id": "./",
   "display": "standalone",
-  "orientation": "portrait",
   "background_color": "#F7F2E8",
-  "theme_color": "#17352A",
+  "theme_color": "#1F6FA8",
   "icons": [
     {
       "src": "/assets/icon-192.png",
@@ -29,5 +27,6 @@
       "type": "image/png",
       "purpose": "maskable"
     }
-  ]
+  ],
+  "short_name": "הטיול לצפון איטליה"
 }
