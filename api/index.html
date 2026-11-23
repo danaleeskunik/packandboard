@@ -72,12 +72,21 @@ details{border-top:1px solid var(--line);padding:12px 0}
 @media (max-width:640px){.tdoc{grid-template-columns:minmax(0,1fr)}}
 summary{cursor:pointer;font-weight:700;color:var(--brand)}
 .contact a{font-weight:700}
+/* agency mode: the page opened from an agency's personal link (#k=...). Its logo on top, no key field, no developer section */
+.only-partner{display:none}
+.partner .only-partner{display:block}
+.partner .dev{display:none !important}
+.brandbar{display:none;background:var(--brand-dark,#17352A);border-radius:16px;padding:16px 20px;margin:0 0 18px;align-items:center;justify-content:space-between;gap:12px}
+.partner .brandbar{display:flex}
+.brandbar img{height:40px;width:auto;max-width:220px;display:block}
+.brandbar span{color:#fff;font:800 20px/1.2 Heebo,sans-serif}
 </style>
 </head>
 <body>
 <div class="wrap">
 <a class="back" href="/">Pack &amp; Board <span aria-hidden="true">←</span></a>
-<p class="eyebrow">לשותפים</p>
+<div class="brandbar" id="brand" aria-label="הסוכנות"></div>
+<p class="eyebrow dev">לשותפים</p>
 <h1>מדריך טיול דיגיטלי אישי, ישר מהמערכת שלכם</h1>
 <p class="lead">שולחים לנו את המסמכים שיש לכם: מייל, PDF, Word, Excel או טקסט. מקבלים בחזרה קישור למדריך אישי שנפתח בטלפון, בלי הורדה מהחנות.</p>
 
@@ -87,12 +96,14 @@ summary{cursor:pointer;font-weight:700;color:var(--brand)}
 <li><b>3. שולחים למטייל</b><span>הוא פותח, והמדריך נשמר גם לשימוש בלי אינטרנט אחרי פתיחה ראשונה.</span></li>
 </ol>
 
-<h2 id="try">נסו עכשיו</h2>
-<p>הדביקו את מפתח ה-API שקיבלתם, צרפו את המסמכים ו/או הדביקו טקסט, ולחצו "יצירת טיול". המפתח נשלח ישירות לשרת שלנו ולא נשמר בדפדפן.</p>
+<h2 id="try" class="dev">נסו עכשיו</h2>
+<h2 class="only-partner">יצירת טיול</h2>
+<p class="only-partner">צרפו את המסמכים ו/או הדביקו טקסט, ולחצו "יצירת טיול". תוך דקה תקבלו קישור לשלוח למטיילים.</p>
+<p class="dev">הדביקו את מפתח ה-API שקיבלתם, צרפו את המסמכים ו/או הדביקו טקסט, ולחצו "יצירת טיול". המפתח נשלח ישירות לשרת שלנו ולא נשמר בדפדפן.</p>
 <p>יש שני מקומות לקבצים. <b>חומרים לבניית הטיול</b> (תוכנית, מיילים, אישורים) נקראים רק כדי לבנות את הטיול ואינם נשמרים. <b>מסמכים לנוסעים</b> (כרטיסי טיסה, רכבת, כניסה למוזיאון, שוברים, ויזות) נשמרים בטיול: הנוסעים מוצאים אותם במסך "מסמכים", וגם בכרטיס של ההזמנה.</p>
 <div class="try">
-<label for="k">מפתח API</label>
-<input id="k" type="password" autocomplete="off" spellcheck="false" placeholder="pab_...">
+<div class="dev"><label for="k">מפתח API</label>
+<input id="k" type="password" autocomplete="off" spellcheck="false" placeholder="pab_..."></div>
 <h3 style="margin:20px 0 4px">1. חומרים לבניית הטיול</h3>
 <p class="note" style="margin:0 0 10px">נקראים ונמחקים. לא נשמרים בטיול.</p>
 <label for="f">קבצים (PDF, Word, Excel, מייל eml, תמונה, טקסט)</label>
@@ -112,15 +123,16 @@ summary{cursor:pointer;font-weight:700;color:var(--brand)}
 </div>
 <div class="row">
 <button class="go" id="send" type="button">יצירת טיול</button>
-<button class="ghost" id="me" type="button">בדיקת מפתח</button>
+<button class="ghost dev" id="me" type="button">בדיקת מפתח</button>
 </div>
-<details style="margin-top:18px"><summary>יש לכם נתונים מובנים? שליחה כ-JSON</summary>
+<details class="dev" style="margin-top:18px"><summary>יש לכם נתונים מובנים? שליחה כ-JSON</summary>
 <textarea id="t" spellcheck="false" aria-label="טיול ב-JSON" style="margin-top:10px"></textarea>
 <div class="row"><button class="ghost" id="sendj" type="button">שליחת JSON</button><button class="ghost" id="reset" type="button">חזרה לדוגמה</button></div>
 </details>
 <div class="result" id="out" role="status" aria-live="polite"></div>
 </div>
 
+<div class="dev">
 <h2>יצירה ממסמכים</h2>
 <p>כתובת בסיס: <code>https://pab-api.dana-lees.workers.dev</code>. בכל קריאה: <code>Authorization: Bearer pab_...</code></p>
 <pre tabindex="0"><code>curl -X POST https://pab-api.dana-lees.workers.dev/v1/trips/from-documents \
@@ -205,6 +217,8 @@ curl -X DELETE https://pab-api.dana-lees.workers.dev/v1/trips/k3j9x0ab/documents
 <h2>איך מקבלים מפתח</h2>
 <p class="contact">המפתח מונפק על ידינו, והוא מוצג פעם אחת בלבד. בחשבון חדש כל טיול ממתין לאישור שלנו עד שנצבר אמון, ואז עוברים לפרסום מיידי. פנו אלינו: <a href="https://wa.me/972537004934">וואטסאפ</a> או <a href="mailto:office@packandboard.com" dir="ltr">office@packandboard.com</a>.</p>
 
+</div>
+
 <h2>פרטיות</h2>
 <p>אתם אחראים לנתוני המטיילים שאתם שולחים. Pack &amp; Board מעבדת אותם רק כדי לבנות את המדריך. טיול שנמחק מוסר, והקישור מפסיק לעבוד. הסכם עיבוד מידע זמין לפי בקשה. ראו גם את <a href="/privacy/">מדיניות הפרטיות</a>.</p>
 </div>
@@ -212,10 +226,21 @@ curl -X DELETE https://pab-api.dana-lees.workers.dev/v1/trips/k3j9x0ab/documents
 <script>
 (function(){
   var API='https://pab-api.dana-lees.workers.dev';
+  var qa=/[?&]api=([^&]+)/.exec(location.search); if(qa && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) API=decodeURIComponent(qa[1]);   /* local test only */
   var EXAMPLE={"title": "פורטוגל בחמישה ימים", "language": "he", "reference": "MY-ORDER-1", "dates": {"start": "2027-05-10", "end": "2027-05-14"}, "destination": {"country": "PT", "cities": [{"name": "Lisbon", "lat": 38.7223, "lng": -9.1393}, {"name": "Porto", "lat": 41.1579, "lng": -8.6291}]}, "days": [{"date": "2027-05-10", "title": "נחיתה בליסבון", "city": "Lisbon", "rows": [{"label": "טיסה", "text": "טיסה מ**תל אביב** ל**ליסבון**, נחיתה אחר הצהריים."}, {"label": "ערב", "text": "טיול רגלי בשכונת **אלפמה** וארוחת ערב בטברנה קטנה."}, {"label": "לינה", "text": "**Hotel Alfama Demo**, ליסבון."}], "tip": "החשמלית 28 צפופה בשעות היום. עדיף לעלות מוקדם בבוקר.", "places": [{"name": "אלפמה"}]}, {"date": "2027-05-11", "title": "ליסבון הקלאסית", "city": "Lisbon", "rows": [{"label": "בוקר", "text": "מגדל בלם ומנזר הירונימוס."}, {"label": "צהריים", "text": "פשטידות **פאשטל דה נאטה** במאפייה ההיסטורית."}, {"label": "ערב", "text": "שקיעה במרפסת **מיראדורו דה סנטה לוזיה**."}], "tip": "כרטיס משולב למנזר ולמגדל חוסך תור.", "places": [{"name": "מגדל בלם"}, {"name": "מנזר הירונימוס"}]}, {"date": "2027-05-12", "title": "סינטרה ביום אחד", "city": "Lisbon", "rows": [{"label": "בוקר", "text": "רכבת לסינטרה (40 דקות) וביקור בארמון **פנה**."}, {"label": "צהריים", "text": "ארוחה בעיירה ההיסטורית."}, {"label": "ערב", "text": "חזרה לליסבון וערב חופשי."}], "tip": "נעלי הליכה נוחות. יש עליות תלולות.", "places": [{"name": "ארמון פנה"}]}, {"date": "2027-05-13", "title": "רכבת לפורטו", "city": "Porto", "rows": [{"label": "בוקר", "text": "רכבת מהירה מליסבון לפורטו (כ-3 שעות)."}, {"label": "צהריים", "text": "ספריית **לבראריה לו** והשוק המקומי."}, {"label": "לינה", "text": "**Hotel Ribeira Demo**, פורטו."}], "tip": "הזמינו כרטיסי רכבת מראש.", "places": [{"name": "ריברה"}]}, {"date": "2027-05-14", "title": "יין, נהר ובית", "city": "Porto", "rows": [{"label": "בוקר", "text": "שיט על נהר הדורו."}, {"label": "צהריים", "text": "טעימות פורט במרתפי **וילה נובה דה גאיה**."}, {"label": "ערב", "text": "טיסה הביתה."}], "tip": "שעת ההמראה בשובר ההזמנה.", "places": [{"name": "וילה נובה דה גאיה"}]}], "flights": [{"dir": "out", "number": "XX 100", "from": "TLV", "to": "LIS", "dep": "2027-05-10T07:00:00+03:00", "arr": "2027-05-10T11:30:00+01:00"}, {"dir": "back", "number": "XX 101", "from": "OPO", "to": "TLV", "dep": "2027-05-14T20:00:00+01:00", "arr": "2027-05-15T02:00:00+03:00"}], "bookings": [{"type": "hotel", "title": "Hotel Alfama Demo", "body": "10-13 במאי, 3 לילות"}, {"type": "hotel", "title": "Hotel Ribeira Demo", "body": "13-14 במאי, לילה אחד"}], "packing": [{"group": "בגדים", "items": ["נעלי הליכה", "מעיל קל לערב", "כובע"]}, {"group": "מסמכים", "items": ["דרכון", "ביטוח נסיעות"]}], "tips": [{"title": "תשלום", "text": "כרטיס אשראי מתקבל כמעט בכל מקום. מזומן לקפה קטן."}], "emergency": [{"label": "חירום", "tel": "112"}], "currency": "EUR", "brand": {"name": "השם של החברה שלכם", "colors": ["#1F5F6B"]}};
   var $=function(i){return document.getElementById(i)}, out=$('out'), t=$('t'), files=[];
   function setExample(){ t.value=JSON.stringify(EXAMPLE,null,2); }
   setExample();
+  var hk=/[#&]k=(pab_[a-z0-9]{20,60})/.exec(location.hash||'');
+  if(hk){ $('k').value=hk[1]; document.body.classList.add('partner');
+    fetch(API+'/v1/me',{headers:{'Authorization':'Bearer '+hk[1]}}).then(function(r){ return r.json(); }).then(function(me){
+      var b=(me&&me.brand)||{}, box=$('brand'); if(!me||!me.name) return;
+      if(b.colors&&/^#[0-9a-fA-F]{6}$/.test(b.colors[0])) box.style.background=b.colors[0];
+      if(b.logo_url&&b.logo_dark){ var i=document.createElement('img'); i.alt=b.name||me.name; i.referrerPolicy='no-referrer'; i.src=b.logo_url; box.appendChild(i); }
+      else box.appendChild(el('span',b.name||me.name));
+      document.title='יצירת טיול · '+(b.name||me.name);
+    }).catch(function(){});
+  }
   function show(kind, nodes){ out.className='result show '+kind; out.textContent=''; nodes.forEach(function(n){ out.appendChild(typeof n==='string'?document.createTextNode(n):n); }); }
   function el(tag, text, cls){ var e=document.createElement(tag); if(text) e.textContent=text; if(cls) e.className=cls; return e; }
   function list(items){ var u=el('ul'); items.forEach(function(x){ u.appendChild(el('li', typeof x==='string'?x:JSON.stringify(x))); }); return u; }
