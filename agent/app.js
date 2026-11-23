@@ -1,8 +1,8 @@
 // Agent itinerary builder: the screens (PLAN.md tasks A3-A8). Plain JS, no build step.
 // State lives in S; every change to the trip goes through commit() (undo + autosave) or edit() (typing: autosave only).
-import * as M from './model.js?v=20261120c';
-import { createStore, takeSecret, forgetSecret, Conflict, NoAccess } from './store.js?v=20261120c';
-import { buildPdfHtml, buildQuoteHtml, loadPack } from './pdf.js?v=20261120c';
+import * as M from './model.js?v=20261123a';
+import { createStore, takeSecret, forgetSecret, Conflict, NoAccess } from './store.js?v=20261123a';
+import { buildPdfHtml, buildQuoteHtml, loadPack } from './pdf.js?v=20261123a';
 
 const S = {
   store: null, me: null, trips: [], filter: 'all', q: '', menuFor: null,
@@ -11,6 +11,7 @@ const S = {
   day: 0, editItem: null, side: (() => { try { return localStorage.getItem('packandboard.agent.side') || 'preview'; } catch (e) { return 'preview'; } })(),
   save: 'saved', saveTimer: null, saving: false, dirty: false, privTimer: null,
   dlg: null, conflict: false,
+  hopen: {}, mtab: 'edit', itemMenu: null, allDays: false, scrolledDay: null,
 };
 // day and item duplication are hidden for now (Dana, 2026-11-15: confusing). Whole-trip cloning in the trips list stays.
 const SHOW_DUPLICATE = false;
@@ -34,6 +35,22 @@ const I = {
   pin: 'M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11zM12 10h.01', nav: 'M3 11l18-8-8 18-2-8z', search: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-3.5-3.5',
   lock: 'M5 11h14v9H5zM8 11V8a4 4 0 0 1 8 0v3', edit: 'M4 20h4L19 9l-4-4L4 16zM14 6l4 4',
 };
+// the design's line icons (agent-builder/app/icons, 24x24, stroke 2), drawn with a mask so they take the text colour
+const ic = (name, size) => `<span class="ic i-${name}${size ? ' s' + size : ''}" aria-hidden="true" style="-webkit-mask-image:url(icons/${name}.svg);mask-image:url(icons/${name}.svg)"></span>`;
+const CUR_SIGN = { ILS: '₪', USD: '$', EUR: '€', JPY: '¥', GBP: '£', THB: '฿' };
+const WEEKDAY_FULL = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+const longDay = (iso) => { if (!iso) return ''; const [y, m, d] = iso.split('-').map(Number); return WEEKDAY_FULL[new Date(Date.UTC(y, m - 1, d)).getUTCDay()] + ' ' + d + '.' + m; };
+// the builder's own destination colours: by the destination's place in the route (not by city), 7 colours, a hatch from the 8th.
+// A destination that comes back (Tokyo at the start and the end) keeps its first colour. The client app, the PDF and the quote keep the country pack's colours.
+const DEST_COLORS = ['#33658A', '#5B7D6B', '#C2544B', '#0F6E7A', '#B04E6A', '#2F5DA8', '#4D6378'];
+function posColor(dest, t = S.t) {
+  const order = []; ((t && t.stays) || []).forEach((s) => { if (!order.includes(s.dest)) order.push(s.dest); });
+  const i = order.indexOf(dest);
+  return i < 0 ? { c: '#8E94A0', rep: false } : { c: DEST_COLORS[i % 7], rep: i >= 7 };
+}
+const HATCH = 'repeating-linear-gradient(135deg,rgba(255,255,255,.28) 0 3px,transparent 3px 7px)';
+const paint = (dest, t = S.t) => { const p = posColor(dest, t); return `background-color:${p.c}${p.rep ? ';background-image:' + HATCH : ''}`; };
+const paint2 = (a, b, t = S.t) => `background:linear-gradient(270deg,${posColor(a, t).c} 50%,${posColor(b, t).c} 50%)`;   // a transition day: right = the destination you leave
 const dayLabel = (iso) => { if (!iso) return ''; const [y, m, d] = iso.split('-').map(Number); return WEEKDAY[new Date(Date.UTC(y, m - 1, d)).getUTCDay()] + ' ' + d + '.' + m; };
 const stayOf = (dest) => (S.t ? S.t.stays.find((s) => s.dest === dest) : null);
 const destName = (dest) => { const s = stayOf(dest); return s ? he(s.label) || dest : dest; };
@@ -104,9 +121,11 @@ async function saveNow() {
   paintSaved();
 }
 function paintSaved() {
-  const el = $('#saved'); if (!el) return;
-  el.className = 'saved' + (S.save === 'err' ? ' err' : S.save === 'busy' ? ' busy' : '');
-  el.innerHTML = S.save === 'saved' ? icon(I.check) + 'נשמר' : S.save === 'busy' ? 'שומר…' : S.conflict ? 'לא נשמר' : 'לא נשמר, מנסה שוב';
+  document.querySelectorAll('.js-saved').forEach((el) => {
+    el.className = 'saved js-saved' + (S.save === 'err' ? ' err' : S.save === 'busy' ? ' busy' : '');
+    el.innerHTML = S.save === 'saved' ? ic('check', 16) + 'נשמר' : S.save === 'busy' ? 'שומר…' : ic('cloud-off', 16) + 'לא נשמר';
+  });
+  const b = $('#save-banner'); if (b) b.hidden = !(S.save === 'err' && !S.conflict);
 }
 window.addEventListener('beforeunload', (e) => { if (S.dirty || S.saving || S.privPending) { e.preventDefault(); e.returnValue = ''; } });
 
@@ -157,7 +176,7 @@ async function load() {
       S.trips = await S.store.listTrips();
     } else {
       if (!S.row || S.row.id !== r.id) {
-        $('#app').innerHTML = '<div class="loading" role="status">טוען את הטיול…</div>';
+        $('#app').innerHTML = loadingPage('trip');
         const row = await S.store.getTrip(r.id);
         S.row = row; S.t = M.relabel(row.data); S.version = row.version; S.history = []; S.conflict = false; S.save = 'saved'; S.dirty = false; S.privPending = null;
         S.priv = await S.store.getPrivate(r.id).catch(() => ({}));
@@ -166,7 +185,8 @@ async function load() {
       if (r.day !== null && r.day < S.t.days.length) S.day = r.day;
     }
   } catch (e) {
-    $('#app').innerHTML = `<div class="gate-page"><div class="card"><h1 class="display" style="font-size:28px">לא הצלחנו לפתוח</h1><p class="muted">${e instanceof NoAccess ? 'הטיול לא נמצא, או שאין גישה אליו מהקישור הזה.' : 'אין חיבור כרגע. כדאי לנסות שוב בעוד רגע.'}</p><a class="btn" href="#/">לכל הטיולים</a></div></div>`;
+    $('#app').innerHTML = gatePage(e instanceof NoAccess ? 'alert' : 'wifi-off', 'לא הצלחנו לפתוח', e instanceof NoAccess ? 'הטיול לא נמצא, או שאין גישה אליו מהקישור הזה.' : 'אין חיבור כרגע. השינויים שכבר נשמרו לא הלכו לשום מקום.',
+      `<div class="row" style="justify-content:center;margin-top:20px"><button class="btn" type="button" data-act="reload-page">${ic('refresh', 16)}לנסות שוב</button><a class="btn ghost" href="#/">לכל הטיולים</a></div>`);
     return;
   }
   render();
@@ -193,84 +213,153 @@ function render() {
   $('#dlg-root').innerHTML = S.dlg ? viewDialog() : '';
   $('#app').inert = !!S.dlg;
   paintSaved();
+  if (r.view === 'trip' && r.step === 'days' && S.scrolledDay !== S.day && window.innerWidth < 1100) {   // keep the chosen day tile in sight on a phone
+    S.scrolledDay = S.day;
+    const cur = $('.dtile[aria-current="true"]'); if (cur) cur.scrollIntoView({ block: 'nearest', inline: 'center' });
+  }
   if (S.dlg) { const f = $('#dlg-root [data-autofocus]') || $('#dlg-root input, #dlg-root select, #dlg-root button'); if (f) f.focus(); }
   else if (focusId) { const el = document.getElementById(focusId); if (el) el.focus(); }
 }
 
-function topList() {
+const wordmark = (href) => `<${href ? `a href="${href}"` : 'span'} class="wordmark" aria-label="Pack and Board">Pack <span class="amp">&amp;</span> Board</${href ? 'a' : 'span'}>`;
+function agencyBadge() {
   const b = (S.me && S.me.branding) || {};
-  return `<header class="top"><div class="wrap">
-    <a class="brand" href="#/"><span class="display">Pack &amp; Board</span><small>בונה מסלולים</small></a>
-    <div class="grow"></div>
-    <div class="agency">${b.logoUrl ? `<img src="${esc(b.logoUrl)}" alt="" width="32" height="32" style="border-radius:6px;object-fit:contain">` : `<span class="logo" aria-hidden="true">${esc((S.me.name || '?').slice(0, 1))}</span>`}<span>${esc(b.agencyName || S.me.name)}</span></div>
-  </div></header>`;
+  return `<div class="agency"><span>${esc(b.agencyName || S.me.name)}</span><span class="lg" aria-hidden="true">${b.logoUrl ? `<img src="${esc(b.logoUrl)}" alt="">` : esc((S.me.name || '?').slice(0, 1))}</span></div>`;
+}
+const flapDigits = (v) => String(v).split('').map((c) => `<span>${esc(c)}</span>`).join('');
+const MONTHS = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
+const todayIso = () => { const n = new Date(); return n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0') + '-' + String(n.getDate()).padStart(2, '0'); };
+const daysBetween = (a, b) => Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 864e5);
+function updatedText(r) {
+  if (!r.updated_at) return '';
+  const d = r.updated_at.slice(0, 10), n = daysBetween(d, todayIso());
+  return n <= 0 ? 'עודכן היום' : n === 1 ? 'עודכן אתמול' : 'עודכן ' + M.shortDate(d);
 }
 
 function viewList() {
   const q = S.q.trim();
-  const trips = S.trips.filter((r) => (S.filter === 'all' || r.status === S.filter) && (!q || he(r.data.client && r.data.client.name).includes(q)));
-  const chip = (v, l) => `<button class="chip" type="button" data-act="filter" data-v="${v}" aria-pressed="${S.filter === v}">${l}</button>`;
+  const today = todayIso();
+  const startOf = (r) => (r.data && r.data.startDate) || '9999-12-31';
+  const endOf = (r) => { const d = r.data || {}; return d.startDate ? M.addDays(d.startDate, d.stays && d.stays.length ? M.totalNights(d) : 0) : '9999-12-31'; };
+  // nearest departure first; trips that already ended go to the end, the most recent first
+  const ordered = S.trips.slice().sort((a, b) => {
+    const pa = endOf(a) < today, pb = endOf(b) < today;
+    if (pa !== pb) return pa ? 1 : -1;
+    return pa ? startOf(b).localeCompare(startOf(a)) : startOf(a).localeCompare(startOf(b));
+  });
+  const trips = ordered.filter((r) => (S.filter === 'all' || r.status === S.filter) && (!q || he(r.data.client && r.data.client.name).includes(q)));
+  const count = (st) => S.trips.filter((r) => st === 'all' || r.status === st).length;
+  const segBtn = (v, l) => `<button type="button" data-act="filter" data-v="${v}" aria-pressed="${S.filter === v}">${l} <span class="cnt num">${count(v)}</span></button>`;
+  const next = S.trips.map((r) => r.data && r.data.startDate).filter((d) => d && d >= today).sort()[0];
+  const kpi = (v, k) => `<div class="kpi"><div class="v" aria-hidden="true">${flapDigits(v)}</div><div class="k"><span class="sr">${esc(v)} </span>${k}</div></div>`;
   const cards = trips.map((r) => {
-    const d = r.data, st = STATUS[r.status] || STATUS.draft;
-    const accent = (d.stays && d.stays[0] && d.stays[0].color) || 'var(--brand)';
-    const where = d.country || (d.stays && d.stays[0] ? he(d.stays[0].label) : 'טיול חדש');
-    return `<article class="pass tp" style="--accent:${esc(accent)}">
-      <div class="pass-band"></div>
-      <div class="pass-body">
-        <div class="row"><span class="iata" style="color:var(--accent)">${esc(where)}</span><div class="grow"></div>
-          <button class="icon-btn" type="button" data-act="menu" data-id="${r.id}" aria-label="פעולות על ${esc(he(d.client.name))}" aria-expanded="${S.menuFor === r.id}">${icon(I.more)}</button></div>
-        <div class="who">${esc(he(d.client.name))}</div>
-        <div class="muted" style="font-size:14px">${tripDates(d)}</div>
+    const d = r.data, st = STATUS[r.status] || STATUS.draft, name = he(d.client && d.client.name);
+    const stays = d.stays || [], N = stays.length ? M.totalNights(d) : 0;
+    const uniq = []; stays.forEach((s) => { if (!uniq.some((u) => u.dest === s.dest)) uniq.push(s); });
+    const route2 = uniq.map((s) => `<span class="row" style="gap:6px"><span class="dot" style="width:8px;height:8px;${paint(s.dest, d)}"></span>${esc(he(s.label))}</span>`).join('<span class="sep" aria-hidden="true"></span>');
+    const cbar = stays.map((s) => `<i style="flex:${Number(s.nights) || 1};${paint(s.dest, d)}"></i>`).join('');
+    const [y, m, dd] = (d.startDate || '').split('-').map(Number);
+    return `<article class="bp" aria-label="${esc(name)}">
+      <div class="main">
+        <div class="row between" style="flex-wrap:nowrap"><span class="lbl2">${esc(d.country || (stays[0] ? he(stays[0].label) : 'טיול חדש'))}</span>
+          <button class="ibtn" type="button" data-act="menu" data-id="${r.id}" aria-label="פעולות לטיול של ${esc(name)}" aria-expanded="${S.menuFor === r.id}" style="margin:-10px 0 -10px -12px">${ic('more', 20)}</button></div>
+        <h2 class="who">${esc(name)}</h2>
+        ${route2 ? `<div class="route2">${route2}</div><div class="cbar" aria-hidden="true">${cbar}</div>` : '<p class="small muted">עוד אין יעדים</p>'}
+        <div class="row between" style="margin-top:6px;gap:8px"><div class="row" style="gap:6px"><span class="badge ${st[1]}">${st[0]}</span>${r.changed_since_publish ? '<span class="badge warn"><span class="bd"></span>יש שינויים</span>' : ''}</div><span class="xs muted">${updatedText(r)}</span></div>
       </div>
-      <div class="foot"><span class="badge ${st[1]}">${st[0]}${r.changed_since_publish ? ' · יש שינויים' : ''}</span><a class="btn ghost sm" href="#/t/${r.id}/structure">פתיחה</a></div>
+      <div class="stubx"><span class="lbl2">יציאה</span>
+        ${d.startDate ? `<span><span class="big num">${dd}.${m}</span><span class="xs muted" style="display:block;margin-top:4px">${MONTHS[m - 1]} ${y}</span></span><span class="xs muted num">${N ? N + 1 + ' ימים' : ''}</span>` : '<span class="xs muted">בלי תאריך</span>'}
+        <a class="btn sm" href="#/t/${r.id}/structure" aria-label="פתיחת הטיול של ${esc(name)}">פתיחה</a></div>
       ${S.menuFor === r.id ? `<div class="menu" role="menu" aria-label="פעולות">
-        <button role="menuitem" type="button" data-act="clone-open" data-id="${r.id}">${icon(I.copy)}שכפול טיול</button>
-        <button role="menuitem" type="button" data-act="archive" data-id="${r.id}">${icon(I.trash)}העברה לארכיון</button></div>` : ''}
+        <button role="menuitem" type="button" data-act="clone-open" data-id="${r.id}">${ic('copy')}שכפול טיול</button>
+        <button role="menuitem" type="button" data-act="archive" data-id="${r.id}">${ic('archive')}העברה לארכיון</button></div>` : ''}
     </article>`;
   }).join('');
-  return topList() + `<main><div class="wrap">
-    <p class="eyebrow">שלום ${esc(S.me.name)}</p>
-    <h1 class="display">הטיולים שלי</h1>
-    <div class="toolbar">
-      <button class="btn sm" type="button" data-act="new-open">${icon(I.plus)}טיול חדש</button>
-      <div class="search"><label class="sr" for="q">חיפוש לפי שם הלקוח</label>${icon(I.search)}<input id="q" class="inp" type="search" placeholder="חיפוש לפי שם הלקוח" value="${esc(S.q)}" data-f="q"></div>
-      <div class="row" role="group" aria-label="סינון לפי סטטוס">${chip('all', 'הכול')}${chip('draft', 'טיוטה')}${chip('submitted', 'אצל דנה')}${chip('published', 'פורסם')}</div>
-    </div>
-    ${cards ? `<div class="passes">${cards}</div>` : `<div class="empty-state">${S.trips.length ? 'אין טיולים שמתאימים לחיפוש.' : 'עוד אין כאן טיולים.'}<br>${S.trips.length ? '' : `<button class="btn" type="button" data-act="new-open">${icon(I.plus)}טיול ראשון</button>`}</div>`}
-  </div></main>`;
+  return `<header class="hero"><div class="wrap">
+      <div class="row between">${wordmark('#/')}${agencyBadge()}</div>
+      <div class="row between" style="align-items:flex-end;gap:24px;margin-top:32px">
+        <div><p class="eyebrow">בונה המסלולים</p><h1 class="display">הטיולים שלי</h1></div>
+        <div class="kpis">${kpi(count('all') - 0, 'טיולים פעילים')}${kpi(count('submitted'), 'אצל דנה לאישור')}${kpi(next ? daysBetween(today, next) : '–', 'ימים ליציאה הקרובה')}</div>
+      </div></div></header>
+    <main class="wrap" style="padding-top:24px;padding-bottom:72px">
+      <div class="toolbar">
+        <button class="btn" type="button" data-act="new-open">${ic('plus')}טיול חדש</button>
+        <label class="inp-ic"><span class="sr">חיפוש לפי שם המשפחה</span>${ic('search')}<input id="q" class="inp" type="search" placeholder="חיפוש לפי שם המשפחה" value="${esc(S.q)}" data-f="q"></label>
+        <span class="grow"></span>
+        <div class="seg" role="group" aria-label="סינון לפי מצב">${segBtn('all', 'הכול')}${segBtn('draft', 'טיוטה')}${segBtn('submitted', 'אצל דנה')}${segBtn('published', 'פורסם')}</div>
+      </div>
+      ${cards ? `<div class="passes">${cards}<button class="addtile" type="button" data-act="new-open"><span class="pl">${ic('plus', 24)}</span>טיול חדש</button></div>`
+        : `<div class="empty-state">${S.trips.length ? 'אין טיולים שמתאימים לחיפוש.' : '<b style="color:var(--ink);font-size:18px">עוד אין כאן טיולים</b><br>מתחילים בטיול הראשון: שם המשפחה ותאריך, והשאר בהמשך.'}<br>${S.trips.length ? '' : `<button class="btn" type="button" data-act="new-open">${ic('plus')}טיול ראשון</button>`}</div>`}
+    </main>`;
 }
 
-function topTrip() {
-  const d = S.t, st = M.stepStates(d);
-  const step = (key, code, name, state, sub, target) => {
-    const cur = route().step === (target || key);
-    const cls = state === 'done' ? 'done' : state === 'work' ? 'work' : '';
-    return `<li><button type="button" data-act="step" data-v="${target || key}"${cur ? ' aria-current="step"' : ''}><span class="state ${cls}" aria-hidden="true"></span><span><span class="code">${code}</span> <span class="nm">${name}</span><span class="st">${sub}</span></span></button></li>`;
-  };
-  const c = st.counts;
+// the seven steps: one list for the side rail (computer) and the flaps (phone)
+function stepsData() {
+  const d = S.t, st = M.stepStates(d), c = st.counts, qt = M.quoteTotals(d);
   const label = { empty: 'עוד לא', work: 'בעבודה', done: 'מוכן' };
-  return `<header class="top"><div class="wrap">
-    <a class="back" href="#/">${icon(I.back)}הטיולים שלי</a>
-    <div class="trip-id"><b>${esc(tripTitle(d))}</b><span>${tripDates(d)}</span></div>
-    <div class="grow"></div>
-    <span class="saved" id="saved" role="status"></span>
-    <button class="btn ghost sm" type="button" data-act="pdf">${icon('M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6')}תצוגת PDF</button>
-  </div></header>
-  ${S.conflict ? `<div class="wrap" style="padding-top:12px"><div class="err-box" role="alert">הטיול נשמר בחלון או במחשב אחר, ולכן השינויים האחרונים כאן לא נשמרו. <button class="btn sm" type="button" data-act="reload">לטעון את הגרסה השמורה</button></div></div>` : ''}
-  <nav class="steps" aria-label="שלבי הטיול"><div class="wrap"><ol>
-    ${step('structure', '01', 'מבנה', st.structure, label[st.structure])}
-    ${step('hotels', '02', 'מלונות', st.hotels, c.stays ? c.staysWithHotel + ' מתוך ' + c.stays : label[st.hotels])}
-    ${step('days', '03', 'ימים', st.days, c.days ? c.filledDays + ' מתוך ' + c.days : label[st.days])}
-    ${step('transfers', '04', 'הגעה', st.transfers, c.pendingTransfers ? c.pendingTransfers + ' לאשר' : label[st.transfers])}
-    ${(() => { const qt = M.quoteTotals(d); const qst = !qt.lines ? 'empty' : qt.priced >= qt.lines ? 'done' : 'work'; return step('quote', '05', 'הצעת מחיר', qst, qt.priced ? money(qt.total, M.quoteOf(d).currency) : label[qst]); })()}
-    <li class="later"><button type="button" disabled aria-describedby="later-5"><span class="state" aria-hidden="true"></span><span><span class="code">06</span> <span class="nm">אישור לקוח</span><span class="st" id="later-5">בקרוב</span></span></button></li>
-    ${step('publish', '07', 'פרסום', S.row.status === 'published' ? 'done' : S.row.status === 'submitted' ? 'work' : 'empty', (STATUS[S.row.status] || STATUS.draft)[0])}
-  </ol></div></nav>`;
+  const qst = !qt.lines ? 'empty' : qt.priced >= qt.lines ? 'done' : 'work';
+  return [
+    { k: 'structure', n: '01', name: 'מבנה ולילות', short: 'מבנה', state: st.structure, sub: d.stays.length ? `${d.stays.length} יעדים · ${M.totalNights(d)} לילות` : label.empty },
+    { k: 'hotels', n: '02', name: 'מלונות', short: 'מלונות', state: st.hotels, sub: c.stays ? c.staysWithHotel + ' מתוך ' + c.stays : label[st.hotels] },
+    { k: 'days', n: '03', name: 'ימים', short: 'ימים', state: st.days, sub: c.days ? c.filledDays + ' מתוך ' + c.days : label[st.days] },
+    { k: 'transfers', n: '04', name: 'הגעה ותחבורה', short: 'הגעה', state: st.transfers, attn: c.pendingTransfers, sub: c.pendingTransfers ? c.pendingTransfers + ' הצעות לאשר' : label[st.transfers] },
+    { k: 'quote', n: '05', name: 'הצעת מחיר', short: 'מחיר', state: qst, sub: qt.priced ? money(qt.total, M.quoteOf(d).currency) : label[qst] },
+    { k: 'approve', n: '06', name: 'אישור לקוח', short: 'אישור', later: true, sub: 'בקרוב' },
+    { k: 'publish', n: '07', name: 'פרסום', short: 'פרסום', state: S.row.status === 'published' ? 'done' : S.row.status === 'submitted' ? 'work' : 'empty', sub: (STATUS[S.row.status] || STATUS.draft)[0] },
+  ];
 }
+function tripStub(d) {
+  if (!d.startDate) return '';
+  const n = d.stays.length ? M.totalNights(d) : 0, end = M.addDays(d.startDate, n);
+  return `${M.shortDate(d.startDate)} – ${M.shortDate(end)}.${end.slice(0, 4)}`;
+}
+function rail(steps) {
+  const d = S.t, cur = route().step;
+  const uniq = []; d.stays.forEach((s) => { if (!uniq.some((u) => u.dest === s.dest)) uniq.push(s); });
+  const pax = M.travellersCount(d);
+  const marker = (s) => s.later ? '<span></span>' : s.attn ? `<span class="attn num" aria-hidden="true">${s.attn}</span>` : s.state === 'done' ? `<span class="ok" aria-hidden="true">${ic('check', 16)}</span>` : s.state === 'work' ? '<span class="half" aria-hidden="true"></span>' : '<span class="todo" aria-hidden="true"></span>';
+  return `<aside class="rail" aria-label="ניווט בטיול">
+    <div>${wordmark()}</div>
+    <a class="back" href="#/">${ic('chev-r', 16)}הטיולים שלי</a>
+    <div class="tpass">
+      <div class="band" aria-hidden="true">${d.stays.map((s) => `<i style="flex:${Number(s.nights) || 1};${paint(s.dest)}"></i>`).join('') || '<i style="flex:1;background:var(--hair)"></i>'}</div>
+      <div class="bd-b"><p class="xs muted" style="font-weight:700;letter-spacing:.06em">${esc(d.country || 'טיול')}</p><p class="who">${esc(he(d.client && d.client.name))}</p>${uniq.length ? `<p class="small muted">${uniq.map((s) => esc(he(s.label))).join(' · ')}</p>` : ''}</div>
+      <div class="stub num"><span class="ltr">${tripStub(d)}</span><span>${pax ? pax + ' מטיילים' : ''}</span></div>
+    </div>
+    <h2 class="rl">שלבים</h2>
+    <ol class="rsteps">${steps.map((s) => `<li><button class="rst${s.later ? ' later' : ''}" type="button"${s.later ? ' aria-disabled="true"' : ` data-act="step" data-v="${s.k}"`}${cur === s.k ? ' aria-current="step"' : ''}><span class="flap">${s.n}</span><span><span class="nm">${s.name}</span><span class="st num">${esc(s.sub)}</span></span>${marker(s)}</button></li>`).join('')}</ol>
+    <div class="foot"><span class="saved js-saved" role="status"></span><button class="btn onboard sm block" type="button" data-act="pdf">${ic('file')}תצוגת PDF</button></div>
+  </aside>`;
+}
+function mtop(steps) {
+  const d = S.t, cur = route().step;
+  const n = d.stays.length ? M.totalNights(d) : 0;
+  const flap = (s) => {
+    const lab = `שלב ${s.n} ${s.name}, ${s.sub}`;
+    if (s.later) return `<button class="mflap later" type="button" aria-disabled="true" aria-label="${esc(lab)}"><span class="num">${Number(s.n)}</span><span class="s no"></span></button>`;
+    if (cur === s.k) return `<button class="mflap" type="button" data-act="step" data-v="${s.k}" aria-current="step" aria-label="${esc(lab)}"><span class="num">${s.n}</span>${s.short}</button>`;
+    const cls = s.attn ? 'att' : s.state === 'done' ? '' : s.state === 'work' ? 'half' : 'no';
+    return `<button class="mflap" type="button" data-act="step" data-v="${s.k}" aria-label="${esc(lab)}"><span class="num">${Number(s.n)}</span><span class="s ${cls}"></span></button>`;
+  };
+  return `<header class="mtop">
+    <div class="row"><a class="ibtn" href="#/" aria-label="הטיולים שלי">${ic('chev-r', 20)}</a>
+      <div class="tripid grow"><b>${esc(tripTitle(d))}</b><span class="num"><span class="ltr">${tripStub(d)}</span>${n ? ' · ' + (n + 1) + ' ימים' : ''}</span></div>
+      <span class="saved js-saved" role="status"></span>
+      <button class="ibtn" type="button" data-act="pdf" aria-label="תצוגת PDF">${ic('file')}</button></div>
+    <nav class="mflaps" aria-label="שלבי הטיול">${steps.map(flap).join('')}</nav>
+  </header>`;
+}
+// the head of every step: a small flap, "step 0X of 07", the title and one line
+const phead = (n, title, sub) => `<div class="phead"><p class="kicker"><span class="flap" aria-hidden="true">${n}</span>שלב ${n} מתוך 07</p><h1 class="display">${title}</h1>${sub ? `<p class="sub">${sub}</p>` : ''}</div>`;
+const needStays = (n, title, why) => phead(n, title) + `<div class="empty-state">${why}<br><a class="btn" href="#/t/${S.row.id}/structure">${ic('chev-r', 16)}למבנה</a></div>`;
 
 function viewTrip(step) {
+  const steps = stepsData();
   const body = step === 'quote' ? viewQuote() : step === 'hotels' ? viewHotels() : step === 'days' ? viewDays() : step === 'transfers' ? viewTransfers() : step === 'publish' ? viewPublish() : viewStructure();
-  return topTrip() + `<main><div class="wrap">${body}</div></main>`;
+  return `<div class="app">${rail(steps)}<div style="min-width:0">${mtop(steps)}<main class="stage">
+    ${S.conflict ? `<div class="banner warn" role="alert" style="margin-bottom:16px">${ic('alert')}<span class="grow">הטיול נשמר בחלון או במחשב אחר, ולכן השינויים האחרונים כאן לא נשמרו.</span><button class="btn sm" type="button" data-act="reload">${ic('refresh', 16)}לטעון את הגרסה השמורה</button></div>` : ''}
+    <div id="save-banner" class="banner err" role="alert" style="margin-bottom:16px" hidden>${ic('cloud-off')}<span class="grow">השינויים האחרונים עוד לא נשמרו. מנסים שוב לבד כל כמה שניות.</span><button class="btn sm ghost" type="button" data-act="retry-save">לנסות עכשיו</button></div>
+    ${body}</main></div></div>`;
 }
 
 // ---------- structure ----------
@@ -278,109 +367,133 @@ function viewStructure() {
   const t = S.t, N = t.stays.length ? M.totalNights(t) : 0;
   const rows = t.stays.map((s, i) => {
     const start = M.stayStart(t, i);
-    const range = t.startDate ? `${M.shortDate(M.addDays(t.startDate, start))} – ${M.shortDate(M.addDays(t.startDate, start + s.nights))}` : '';
+    const range = t.startDate ? `<span class="ltr">${M.shortDate(M.addDays(t.startDate, start))} – ${M.shortDate(M.addDays(t.startDate, start + s.nights))}</span> · ${(Number(s.nights) || 0) + 1} ימים` : '';
     const name = he(s.label);
-    return `<div class="stay" draggable="true" data-drag-stay="${s.id}">
-      <div class="acts" style="flex-direction:column;gap:0">
-        <button class="mini" type="button" data-act="stay-up" data-id="${s.id}" aria-label="הזזת ${esc(name)} למעלה"${i === 0 ? ' disabled' : ''}>${icon(I.up)}</button>
-        <button class="mini" type="button" data-act="stay-down" data-id="${s.id}" aria-label="הזזת ${esc(name)} למטה"${i === t.stays.length - 1 ? ' disabled' : ''}>${icon(I.down)}</button>
+    return `<li class="stay" draggable="true" data-drag-stay="${s.id}">
+      <div class="reorder">
+        <button class="mini" type="button" data-act="stay-up" data-id="${s.id}" aria-label="הזזת ${esc(name)} למעלה"${i === 0 ? ' disabled' : ''}>${ic('chev-u')}</button>
+        <button class="mini" type="button" data-act="stay-down" data-id="${s.id}" aria-label="הזזת ${esc(name)} למטה"${i === t.stays.length - 1 ? ' disabled' : ''}>${ic('chev-d')}</button>
       </div>
-      <span class="bar" style="background:${esc(s.color || '#8A938D')}"></span>
-      <div><label class="sr" for="stay-name-${s.id}">שם היעד</label><input id="stay-name-${s.id}" class="inp" style="font-weight:600;min-height:40px" value="${esc(name)}" data-f="stay-name" data-id="${s.id}"><div class="dt ltr">${range}</div></div>
-      <div class="row" style="gap:6px">
-        <div class="stepper" role="group" aria-label="לילות ב${esc(name)}"><button type="button" data-act="night-minus" data-id="${s.id}" aria-label="פחות לילה ב${esc(name)}"${s.nights <= 1 ? ' disabled' : ''}>−</button><output><b>${Number(s.nights) || 0}</b> ${s.nights === 1 ? 'לילה' : 'לילות'}</output><button type="button" data-act="night-plus" data-id="${s.id}" aria-label="עוד לילה ב${esc(name)}">+</button></div>
-        <button class="mini" type="button" data-act="stay-del" data-id="${s.id}" aria-label="הסרת ${esc(name)} וכל הימים שלו">${icon(I.trash)}</button>
-      </div>
-    </div>`;
+      <span class="vb" style="${paint(s.dest)}"></span>
+      <div style="min-width:0"><label class="sr" for="stay-name-${s.id}">שם היעד</label><input id="stay-name-${s.id}" class="inp nm-inp" value="${esc(name)}" data-f="stay-name" data-id="${s.id}"><p class="dt num">${range}</p></div>
+      <div class="stepper" role="group" aria-label="לילות ב${esc(name)}"><button type="button" data-act="night-minus" data-id="${s.id}" aria-label="פחות לילה ב${esc(name)}"${s.nights <= 1 ? ' disabled' : ''}>${ic('minus')}</button><output><b class="num">${Number(s.nights) || 0}</b>${s.nights === 1 ? 'לילה' : 'לילות'}</output><button type="button" data-act="night-plus" data-id="${s.id}" aria-label="עוד לילה ב${esc(name)}">${ic('plus')}</button></div>
+      <button class="mini del" type="button" data-act="stay-del" data-id="${s.id}" aria-label="הסרת ${esc(name)} וכל הימים שלו">${ic('trash')}</button>
+    </li>`;
   }).join('');
   const strip = t.days.map((d, i) => {
     const info = M.dayInfo(t, i);
     return info.transition
-      ? `<span class="tr" style="--a:${esc(destColor(info.dest))};--b:${esc(destColor(info.dest2))}" title="${esc(destName(info.dest) + ' ← ' + destName(info.dest2))}">${i + 1}</span>`
-      : `<span style="background:${esc(destColor(info.dest))}" title="${esc(destName(info.dest))}">${i + 1}</span>`;
+      ? `<span class="num" style="${paint2(info.dest, info.dest2)}" title="${esc(destName(info.dest) + ' ← ' + destName(info.dest2))}, יום מעבר">${i + 1}</span>`
+      : `<span class="num" style="${paint(info.dest)}" title="${esc(destName(info.dest))}">${i + 1}</span>`;
   }).join('');
-  const trans = t.days.filter((d) => d.dest2).length;
-  return `<p class="eyebrow">שלב 01</p><h1 class="display">מבנה ולילות</h1>
-    <p class="sub">באיזה סדר עוברים בין היעדים, וכמה לילות בכל אחד. התאריכים מתעדכנים לבד.</p>
-    <div class="layout2">
-      <section class="stays" aria-label="היעדים לפי הסדר">
-        ${rows || '<p class="muted" style="padding:16px 18px;margin:0">עוד אין יעדים. מתחילים מהיעד הראשון.</p>'}
-        <form class="add-row" data-form="add-stay">
-          <label class="sr" for="newdest">יעד חדש</label>
-          <input id="newdest" class="inp" placeholder="הוספת יעד, למשל טוקיו" required>
-          <label class="sr" for="newnights">לילות</label>
-          <input id="newnights" class="inp ltr" type="number" min="1" max="60" value="2" style="width:84px">
-          <button class="btn ghost sm" type="submit">הוספה</button>
-        </form>
-      </section>
-      <aside class="card summary" aria-label="סיכום">
-        <div class="row"><div><div class="big">${N}</div><div class="muted">לילות</div></div><div><div class="big">${t.days.length}</div><div class="muted">ימים</div></div><div><div class="big">${trans}</div><div class="muted">ימי מעבר</div></div></div>
-        ${strip ? `<div class="strip" aria-label="${t.days.length} הימים לפי יעד">${strip}</div><p class="muted" style="font-size:14px;margin:12px 0 0">יום בשני צבעים הוא יום מעבר. בימים האלה תופיע הצעה לקטע הגעה בין היעדים.</p>` : ''}
-        <hr class="hr" style="margin:16px 0">
-        <div class="field"><label for="start">תאריך התחלה</label><input id="start" class="inp ltr" type="date" value="${esc(t.startDate)}" data-f="start"></div>
-        <div class="field" style="margin-top:12px"><label for="country">שם הטיול (מדינה)</label><input id="country" class="inp" value="${esc(t.country)}" placeholder="למשל יפן" data-f="country"></div>
-        ${t.stays.length ? `<a class="btn" style="margin-top:16px;width:100%" href="#/t/${S.row.id}/days">לבניית הימים</a>` : ''}
-      </aside>
-    </div>`;
+  const trans = t.days.filter((d, i) => M.dayInfo(t, i).transition).length;
+  const last = t.days.length ? M.dayInfo(t, t.days.length - 1).date : '';
+  return phead('01', 'מבנה ולילות', 'באיזה סדר עוברים בין היעדים, וכמה לילות בכל אחד. התאריכים מתעדכנים לבד.') + `
+    <section class="card" style="padding:22px 24px;margin-bottom:20px" aria-label="סיכום">
+      <div class="row between" style="align-items:flex-end;gap:20px">
+        <div class="row" style="gap:36px"><div class="stat"><div class="v num">${N}</div><div class="k">לילות</div></div><div class="stat"><div class="v num">${t.days.length}</div><div class="k">ימים</div></div><div class="stat"><div class="v num">${trans}</div><div class="k">ימי מעבר</div></div></div>
+        <div class="row" style="gap:12px;align-items:flex-end">
+          <div class="field" style="width:200px"><label for="start">תאריך התחלה</label><input id="start" class="inp ltr" type="date" value="${esc(t.startDate)}" data-f="start"></div>
+          <div class="field" style="width:160px"><label for="country">שם הטיול (מדינה)</label><input id="country" class="inp" value="${esc(t.country)}" placeholder="למשל יפן" data-f="country"></div>
+        </div>
+      </div>
+      ${strip ? `<div class="strip" style="margin-top:18px" role="img" aria-label="${t.days.length} הימים לפי יעד">${strip}</div>
+        <div class="row between xs muted num" style="margin-top:6px;gap:8px"><span>${longDay(t.startDate)}</span><span>יום בשני צבעים הוא יום מעבר, ותופיע בו הצעה להגעה</span><span>${longDay(last)}</span></div>` : ''}
+    </section>
+    <section class="card" aria-labelledby="h-st">
+      <div class="card-h"><h2 id="h-st">יעדים</h2>${t.stays.length > 1 ? '<span class="small muted">גוררים או משתמשים בחיצים כדי לשנות סדר</span>' : ''}</div>
+      ${rows ? `<ol class="stays">${rows}</ol>` : '<p class="muted" style="padding:16px 20px">עוד אין יעדים. מתחילים מהיעד הראשון.</p>'}
+      <form class="add-row" data-form="add-stay">
+        <label class="inp-ic"><span class="sr">יעד חדש</span><input id="newdest" class="inp" placeholder="הוספת יעד, למשל טוקיו" required>${ic('pin')}</label>
+        <div class="stepper" role="group" aria-label="לילות ביעד החדש"><button type="button" data-act="nn-minus" aria-label="פחות לילה">${ic('minus')}</button><label class="sr" for="newnights">לילות</label><input id="newnights" class="num" type="number" min="1" max="60" value="2"><span class="small muted" style="padding-inline-end:4px">לילות</span><button type="button" data-act="nn-plus" aria-label="עוד לילה">${ic('plus')}</button></div>
+        <button class="btn ghost sm" type="submit">${ic('plus')}הוספה</button>
+      </form>
+    </section>
+    ${t.stays.length ? nextStep('hotels', 'למלונות') : ''}`;
 }
 
-// ---------- hotels ----------
+// ---------- hotels: up to 3 options for every stay, one of them shown to the travellers ----------
 function viewHotels() {
   const t = S.t;
-  if (!t.stays.length) return `<p class="eyebrow">שלב 02</p><h1 class="display">מלונות</h1><div class="empty-state">קודם מוסיפים יעדים בשלב המבנה.<br><a class="btn" href="#/t/${S.row.id}/structure">למבנה</a></div>`;
+  if (!t.stays.length) return needStays('02', 'מלונות', 'קודם מוסיפים יעדים בשלב המבנה.');
+  const STATE_HE = { proposed: 'הצעה', chosen: 'נבחר', booked: 'הוזמן' };
   const cards = t.stays.map((s, i) => {
-    const h = s.hotels[0] || {};
     const start = M.stayStart(t, i);
-    const f = (k, label, ltr, ph) => `<div class="field"><label for="h-${k}-${s.id}">${label}</label><input id="h-${k}-${s.id}" class="inp${ltr ? ' ltr' : ''}" value="${esc(h[k] || '')}" placeholder="${ph || ''}" data-f="hotel" data-k="${k}" data-id="${s.id}"></div>`;
+    const shown = M.shownHotel(s);
+    const openId = (S.hopen[s.id] && s.hotels.some((h) => h.id === S.hopen[s.id])) ? S.hopen[s.id] : (shown || s.hotels[0] || {}).id || '';
     const ref = ((S.priv.bookings || {})[s.id] || {}).ref || '';
-    return `<section class="hcard" aria-labelledby="h-${s.id}">
-      <div class="hh"><span class="dot" style="background:${esc(s.color || '#8A938D')}"></span><h2 id="h-${s.id}">${esc(he(s.label))}</h2><span class="muted" style="font-size:14px"><span class="ltr">${M.shortDate(M.addDays(t.startDate, start))} – ${M.shortDate(M.addDays(t.startDate, start + s.nights))}</span> · ${Number(s.nights) || 0} לילות</span></div>
-      <div class="hb">
-        ${f('name', 'שם המלון', true)}${f('area', 'אזור')}${f('url', 'קישור', true, 'https://')}${f('maps', 'מיקום במפות', true)}
-        <div class="field"><label for="h-pricePerNight-${s.id}">מחיר ללילה (רשות)</label><div class="row" style="flex-wrap:nowrap"><input id="h-pricePerNight-${s.id}" class="inp ltr" value="${esc(h.pricePerNight || '')}" data-f="hotel" data-k="pricePerNight" data-id="${s.id}"><label class="sr" for="h-cur-${s.id}">מטבע</label><select id="h-cur-${s.id}" class="inp" style="width:100px" data-f="hotel" data-k="currency" data-id="${s.id}">${CURRENCIES.map((c) => `<option${(h.currency || 'ILS') === c ? ' selected' : ''}>${c}</option>`).join('')}</select></div></div>
-        <fieldset class="field"><legend>מצב</legend><div class="seg">${[['proposed', 'הצעה'], ['chosen', 'נבחר'], ['booked', 'הוזמן']].map(([v, l]) => `<button type="button" data-act="hotel-state" data-id="${s.id}" data-v="${v}" aria-pressed="${(h.state || 'proposed') === v}">${l}</button>`).join('')}</div></fieldset>
-        <div class="field full"><label for="h-why-${s.id}">למה אני ממליצה</label><textarea id="h-why-${s.id}" class="inp" data-f="hotel" data-k="why" data-id="${s.id}">${esc(h.why || '')}</textarea></div>
-        ${h.state === 'booked' ? `<div class="full lock">${icon(I.lock)}<div class="grow"><div class="field"><label for="h-ref-${s.id}">מספר הזמנה</label><input id="h-ref-${s.id}" class="inp ltr" value="${esc(ref)}" data-f="hotel-ref" data-id="${s.id}"></div><div style="margin-top:6px;color:var(--ink-2)">נשמר בנפרד מהטיול, לא עובר בשכפול, ובאפליקציה של הלקוח מוצג רק עם הקישור הסודי.</div></div></div>` : ''}
-      </div></section>`;
+    const open = (h, j) => {
+      const hid = h.id || '';
+      const f = (k, label, o = {}) => `<div class="field${o.full ? ' full' : ''}"><label for="h-${k}-${s.id}">${label}</label>${o.icon ? '<span class="inp-ic">' : ''}<input id="h-${k}-${s.id}" class="inp${o.ltr ? ' ltr' : ''}" value="${esc(h[k] || '')}" placeholder="${o.ph || ''}" data-f="hotel" data-k="${k}" data-id="${s.id}" data-hid="${hid}">${o.icon ? ic(o.icon) + '</span>' : ''}</div>`;
+      const st = h.state || 'proposed', isShown = st === 'chosen' || st === 'booked';
+      return `<div class="hopt">
+        <div class="hopt-h"><span class="badge ${isShown ? 'pub' : 'draft'}">${isShown ? ic('eye', 16) : ''}אפשרות ${j + 1}${isShown ? ' · מופיעה אצל המטיילים' : ' · הצעה'}</span>
+          <div class="seg" role="group" aria-label="מצב המלון">${['proposed', 'chosen', 'booked'].map((v) => `<button type="button" data-act="hotel-state" data-id="${s.id}" data-hid="${hid}" data-v="${v}" aria-pressed="${st === v}">${v === 'booked' ? ic('lock', 16) : ''}${STATE_HE[v]}</button>`).join('')}</div></div>
+        <div class="g2">
+          ${f('name', 'שם המלון', { ltr: 1 })}${f('area', 'אזור')}${f('url', 'קישור', { ltr: 1, ph: 'https://' })}${f('maps', 'מיקום במפה', { ph: 'כתובת או קישור למפות', icon: 'pin' })}
+          <div class="field"><label for="h-pricePerNight-${s.id}">מחיר ללילה (רשות)</label><div class="row" style="flex-wrap:nowrap;gap:8px"><input id="h-pricePerNight-${s.id}" class="inp ltr num" value="${esc(h.pricePerNight || '')}" data-f="hotel" data-k="pricePerNight" data-id="${s.id}" data-hid="${hid}"><label class="sr" for="h-cur-${s.id}">מטבע</label><select id="h-cur-${s.id}" class="inp" style="flex:0 0 112px" data-f="hotel" data-k="currency" data-id="${s.id}" data-hid="${hid}">${CURRENCIES.map((c) => `<option value="${c}"${(h.currency || 'ILS') === c ? ' selected' : ''}>${c} ${CUR_SIGN[c]}</option>`).join('')}</select></div></div>
+          <div class="field full"><label for="h-why-${s.id}">למה אני ממליצה</label><textarea id="h-why-${s.id}" class="inp" style="min-height:64px" data-f="hotel" data-k="why" data-id="${s.id}" data-hid="${hid}">${esc(h.why || '')}</textarea></div>
+          ${st === 'booked' ? `<div class="full lock">${ic('lock')}<div class="grow"><div class="field"><label for="h-ref-${s.id}">מספר הזמנה</label><input id="h-ref-${s.id}" class="inp ltr" value="${esc(ref)}" data-f="hotel-ref" data-id="${s.id}"></div><p style="margin-top:6px;color:var(--ink-2)">נשמר בנפרד מהטיול, לא עובר בשכפול, ובאפליקציה של המטיילים מוצג רק עם הקישור הסודי.</p></div></div>` : ''}
+        </div></div>`;
+    };
+    const opts = s.hotels.length ? s.hotels.map((h, j) => h.id === openId ? open(h, j) : `<div class="hrow">
+        <span class="num muted small" style="width:20px;text-align:center">${j + 1}</span>
+        <div class="grow"><p style="font-weight:600"><bdi>${esc(h.name || 'בלי שם')}</bdi></p>${h.area ? `<p class="xs muted">${esc(h.area)}</p>` : ''}</div>
+        <span class="badge ${h.state === 'proposed' || !h.state ? 'draft' : 'pub'}">${STATE_HE[h.state || 'proposed']}</span>
+        <button class="mini" type="button" data-act="hotel-open" data-id="${s.id}" data-hid="${h.id}" aria-label="עריכת ${esc(h.name || 'האפשרות')}">${ic('pencil')}</button>
+        <button class="mini" type="button" data-act="hotel-del" data-id="${s.id}" data-hid="${h.id}" aria-label="מחיקת ${esc(h.name || 'האפשרות')}">${ic('trash')}</button>
+      </div>`).join('') : open({}, 0);
+    return `<section class="card hcard" aria-labelledby="h-${s.id}">
+      <div class="topband" style="${paint(s.dest)}"></div>
+      <div class="card-h" style="min-height:58px"><div class="row" style="gap:10px"><span class="dot" style="${paint(s.dest)}"></span><h2 id="h-${s.id}">${esc(he(s.label))}</h2><span class="small muted num"><span class="ltr">${M.shortDate(M.addDays(t.startDate, start))} – ${M.shortDate(M.addDays(t.startDate, start + s.nights))}</span> · ${Number(s.nights) || 0} לילות</span></div>
+        ${s.hotels.length > 1 && openId ? `<button class="mini" type="button" data-act="hotel-del" data-id="${s.id}" data-hid="${openId}" aria-label="מחיקת האפשרות הפתוחה">${ic('trash')}</button>` : ''}</div>
+      <div class="card-b col" style="gap:10px">${opts}
+        ${s.hotels.length && s.hotels.length < 3 ? `<button class="addline" type="button" data-act="hotel-add" data-id="${s.id}">${ic('plus', 16)}אפשרות נוספת <span class="muted">(עד 3)</span></button>` : ''}</div>
+    </section>`;
   }).join('');
-  return `<p class="eyebrow">שלב 02</p><h1 class="display">מלונות</h1>
-    <p class="sub">מלון אחד לכל יעד. רק מלון "נבחר" או "הוזמן" מופיע אצל הלקוח.</p>
-    <div class="card" style="padding:4px 18px;margin-bottom:16px"><div class="toggle"><button class="sw" type="button" role="switch" aria-checked="${!!t.showPrices}" aria-labelledby="sp-l" data-act="prices"></button><span id="sp-l"><b>להציג מחירים ללקוח</b><br><span class="muted" style="font-size:14px">${t.showPrices ? 'דלוק: המחירים יופיעו באפליקציה וב-PDF.' : 'כבוי: המחירים נשמרים אצלך, ולא נכנסים לאפליקציה ול-PDF.'}</span></span></div></div>
-    <div class="hotels">${cards}</div>${nextStep('days', 'לבניית הימים')}`;
+  return phead('02', 'מלונות', 'עד 3 אפשרויות לכל יעד. רק מלון שנבחר או הוזמן מופיע אצל המטיילים.') + `
+    <div class="side2">
+      <div class="col" style="gap:16px">${cards}</div>
+      <aside class="card" style="padding:20px" aria-labelledby="sees-h">
+        <h2 id="sees-h" class="h3">מה המטיילים רואים</h2>
+        <p class="small muted" style="margin-top:6px">באפליקציה וב-PDF מופיע מלון אחד לכל יעד: זה שנבחר או הוזמן. הצעות נשארות אצלך.</p>
+        <hr class="hr" style="margin:14px 0">
+        <div class="toggle"><button class="sw" type="button" role="switch" aria-checked="${!!t.showPrices}" aria-labelledby="sp-l" data-act="prices"></button><span id="sp-l"><b>להציג מחירים למטיילים</b><br><span class="small muted">${t.showPrices ? 'דלוק: המחירים יופיעו באפליקציה וב-PDF.' : 'כבוי: המחירים נשמרים אצלך, ולא נכנסים לאפליקציה ול-PDF.'}</span></span></div>
+      </aside>
+    </div>${nextStep('days', 'לבניית הימים')}`;
 }
 
 // ---------- step 5: the price quote for the client ----------
 function money(n, cur) { return Math.round(n).toLocaleString('he-IL') + ' ' + ({ ILS: '₪', USD: '$', EUR: '€', JPY: '¥', GBP: '£', THB: '฿' }[cur] || cur); }
 function viewQuote() {
   const t = S.t, q = M.quoteOf(t), tot = M.quoteTotals(t);
-  if (!t.stays.length) return `<p class="eyebrow">שלב 05</p><h1 class="display">הצעת מחיר</h1><div class="empty-state">קודם מוסיפים יעדים בשלב המבנה. ההצעה נבנית מהם.<br><a class="btn" href="#/t/${S.row.id}/structure">למבנה</a></div>`;
+  if (!t.stays.length) return needStays('05', 'הצעת מחיר', 'קודם מוסיפים יעדים בשלב המבנה. ההצעה נבנית מהם.');
   const row = (l, i) => `<div class="qline" role="group" aria-label="שורה ${i + 1}">
       <div class="field qlab"><label for="ql-${l.id}">מה</label><input id="ql-${l.id}" class="inp" value="${esc(l.label || '')}" placeholder="למשל טיסות הלוך וחזור" data-f="quote-line" data-k="label" data-id="${l.id}"></div>
       <div class="field qnote"><label for="qn-${l.id}">פירוט (רשות)</label><input id="qn-${l.id}" class="inp" value="${esc(l.note || '')}" placeholder="למשל 3 לילות, ארוחת בוקר" data-f="quote-line" data-k="note" data-id="${l.id}"></div>
-      <div class="field qqty"><label for="qq-${l.id}">כמות</label><input id="qq-${l.id}" class="inp ltr" inputmode="decimal" value="${esc(l.qty == null ? '' : l.qty)}" data-f="quote-line" data-k="qty" data-id="${l.id}"></div>
-      <div class="field qpr"><label for="qp-${l.id}">מחיר ליחידה</label><input id="qp-${l.id}" class="inp ltr" inputmode="decimal" value="${esc(l.price == null ? '' : l.price)}" placeholder="0" data-f="quote-line" data-k="price" data-id="${l.id}"></div>
-      <div class="qsum" id="qs-${l.id}" aria-live="polite">${lineSum(l, q.currency)}</div>
-      <button class="icon-btn qdel" type="button" data-act="q-del" data-id="${l.id}" aria-label="מחיקת השורה ${esc(l.label || String(i + 1))}">${icon('M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3')}</button>
+      <div class="field qqty"><label for="qq-${l.id}">כמות</label><input id="qq-${l.id}" class="inp ltr num" inputmode="decimal" value="${esc(l.qty == null ? '' : l.qty)}" data-f="quote-line" data-k="qty" data-id="${l.id}"></div>
+      <div class="field qpr"><label for="qp-${l.id}">מחיר ליחידה</label><input id="qp-${l.id}" class="inp ltr num" inputmode="decimal" value="${esc(l.price == null ? '' : l.price)}" placeholder="0" data-f="quote-line" data-k="price" data-id="${l.id}"></div>
+      <div class="qsum num" id="qs-${l.id}" aria-live="polite">${lineSum(l, q.currency)}</div>
+      <button class="mini qdel" type="button" data-act="q-del" data-id="${l.id}" aria-label="מחיקת השורה ${esc(l.label || String(i + 1))}">${ic('trash')}</button>
     </div>`;
-  return `<p class="eyebrow">שלב 05</p><h1 class="display">הצעת מחיר</h1>
-    <p class="sub">הצעת המחיר שהלקוח מקבל, בעיצוב של היעד: הטיסות, הימים, המלונות והמחיר. מתחילים במילוי מהטיול, ומשלימים מחירים.</p>
+  return phead('05', 'הצעת מחיר', 'הצעת המחיר שהמטיילים מקבלים, בעיצוב של היעד: הטיסות, הימים, המלונות והמחיר. מתחילים במילוי מהטיול, ומשלימים מחירים.') + `
     <div class="card qset">
-      <div class="field"><label for="q-cur">מטבע</label><select id="q-cur" class="inp" data-f="quote" data-k="currency">${CURRENCIES.map((c) => `<option${q.currency === c ? ' selected' : ''}>${c}</option>`).join('')}</select></div>
+      <div class="field"><label for="q-cur">מטבע</label><select id="q-cur" class="inp" data-f="quote" data-k="currency">${CURRENCIES.map((c) => `<option value="${c}"${q.currency === c ? ' selected' : ''}>${c} ${CUR_SIGN[c]}</option>`).join('')}</select></div>
       <div class="field"><label for="q-valid">בתוקף עד</label><input id="q-valid" class="inp ltr" type="date" value="${esc(q.validUntil)}" data-f="quote" data-k="validUntil"></div>
-      <div class="toggle"><button class="sw" type="button" role="switch" aria-checked="${q.perPerson}" aria-labelledby="qpp-l" data-act="q-pp"></button><span id="qpp-l"><b>להציג מחיר לאדם</b><br><span class="muted" style="font-size:14px">${tot.pax ? tot.pax + ' נוסעים בטיול' : 'אין נוסעים בטיול'}</span></span></div>
+      <div class="toggle"><button class="sw" type="button" role="switch" aria-checked="${q.perPerson}" aria-labelledby="qpp-l" data-act="q-pp"></button><span id="qpp-l"><b>להציג מחיר לאדם</b><br><span class="small muted">${tot.pax ? tot.pax + ' מטיילים בטיול' : 'אין מטיילים בטיול'}</span></span></div>
     </div>
-    <div class="card qlines">
-      <div class="qh"><h2>פירוט המחיר</h2><div class="grow"></div><button class="btn ghost sm" type="button" data-act="q-fill">${icon('M12 5v14M5 12h14')}מילוי מהטיול</button></div>
-      ${q.lines.length ? q.lines.map(row).join('') : '<p class="muted" style="margin:6px 0 12px">עוד אין שורות. "מילוי מהטיול" מוסיף את הטיסות, המלונות והפעילויות שיש להן מחיר.</p>'}
-      <div class="qfoot"><button class="btn ghost sm" type="button" data-act="q-add">${icon('M12 5v14M5 12h14')}שורה חדשה</button><div class="grow"></div>
+    <section class="card" aria-labelledby="qh-h">
+      <div class="card-h"><h2 id="qh-h">פירוט המחיר</h2><button class="btn ghost sm" type="button" data-act="q-fill">${ic('refresh', 16)}מילוי מהטיול</button></div>
+      ${q.lines.length ? `<div class="qhead" aria-hidden="true"><span>מה</span><span>פירוט</span><span>כמות</span><span>מחיר ליחידה</span><span class="tot">סה״כ</span><span></span></div>${q.lines.map(row).join('')}` : '<p class="muted" style="padding:16px 20px">עוד אין שורות. "מילוי מהטיול" מוסיף את הטיסות, המלונות והפעילויות שיש להן מחיר.</p>'}
+      <div class="qfoot"><button class="btn ghost sm" type="button" data-act="q-add">${ic('plus')}שורה חדשה</button><div class="grow"></div>
         <div class="qtot" id="q-tot" aria-live="polite">${totText(t)}</div></div>
-    </div>
+    </section>
     <div class="g2" style="margin-top:16px">
       <div class="field"><label for="q-inc">המחיר כולל (שורה לכל דבר)</label><textarea id="q-inc" class="inp" data-f="quote" data-k="includes" placeholder="טיסות ומיסים&#10;מלונות עם ארוחת בוקר&#10;JR Pass ל-7 ימים">${esc(q.includes.join('\n'))}</textarea></div>
       <div class="field"><label for="q-exc">המחיר לא כולל (שורה לכל דבר)</label><textarea id="q-exc" class="inp" data-f="quote" data-k="excludes" placeholder="ביטוח נסיעות&#10;ארוחות צהריים וערב">${esc(q.excludes.join('\n'))}</textarea></div>
     </div>
     <div class="field" style="margin-top:14px"><label for="q-notes">תנאים והערות (רשות)</label><textarea id="q-notes" class="inp" data-f="quote" data-k="notes" placeholder="למשל מקדמה של 30% באישור, ויתרה עד 30 יום לפני היציאה">${esc(q.notes)}</textarea></div>
-    <div class="next-step"><button class="btn" type="button" data-act="q-preview">${icon('M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6')}תצוגת הצעת המחיר</button></div>`;
+    <div class="next-step row"><button class="btn" type="button" data-act="q-preview">${ic('eye')}תצוגת הצעת המחיר</button><a class="btn ghost" href="#/t/${S.row.id}/publish">לפרסום${ic('chev-l', 16)}</a></div>`;
 }
 function lineSum(l, cur) { const p = M.quoteNum(l.price), n = M.quoteNum(l.qty); return p == null ? '' : money(p * (n == null ? 1 : n), cur); }
 function totText(t) {
@@ -409,75 +522,117 @@ function showDoc(html, title, back) {
 }
 
 function nextStep(step, text, inline) {
-  return `<div class="${inline ? '' : 'next-step'}"><a class="btn" href="#/t/${S.row.id}/${step}">${esc(text)} ${icon('M15 6l-6 6 6 6')}</a></div>`;
+  return `<div class="${inline ? '' : 'next-step'}"><a class="btn" href="#/t/${S.row.id}/${step}">${esc(text)}${ic('chev-l', 16)}</a></div>`;
+}
+// the entry gate, the "could not open" page and the loading skeleton
+function gatePage(icn, title, text, extra = '') {
+  return `<div class="gate-page">${wordmark()}<p class="small muted" style="margin-bottom:28px">בונה המסלולים</p>
+    <div class="card"><span class="mark" aria-hidden="true">${ic(icn, 24)}</span><h1 class="h2">${title}</h1><p class="muted" style="margin-top:6px">${text}</p>${extra}</div></div>`;
+}
+function loadingPage(kind) {
+  const sk = (w, h, r = 6) => `<div class="sk" style="width:${w};height:${h}px;border-radius:${r}px"></div>`;
+  const card = `<div class="card" style="overflow:hidden">${sk('100%', 6, 0)}<div class="col" style="padding:16px;gap:10px">${sk('40%', 26)}${sk('60%', 16)}${sk('75%', 14)}</div></div>`;
+  return `<div role="status" aria-label="טוען">${kind === 'trip' ? '' : `<header class="hero"><div class="wrap" style="min-height:68px;display:flex;align-items:center">${wordmark()}</div></header>`}
+    <div class="wrap" style="padding-top:28px"><div class="passes">${card}${card}</div></div></div>`;
 }
 
 // ---------- step 4: all transfers of the trip in one place ----------
+const modeIcon = (mode) => (mode === 'flight' ? 'plane' : mode === 'walk' ? 'pin' : 'train');
 function viewTransfers() {
   const t = S.t;
-  if (!t.stays.length) return `<p class="eyebrow">שלב 04</p><h1 class="display">הגעה ותחבורה</h1><div class="empty-state">קודם מוסיפים יעדים ולילות בשלב המבנה.<br><a class="btn" href="#/t/${S.row.id}/structure">למבנה</a></div>`;
+  if (!t.stays.length) return needStays('04', 'הגעה ותחבורה', 'קודם מוסיפים יעדים ולילות בשלב המבנה.');
   const sugg = M.suggestedTransfers(t);
-  const dayHead = (d) => { const info = M.dayInfo(t, d); return `יום ${d + 1} · <span class="ltr">${dayLabel(info.date)}</span> · ${esc(he(t.days[d].title).trim() || (info.transition ? destName(info.dest) + ' ← ' + destName(info.dest2) : destName(info.dest)))}`; };
+  const dayName = (d) => { const info = M.dayInfo(t, d); return he(t.days[d].title).trim() || (info.transition ? destName(info.dest) + ' ← ' + destName(info.dest2) : destName(info.dest)); };
+  const dayHead = (d) => `יום ${d + 1} · <span class="ltr">${dayLabel(M.dayInfo(t, d).date)}</span> · ${esc(dayName(d))}`;
+  const dayDots = (d) => { const info = M.dayInfo(t, d); return `<span class="dot" style="${paint(info.dest)}"></span>${info.transition ? `<span class="dot" style="${paint(info.dest2)};margin-inline-start:-4px;box-shadow:0 0 0 2px #fff"></span>` : ''}`; };
   const list = [];
   t.days.forEach((day, d) => day.items.forEach((it) => { if (it.kind === 'transfer') list.push({ it, d }); }));
   list.sort((a, b) => a.d - b.d || M.PARTS.indexOf(M.itemPart(a.it)) - M.PARTS.indexOf(M.itemPart(b.it)));
   const f = (it, k, label, val, o = {}) => `<div class="field"><label for="x${k.replace('.', '')}-${it.id}">${label}</label><input id="x${k.replace('.', '')}-${it.id}" class="inp${o.ltr ? ' ltr' : ''}" value="${esc(val == null ? '' : val)}" placeholder="${o.ph || ''}" data-f="item" data-k="${k}" data-id="${it.id}"></div>`;
   const cards = list.map(({ it, d }) => {
     const tr = it.transfer || {}, nav = M.navUrl(tr);
-    return `<section class="hcard" aria-label="${esc(he(it.title) || 'קטע הגעה')}">
-      <div class="hh"><span class="dot" style="background:${esc(destColor(M.dayInfo(t, d).dest2 || M.dayInfo(t, d).dest))}"></span><h2 style="font-size:16px">${dayHead(d)}</h2>${it.pending ? '<span class="flag todo">לאשר</span>' : ''}<div class="grow"></div>
-        <a class="btn ghost sm" href="#/t/${S.row.id}/days/${d}">ביום</a><button class="mini" type="button" data-act="item-del" data-id="${it.id}" aria-label="מחיקת קטע ההגעה">${icon(I.trash)}</button></div>
-      <div class="hb">
+    return `<section class="card" style="overflow:hidden" aria-label="${esc(he(it.title) || 'קטע הגעה')}">
+      <div class="card-h trc-h"><div class="row" style="gap:10px;flex-wrap:nowrap;min-width:0"><span class="mark ${it.pending ? 'warn' : 'ok'}" aria-hidden="true">${ic(modeIcon(tr.mode), 16)}</span><div style="min-width:0"><p class="h3">${esc(he(it.title)) || 'קטע הגעה'}${it.pending ? '<span class="flag todo">לאשר</span>' : ''}</p><p class="small muted num">${dayHead(d)}</p></div></div>
+        <div class="row" style="gap:4px"><a class="btn quiet sm" href="#/t/${S.row.id}/days/${d}">${ic('calendar', 16)}ביום</a><button class="mini" type="button" data-act="item-del" data-id="${it.id}" aria-label="מחיקת קטע ההגעה">${ic('trash')}</button></div></div>
+      <div class="card-b g3">
         ${f(it, 'title', 'מה', he(it.title), { ph: 'למשל מהשדה למלון' })}
         <div class="field"><label for="xm-${it.id}">אמצעי</label><select id="xm-${it.id}" class="inp" data-f="item" data-k="tr.mode" data-id="${it.id}">${M.MODES.map((m) => `<option value="${m}"${(tr.mode || 'other') === m ? ' selected' : ''}>${MODE_HE[m]}</option>`).join('')}</select></div>
+        ${f(it, 'from', 'שעת יציאה', it.when && it.when.from, { ltr: 1, ph: '09:30' })}
         ${f(it, 'tr.from', 'מאיפה', tr.from, { ltr: 1, ph: 'Narita Airport' })}${f(it, 'tr.to', 'לאן', tr.to, { ltr: 1, ph: 'Hotel, Tokyo' })}
-        ${f(it, 'from', 'שעת יציאה', it.when && it.when.from, { ltr: 1, ph: '09:30' })}${f(it, 'tr.duration', 'משך', tr.duration, { ph: 'שעה' })}
-        ${f(it, 'tr.distanceKm', 'מרחק בק״מ', tr.distanceKm, { ltr: 1 })}${f(it, 'tr.provider', 'ספק', tr.provider, { ph: 'למשל Narita Express' })}
-        <div class="field"><label for="xp-${it.id}">מחיר (רשות)</label><div class="row" style="flex-wrap:nowrap"><input id="xp-${it.id}" class="inp ltr" value="${esc(it.price == null ? '' : it.price)}" data-f="item" data-k="price" data-id="${it.id}"><label class="sr" for="xc-${it.id}">מטבע</label><select id="xc-${it.id}" class="inp" style="width:100px" data-f="item" data-k="currency" data-id="${it.id}">${CURRENCIES.map((c) => `<option${(it.currency || 'ILS') === c ? ' selected' : ''}>${c}</option>`).join('')}</select></div></div>
-        <div class="field">${nav ? `<span class="lbl">ניווט</span><a class="lk" style="align-self:flex-start" href="${esc(nav)}" target="_blank" rel="noopener">${icon(I.nav, 14)}ניווט במפות</a>` : '<span class="lbl">ניווט</span><span class="muted" style="font-size:14px">מופיע כשממלאים מאיפה ולאן</span>'}</div>
-        <div class="field full"><label for="xn-${it.id}">הערות</label><textarea id="xn-${it.id}" class="inp" data-f="item" data-k="text" data-id="${it.id}" placeholder="למשל לשבת בצד ימין כדי לראות את פוג׳י">${esc(he(it.text))}</textarea></div>
+        ${f(it, 'tr.duration', 'משך', tr.duration, { ph: 'שעה' })}
+        ${f(it, 'tr.provider', 'ספק', tr.provider, { ph: 'למשל Narita Express' })}
+        <div class="field"><label for="xp-${it.id}">מחיר (רשות)</label><div class="row" style="flex-wrap:nowrap;gap:8px"><input id="xp-${it.id}" class="inp ltr num" value="${esc(it.price == null ? '' : it.price)}" data-f="item" data-k="price" data-id="${it.id}"><label class="sr" for="xc-${it.id}">מטבע</label><select id="xc-${it.id}" class="inp" style="flex:0 0 104px" data-f="item" data-k="currency" data-id="${it.id}">${CURRENCIES.map((c) => `<option value="${c}"${(it.currency || 'ILS') === c ? ' selected' : ''}>${c}</option>`).join('')}</select></div></div>
+        ${f(it, 'tr.distanceKm', 'מרחק בק״מ', tr.distanceKm, { ltr: 1 })}
+        <div class="field"><span class="lbl">ניווט</span>${nav ? `<a class="btn ghost sm" style="align-self:flex-start" href="${esc(nav)}" target="_blank" rel="noopener">${ic('nav', 16)}ניווט במפות</a>` : '<span class="small muted">מופיע כשממלאים מאיפה ולאן</span>'}</div>
+        <div class="field full"><label for="xn-${it.id}">הערות</label><textarea id="xn-${it.id}" class="inp" style="min-height:64px" data-f="item" data-k="text" data-id="${it.id}" placeholder="למשל לשבת בצד ימין כדי לראות את פוג׳י">${esc(he(it.text))}</textarea></div>
       </div></section>`;
   }).join('');
-  return `<p class="eyebrow">שלב 04</p><h1 class="display">הגעה ותחבורה</h1>
-    <p class="sub">כל ההעברות בטיול במקום אחד: מהשדה למלון, בין הערים ובחזרה לשדה. כל שינוי כאן מופיע גם ביום עצמו.</p>
-    ${sugg.length ? `<section class="card" style="padding:6px 18px;margin-bottom:16px" aria-labelledby="sg-h"><h2 id="sg-h" style="font-size:16px;margin:12px 0 4px">הצעות לאישור</h2>
-      <ul class="checklist">${sugg.map((x) => `<li><span class="ck no" aria-hidden="true">!</span><div class="grow"><b>${esc(x.title)}</b><div class="muted" style="font-size:14px">${dayHead(x.d)}</div></div><button class="btn ghost sm" type="button" data-act="sugg" data-v="${esc(x.suggest)}" data-d="${x.d}">הוספה</button></li>`).join('')}</ul></section>` : ''}
-    <div class="hotels">${cards || '<div class="empty-state">עוד אין קטעי הגעה בטיול. אפשר להוסיף מההצעות למעלה, או קטע חדש כאן למטה.</div>'}</div>
-    <form class="card add-row" data-form="add-transfer" style="margin-top:16px;border-radius:var(--r);flex-wrap:wrap;align-items:flex-end">
-      <div class="field grow"><label for="at-day">קטע הגעה חדש ביום</label><select id="at-day" class="inp">${t.days.map((x, d) => `<option value="${d}">יום ${d + 1} · ${M.shortDate(M.dayInfo(t, d).date)} · ${esc(he(x.title).trim() || destName(M.dayInfo(t, d).dest))}</option>`).join('')}</select></div>
-      <button class="btn ghost sm" type="submit">${icon(I.plus)}הוספה</button>
-    </form>
-    ${nextStep('publish', 'לפרסום')}`;
+  const side = sugg.length ? `<section class="card sugg" aria-labelledby="sg-h">
+      <div class="card-h"><div><h2 id="sg-h" class="h3">הצעות לאישור</h2><p class="small muted">מצאנו ${sugg.length === 1 ? 'מעבר אחד' : sugg.length + ' מעברים'} בלי קטע הגעה</p></div><span class="badge warn num">${sugg.length}</span></div>
+      <ul>${sugg.map((x) => `<li><span class="mark warn" aria-hidden="true">${ic(x.suggest === 'move' ? 'train' : 'plane', 16)}</span>
+        <div class="grow"><p style="font-weight:700">${esc(x.title)}</p><p class="small muted num row" style="gap:6px">${dayDots(x.d)}<span>${dayHead(x.d)}</span></p></div>
+        <button class="btn sm" type="button" data-act="sugg" data-v="${esc(x.suggest)}" data-d="${x.d}" aria-label="הוספת ${esc(x.title)}">${ic('plus', 16)}הוספה</button></li>`).join('')}</ul>
+      ${sugg.length > 1 ? `<div style="padding:14px 20px"><button class="btn ghost sm block" type="button" data-act="sugg-all">${ic('check', 16)}הוספת כל ה-${sugg.length}</button></div>` : ''}
+    </section>` : `<section class="card" style="padding:20px"><div class="row" style="gap:10px;flex-wrap:nowrap"><span class="mark ok" aria-hidden="true">${ic('check', 16)}</span><p class="small">אין מעברים בלי קטע הגעה.</p></div></section>`;
+  return phead('04', 'הגעה ותחבורה', 'כל ההעברות בטיול במקום אחד: מהשדה למלון, בין הערים ובחזרה לשדה. כל שינוי כאן מופיע גם ביום עצמו.') + `
+    <div class="side380">
+      <div class="col" style="gap:16px">
+        ${cards || '<div class="empty-state">עוד אין קטעי הגעה בטיול. אפשר להוסיף מההצעות, או קטע חדש כאן למטה.</div>'}
+        <form class="card row" data-form="add-transfer" style="padding:12px 16px;gap:10px;flex-wrap:wrap">
+          <label class="lbl" for="at-day" style="white-space:nowrap">קטע הגעה חדש ביום</label>
+          <select id="at-day" class="inp grow" style="flex:1 1 220px;width:auto">${t.days.map((x, d) => `<option value="${d}">יום ${d + 1} · ${M.shortDate(M.dayInfo(t, d).date)} · ${esc(dayName(d))}</option>`).join('')}</select>
+          <button class="btn ghost sm" type="submit">${ic('plus')}הוספה</button>
+        </form>
+      </div>
+      ${side}
+    </div>
+    ${nextStep('quote', 'להצעת המחיר')}`;
 }
 
 // ---------- days ----------
+const KIND_IC = { activity: ['flag', 'act'], meal: ['meal', 'meal'], tip: ['bulb', 'tip'], transfer: ['train', 'go'] };
+const PART_IC = { 'בוקר': 'sun', 'צהריים': 'meal', 'ערב': 'clock', 'לילה': 'moon' };
 function itemCard(it, d) {
   if (S.editItem === it.id) return itemEditor(it, d);
   const tr = it.transfer || {};
   const nav = it.kind === 'transfer' ? M.navUrl(tr) : null;
-  const meta = [KIND_HE[it.kind]];
+  const meta = [];
   if (it.kind === 'transfer') { if (tr.mode && tr.mode !== 'other') meta.push(MODE_HE[tr.mode]); if (tr.duration) meta.push(tr.duration); if (tr.distanceKm) meta.push(tr.distanceKm + ' ק״מ'); }
   if (it.src === 'library') meta.push('מהספרייה');
-  const time = it.when && it.when.from;
-  return `<div class="item${it.kind === 'transfer' ? ' transfer' : ''}${it.pending ? ' pending' : ''}" draggable="true" data-drag-item="${it.id}">
-    <div class="tag${time ? ' ltr' : ' part'}">${esc(M.itemLabel(it))}</div>
-    <div>
-      <div class="kind">${esc(meta.join(' · '))}${it.pending ? '<span class="flag todo">לאשר</span>' : ''}${it.checkDate ? '<span class="flag">לבדוק תאריך</span>' : ''}</div>
-      <div class="tt">${esc(he(it.title)) || '<span class="muted">בלי כותרת</span>'}</div>
-      ${he(it.text) ? `<p>${esc(he(it.text))}</p>` : ''}
-      <div class="links">
-        ${it.place ? `<a class="lk" target="_blank" rel="noopener" href="${esc(M.placeHref(it.place))}">${icon(I.pin, 14)}<bdi>${esc(M.placeLabel(it.place))}</bdi></a>` : ''}
-        ${nav ? `<a class="lk" target="_blank" rel="noopener" href="${esc(nav)}">${icon(I.nav, 14)}ניווט במפות</a>` : ''}
-        ${M.safeUrl(it.url) ? `<a class="lk" target="_blank" rel="noopener" href="${esc(M.safeUrl(it.url))}">קישור</a>` : ''}
+  const from = it.when && it.when.from, to = it.when && it.when.to;
+  const [kic, kcls] = KIND_IC[it.kind] || KIND_IC.activity;
+  const title = he(it.title);
+  const cls = (it.kind === 'tip' ? ' tipc' : '') + (it.kind === 'transfer' ? ' trc' : '') + (it.pending ? ' attn' : '');
+  return `<article class="ti${cls}" draggable="true" data-drag-item="${it.id}" aria-label="${esc(title || KIND_HE[it.kind])}">
+    <span class="hdl" aria-hidden="true">${ic('grip', 16)}</span>
+    ${from ? `<span class="t">${esc(from)}${to ? `<small>עד <span class="ltr">${esc(to)}</span></small>` : ''}</span>` : '<span class="t none">בלי שעה</span>'}
+    <div style="min-width:0">
+      <div class="row" style="gap:8px">
+        <span class="k ${kcls}">${ic(it.kind === 'transfer' ? modeIcon(tr.mode) : kic, 16)}${KIND_HE[it.kind]}${meta.length ? `<span class="mt">· ${esc(meta.join(' · '))}</span>` : ''}</span>
+        <span class="tm">${from ? `<b class="ltr">${esc(from)}</b>${to ? `<span class="xs muted">עד <span class="ltr">${esc(to)}</span></span>` : ''}` : '<span class="xs muted">בלי שעה</span>'}</span>
+        ${it.pending ? '<span class="flag todo">לאשר</span>' : ''}${it.checkDate ? '<span class="flag">לבדוק תאריך</span>' : ''}
       </div>
+      <p class="tt">${esc(title) || '<span class="muted">בלי כותרת</span>'}</p>
+      ${he(it.text) ? `<p>${esc(he(it.text))}</p>` : ''}
+      ${it.place || nav || M.safeUrl(it.url) ? `<div class="links">
+        ${it.place ? `<a class="pill" target="_blank" rel="noopener" href="${esc(M.placeHref(it.place))}">${ic('pin', 16)}<bdi>${esc(M.placeLabel(it.place))}</bdi></a>` : ''}
+        ${nav ? `<a class="pill" target="_blank" rel="noopener" href="${esc(nav)}">${ic('nav', 16)}ניווט במפות</a>` : ''}
+        ${M.safeUrl(it.url) ? `<a class="pill" target="_blank" rel="noopener" href="${esc(M.safeUrl(it.url))}">${ic('link', 16)}קישור</a>` : ''}
+      </div>` : ''}
     </div>
-    <div class="acts">
-      <button class="mini" type="button" data-act="item-edit" data-id="${it.id}" aria-label="עריכת הקטע ${esc(he(it.title))}">${icon(I.edit)}</button>
-      ${SHOW_DUPLICATE ? `<button class="mini" type="button" data-act="item-dup" data-id="${it.id}" aria-label="שכפול הקטע">${icon(I.copy)}</button>` : ''}
-      <button class="mini" type="button" data-act="item-move" data-id="${it.id}" aria-label="העברה ליום או לחלק אחר">${icon(I.move)}</button>
-      <button class="mini" type="button" data-act="item-del" data-id="${it.id}" aria-label="מחיקת הקטע">${icon(I.trash)}</button>
+    <div class="tools">
+      <button class="mini" type="button" data-act="item-edit" data-id="${it.id}" aria-label="עריכת ${esc(title || 'הקטע')}">${ic('pencil')}</button>
+      ${SHOW_DUPLICATE ? `<button class="mini" type="button" data-act="item-dup" data-id="${it.id}" aria-label="שכפול הקטע">${ic('copy')}</button>` : ''}
+      <button class="mini" type="button" data-act="item-move" data-id="${it.id}" aria-label="העברת ${esc(title || 'הקטע')} ליום או לחלק אחר">${ic('arrow-l')}</button>
+      <button class="mini" type="button" data-act="item-del" data-id="${it.id}" aria-label="מחיקת ${esc(title || 'הקטע')}">${ic('trash')}</button>
     </div>
-  </div>`;
+    <button class="mini imenu" type="button" data-act="item-menu" data-id="${it.id}" aria-label="פעולות ל${esc(title || 'קטע')}" aria-expanded="${S.itemMenu === it.id}">${ic('more')}</button>
+    ${S.itemMenu === it.id ? `<div class="menu" role="menu" aria-label="פעולות לקטע">
+      <button role="menuitem" type="button" data-act="item-edit" data-id="${it.id}">${ic('pencil')}עריכה</button>
+      <button role="menuitem" type="button" data-act="item-move" data-id="${it.id}">${ic('clock')}העברה לחלק אחר ביום</button>
+      <button role="menuitem" type="button" data-act="item-move" data-id="${it.id}">${ic('calendar')}העברה ליום אחר</button>
+      <button role="menuitem" class="del" type="button" data-act="item-del" data-id="${it.id}">${ic('trash')}מחיקה</button></div>` : ''}
+  </article>`;
 }
 
 function itemEditor(it) {
@@ -485,88 +640,99 @@ function itemEditor(it) {
   const tr = it.transfer || {};
   const inp = (id, label, val, k, opt = {}) => `<div class="field${opt.grow ? ' grow' : ''}"><label for="${id}">${label}</label><input id="${id}" class="inp${opt.ltr ? ' ltr' : ''}" value="${esc(val || '')}" placeholder="${opt.ph || ''}" data-f="item" data-k="${k}" data-id="${it.id}"${opt.type ? ` type="${opt.type}"` : ''}></div>`;
   return `<div class="edit" role="group" aria-label="עריכת קטע">
-    <fieldset class="field"><legend>סוג</legend><div class="seg">${M.KINDS.map((k) => `<button type="button" data-act="item-kind" data-id="${it.id}" data-v="${k}" aria-pressed="${it.kind === k}">${KIND_HE[k]}</button>`).join('')}</div></fieldset>
-    <div class="g2" style="margin-top:12px">
+    <fieldset class="field"><legend>סוג</legend><div class="seg">${M.KINDS.map((k) => `<button type="button" data-act="item-kind" data-id="${it.id}" data-v="${k}" aria-pressed="${it.kind === k}">${ic(KIND_IC[k][0], 16)}${KIND_HE[k]}</button>`).join('')}</div></fieldset>
+    <div class="g2" style="margin-top:14px">
       <fieldset class="field"><legend>מתי</legend><div class="seg"><button type="button" data-act="item-whenmode" data-id="${it.id}" data-v="part" aria-pressed="${!timed}">חלק ביום</button><button type="button" data-act="item-whenmode" data-id="${it.id}" data-v="time" aria-pressed="${timed}">שעה</button></div></fieldset>
       ${timed
         ? `<div class="row" style="flex-wrap:nowrap;align-items:flex-end">${inp('t-from-' + it.id, 'משעה', it.when.from, 'from', { ltr: 1, grow: 1, ph: '09:00' })}${inp('t-to-' + it.id, 'עד (רשות)', it.when.to, 'to', { ltr: 1, grow: 1, ph: '11:30' })}</div>`
         : `<div class="field"><label for="t-part-${it.id}">חלק ביום</label><select id="t-part-${it.id}" class="inp" data-f="item" data-k="part" data-id="${it.id}">${M.PARTS.map((p) => `<option${M.itemPart(it) === p ? ' selected' : ''}>${p}</option>`).join('')}</select></div>`}
     </div>
-    <div style="margin-top:12px">${inp('it-' + it.id, 'כותרת', he(it.title), 'title')}</div>
-    <div class="field" style="margin-top:12px"><label for="ix-${it.id}">טקסט</label><textarea id="ix-${it.id}" class="inp" data-f="item" data-k="text" data-id="${it.id}">${esc(he(it.text))}</textarea></div>
-    ${it.kind === 'transfer' ? `<div class="g2" style="margin-top:12px">
+    <div style="margin-top:14px">${inp('it-' + it.id, 'כותרת', he(it.title), 'title')}</div>
+    <div class="field" style="margin-top:14px"><label for="ix-${it.id}">טקסט</label><textarea id="ix-${it.id}" class="inp" data-f="item" data-k="text" data-id="${it.id}">${esc(he(it.text))}</textarea></div>
+    ${it.kind === 'transfer' ? `<div class="g2" style="margin-top:14px">
         ${inp('tf-' + it.id, 'מאיפה', tr.from, 'tr.from', { ltr: 1, ph: 'Narita Airport' })}${inp('tt-' + it.id, 'לאן', tr.to, 'tr.to', { ltr: 1, ph: 'Hotel, Tokyo' })}
         <div class="field"><label for="tm-${it.id}">אמצעי</label><select id="tm-${it.id}" class="inp" data-f="item" data-k="tr.mode" data-id="${it.id}">${M.MODES.map((m) => `<option value="${m}"${(tr.mode || 'other') === m ? ' selected' : ''}>${MODE_HE[m]}</option>`).join('')}</select></div>
         ${inp('tdu-' + it.id, 'משך', tr.duration, 'tr.duration', { ph: 'שעה' })}
         ${inp('tkm-' + it.id, 'מרחק בק״מ', tr.distanceKm, 'tr.distanceKm', { ltr: 1 })}
         ${inp('tpr-' + it.id, 'ספק', tr.provider, 'tr.provider', { ph: 'למשל Narita Express' })}
       </div>` : ''}
-    <div class="g2" style="margin-top:12px">
+    <div class="g2" style="margin-top:14px">
       ${inp('ip-' + it.id, 'מיקום במפות (שם המקום או קישור מגוגל מפות)', it.place, 'place', { ltr: 1 })}
       ${inp('iu-' + it.id, 'קישור (רשות)', it.url, 'url', { ltr: 1, ph: 'https://' })}
-      <div class="field"><label for="ipr-${it.id}">מחיר (רשות)</label><div class="row" style="flex-wrap:nowrap"><input id="ipr-${it.id}" class="inp ltr" value="${esc(it.price == null ? '' : it.price)}" data-f="item" data-k="price" data-id="${it.id}"><label class="sr" for="icu-${it.id}">מטבע</label><select id="icu-${it.id}" class="inp" style="width:100px" data-f="item" data-k="currency" data-id="${it.id}">${CURRENCIES.map((c) => `<option${(it.currency || 'ILS') === c ? ' selected' : ''}>${c}</option>`).join('')}</select></div></div>
+      <div class="field"><label for="ipr-${it.id}">מחיר (רשות)</label><div class="row" style="flex-wrap:nowrap;gap:8px"><input id="ipr-${it.id}" class="inp ltr num" value="${esc(it.price == null ? '' : it.price)}" data-f="item" data-k="price" data-id="${it.id}"><label class="sr" for="icu-${it.id}">מטבע</label><select id="icu-${it.id}" class="inp" style="flex:0 0 104px" data-f="item" data-k="currency" data-id="${it.id}">${CURRENCIES.map((c) => `<option${(it.currency || 'ILS') === c ? ' selected' : ''}>${c}</option>`).join('')}</select></div></div>
     </div>
-    <div class="row" style="margin-top:14px"><button class="btn sm" type="button" data-act="item-done">סיום</button><button class="btn ghost sm" type="button" data-act="item-lib" data-id="${it.id}">שמירה לספרייה</button>${timed && M.isTime(it.when.from) ? `<span class="muted" style="font-size:13px"><span class="ltr">${esc(it.when.from)}</span> נכנס ל${M.partOf(it.when.from)}</span>` : ''}</div>
+    <div class="row" style="margin-top:16px"><button class="btn sm" type="button" data-act="item-done">${ic('check', 16)}סיום</button><button class="btn ghost sm" type="button" data-act="item-lib" data-id="${it.id}">${ic('book', 16)}שמירה לספרייה</button>${timed && M.isTime(it.when.from) ? `<span class="small muted"><span class="ltr">${esc(it.when.from)}</span> נכנס ל${M.partOf(it.when.from)}</span>` : ''}</div>
   </div>`;
 }
 
 function viewDays() {
   const t = S.t;
-  if (!t.stays.length) return `<p class="eyebrow">שלב 03</p><h1 class="display">ימים</h1><div class="empty-state">קודם מוסיפים יעדים ולילות בשלב המבנה. הימים נוצרים מהם.<br><a class="btn" href="#/t/${S.row.id}/structure">למבנה</a></div>`;
+  if (!t.stays.length) return needStays('03', 'ימים', 'קודם מוסיפים יעדים ולילות בשלב המבנה. הימים נוצרים מהם.');
   const d = S.day, day = t.days[d], info = M.dayInfo(t, d);
-  const list = t.days.map((x, i) => {
+  const suggAll = M.suggestedTransfers(t);
+  const dayName = (i) => { const inf = M.dayInfo(t, i); return he(t.days[i].title).trim() || (inf.transition ? destName(inf.dest) + ' ← ' + destName(inf.dest2) : destName(inf.dest)); };
+  const uniq = []; t.stays.forEach((s) => { if (!uniq.some((u) => u.dest === s.dest)) uniq.push(s); });
+  const tiles = t.days.map((x, i) => {
     const inf = M.dayInfo(t, i);
-    const bar = inf.transition ? `linear-gradient(${esc(destColor(inf.dest))} 50%,${esc(destColor(inf.dest2))} 50%)` : esc(destColor(inf.dest));
-    const pend = x.items.some((it) => it.pending) || M.suggestedTransfers(t).some((s) => s.d === i);
-    const where = inf.transition ? destName(inf.dest) + ' ← ' + destName(inf.dest2) : destName(inf.dest);
-    const empty = M.dayIsEmpty(x);
-    return `<li><button class="drow" type="button" data-act="day" data-v="${i}" data-drop-day="${i}"${i === d ? ' aria-current="true"' : ''}><span class="bar" style="background:${bar}"></span><span class="n ltr">${M.shortDate(inf.date)}</span><span class="t${empty ? ' empty' : ''}">${empty ? 'יום ריק' : esc(he(x.title)) || 'בלי כותרת'}<small>${esc(where)}${x.items.length ? ' · ' + x.items.length + ' קטעים' : ''}${pend ? ' · הגעה לאשר' : ''}</small></span><span></span></button>
-      ${SHOW_DUPLICATE ? `<button class="mini rowdup" type="button" data-act="day-dup" data-v="${i}" aria-label="שכפול יום ${i + 1}">${icon(I.copy)}</button>` : ''}</li>`;
+    const pend = x.items.some((it) => it.pending) || suggAll.some((s) => s.d === i);
+    const [y, m, dd] = inf.date.split('-').map(Number);
+    return `<button class="dtile" type="button" data-act="day" data-v="${i}" data-drop-day="${i}"${i === d ? ' aria-current="true"' : ''} aria-label="יום ${i + 1}, ${esc(dayName(i))}${pend ? ', הגעה לאשר' : ''}"><span class="wd" aria-hidden="true">${WEEKDAY[new Date(Date.UTC(y, m - 1, dd)).getUTCDay()]}</span><span class="dn num" aria-hidden="true">${i + 1}</span><span class="dd" aria-hidden="true">${dd}.${m}</span><span class="cb" style="${inf.transition ? paint2(inf.dest, inf.dest2) : paint(inf.dest)}"></span>${pend ? '<span class="wdot" aria-hidden="true"></span>' : ''}</button>`;
   }).join('');
   const groups = M.itemsByPart(day);
-  const sugg = M.suggestedTransfers(t).filter((s) => s.d === d);
-  const bands = M.PARTS.map((p) => `<div class="band" data-drop-part="${p}">
-      <div class="band-h"><h3>${p} <span class="mono">${PART_RANGE[p]}</span></h3></div>
-      ${groups[p].map((it) => itemCard(it, d)).join('')}
-      <button class="addline" type="button" data-act="item-add" data-v="${p}">+ הוספה ל${p}</button>
-    </div>`).join('');
+  const sugg = suggAll.filter((s) => s.d === d);
+  const bands = M.PARTS.map((p) => `<section class="tlb" aria-label="${p}">
+      <div class="lane"><h3>${ic(PART_IC[p], 16)}${p}</h3><span class="rng">${PART_RANGE[p]}</span></div>
+      <div class="body" data-drop-part="${p}">
+        ${groups[p].map((it) => itemCard(it, d)).join('')}
+        <button class="addq" type="button" data-act="item-add" data-v="${p}">${ic('plus', 16)}הוספה ל${p}</button>
+      </div></section>`).join('');
   const lib = M.librarySubset(S.snippets, t, d, { query: S.libQuery, allDests: S.libAll });
   const libDests = [info.dest, info.dest2].filter(Boolean).map(destName).join(' + ');
-  return `<div class="days3">
-    <section class="panel" aria-labelledby="dl-h">
-      <div class="panel-h"><h2 id="dl-h">${t.days.length} ימים</h2><button class="mini" type="button" data-act="day-add" aria-label="הוספת יום בסוף הטיול">${icon(I.plus)}</button></div>
-      <ul class="dlist">${list}</ul>
-    </section>
-    <section class="panel" aria-labelledby="day-title-l">
-      <div class="dayhead">
-        <div class="field"><label id="day-title-l" for="day-title">יום ${d + 1} · <span class="ltr">${dayLabel(info.date)}</span> · ${esc(info.transition ? destName(info.dest) + ' ← ' + destName(info.dest2) : destName(info.dest))}</label><input id="day-title" class="inp" value="${esc(he(day.title))}" placeholder="כותרת היום, למשל אסאקוסה ואואנו" data-f="day-title"></div>
-        <div class="row">
-          ${SHOW_DUPLICATE ? `<button class="btn ghost sm" type="button" data-act="day-dup" data-v="${d}">${icon(I.copy)}שכפול יום</button>
-          <button class="icon-btn" type="button" data-act="day-dup-opts" aria-label="אפשרויות שכפול">${icon(I.down)}</button>` : ''}
-          <button class="icon-btn" type="button" data-act="day-del" aria-label="מחיקת יום ${d + 1}"${M.totalNights(t) <= 1 ? ' disabled' : ''}>${icon(I.trash)}</button>
-        </div>
-      </div>
-      ${sugg.map((s) => `<div class="note" style="margin:12px 18px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="grow">הצעה: קטע הגעה <b>${esc(s.title)}</b></span><button class="btn ghost sm" type="button" data-act="sugg" data-v="${esc(s.suggest)}">הוספה ל${esc(s.part)}</button></div>`).join('')}
-      ${bands}
-      <div style="padding:14px 18px">${nextStep('transfers', 'להגעה ותחבורה', true)}</div>
-    </section>
-    <section class="panel libcol" aria-label="${S.side === 'lib' ? 'הספרייה שלי' : 'תצוגה באפליקציה'}">
-      <div class="panel-h side-tabs" role="group" aria-label="מה להציג בצד">
-        <button class="chip" type="button" data-act="side" data-v="preview" aria-pressed="${S.side !== 'lib'}">תצוגה באפליקציה</button>
-        <button class="chip" type="button" data-act="side" data-v="lib" aria-pressed="${S.side === 'lib'}">הספרייה שלי · ${S.snippets.length}</button>
-      </div>
-      ${S.side === 'lib' ? `      <div style="padding:12px 14px 0"><button class="btn ghost sm" type="button" data-act="lib-new" style="width:100%">${icon(I.plus)}קטע חדש לספרייה</button></div>
-      <div style="padding:10px 14px 0" class="search"><label class="sr" for="lq">חיפוש בספרייה</label><svg class="i" viewBox="0 0 24 24" aria-hidden="true" style="top:23px;inset-inline-start:26px"><path d="${I.search}"/></svg><input id="lq" class="inp" type="search" placeholder="חיפוש בספרייה" value="${esc(S.libQuery)}" data-f="libq"></div>
+  const mPressed = (v) => (v === 'edit' ? S.mtab === 'edit' : S.mtab === 'side' && (v === 'lib') === (S.side === 'lib'));
+  const sideBody = S.side === 'lib' ? `
+      <button class="btn ghost sm block" type="button" data-act="lib-new">${ic('plus')}קטע חדש לספרייה</button>
+      <label class="inp-ic" style="margin-top:10px"><span class="sr">חיפוש בספרייה</span><input id="lq" class="inp" type="search" placeholder="חיפוש בספרייה" value="${esc(S.libQuery)}" data-f="libq">${ic('search')}</label>
       <div class="libfilter" role="group" aria-label="סינון הספרייה">
-        <button class="chip" type="button" data-act="lib-all" data-v="0" aria-pressed="${!S.libAll}"><span class="dot" style="background:${esc(destColor(info.dest))}"></span>${esc(libDests)} + כללי</button>
+        <button class="chip" type="button" data-act="lib-all" data-v="0" aria-pressed="${!S.libAll}"><span class="dot" style="${paint(info.dest)}"></span>${esc(libDests)} + כללי</button>
         <button class="chip" type="button" data-act="lib-all" data-v="1" aria-pressed="${S.libAll}">כל היעדים</button>
       </div>
       ${lib.length ? `<ul class="lib">${lib.map((s) => `<li><div><div class="mt">${esc(s.dest === 'all' ? 'כללי' : destName(s.dest))} · ${esc(s.data.part || '')} · ${esc(KIND_HE[s.data.kind] || '')}</div><div class="tt">${esc(he(s.data.title))}</div>${he(s.data.text) ? `<p>${esc(he(s.data.text))}</p>` : ''}</div>
-        <div style="display:flex;flex-direction:column;gap:4px"><button class="plus" type="button" data-act="lib-add" data-id="${s.id}" aria-label="הוספת ${esc(he(s.data.title))} ל${esc(s.data.part || 'בוקר')}">${icon(I.plus)}</button><button class="mini" type="button" data-act="lib-del" data-id="${s.id}" aria-label="מחיקת ${esc(he(s.data.title))} מהספרייה">${icon(I.trash)}</button></div></li>`).join('')}</ul>`
-        : `<p class="muted" style="padding:0 14px 14px;margin:0;font-size:14px">${S.snippets.length ? 'אין כאן קטעים שמתאימים.' : 'הספרייה ריקה. מוסיפים כאן קטע חדש, או "שמירה לספרייה" מתוך קטע ביום.'}</p>`}
-` : `<div id="preview" class="preview">${previewDay(d)}</div><p class="muted" style="font-size:12.5px;padding:0 14px 14px;margin:0">כך הלקוח יראה את היום באפליקציה. מתעדכן תוך כדי כתיבה.</p>`}
-    </section>
-  </div>`;
+        <div style="display:flex;flex-direction:column;gap:4px"><button class="plus" type="button" data-act="lib-add" data-id="${s.id}" aria-label="הוספת ${esc(he(s.data.title))} ל${esc(s.data.part || 'בוקר')}">${ic('plus')}</button><button class="mini" type="button" data-act="lib-del" data-id="${s.id}" aria-label="מחיקת ${esc(he(s.data.title))} מהספרייה">${ic('trash')}</button></div></li>`).join('')}</ul>`
+        : `<p class="small muted">${S.snippets.length ? 'אין כאן קטעים שמתאימים.' : 'הספרייה ריקה. מוסיפים כאן קטע חדש, או "שמירה לספרייה" מתוך קטע ביום.'}</p>`}`
+    : `<div id="preview">${previewDay(d)}</div><p class="xs muted" style="margin-top:8px;text-align:center">כך המטיילים יראו את היום באפליקציה. מתעדכן תוך כדי כתיבה.</p>`;
+  const prev = d > 0 ? `<button class="btn ghost sm" type="button" data-act="day" data-v="${d - 1}">${ic('chev-r', 16)}<span class="t">יום ${d} · ${esc(dayName(d - 1))}</span></button>` : '<span></span>';
+  const next = d < t.days.length - 1 ? `<button class="btn sm" type="button" data-act="day" data-v="${d + 1}"><span class="t">יום ${d + 2} · ${esc(dayName(d + 1))}</span>${ic('chev-l', 16)}</button>` : `<a class="btn sm" href="#/t/${S.row.id}/transfers">להגעה ותחבורה${ic('chev-l', 16)}</a>`;
+  return `<nav aria-label="ימים">
+      <div class="dnav-h"><div class="row" style="gap:16px"><span class="h3">${t.days.length} ימים</span>
+        <span class="legend">${uniq.map((s) => `<span><span class="dot" style="width:8px;height:8px;${paint(s.dest)}"></span>${esc(he(s.label))}</span>`).join('')}<span><span class="dot" style="width:8px;height:8px;background:var(--warn)"></span>הגעה לאשר</span></span></div>
+        <div class="row" style="gap:4px"><button class="btn quiet sm ph-only" type="button" data-act="all-days" aria-pressed="${!!S.allDays}">${ic('calendar', 16)}כל הימים</button><button class="btn quiet sm" type="button" data-act="day-add">${ic('plus', 16)}יום חדש</button></div></div>
+      <div class="dboard${S.allDays ? ' all' : ''}">${tiles}</div>
+    </nav>
+    <div class="seg full mseg" role="group" aria-label="תצוגה">
+      <button type="button" data-act="mtab" data-v="edit" aria-pressed="${mPressed('edit')}">${ic('pencil', 16)}עריכה</button>
+      <button type="button" data-act="mtab" data-v="preview" aria-pressed="${mPressed('preview')}">${ic('phone', 16)}באפליקציה</button>
+      <button type="button" data-act="mtab" data-v="lib" aria-pressed="${mPressed('lib')}">${ic('book', 16)}ספרייה</button>
+    </div>
+    <div class="dgrid" data-mtab="${S.mtab}">
+      <div class="deditor" style="min-width:0">
+        <div class="dayhero"><div class="grow" style="min-width:min(300px,100%)"><p class="kicker"><span class="dot" style="${info.transition ? paint2(info.dest, info.dest2) : paint(info.dest)}"></span><span class="num">יום ${d + 1} · ${longDay(info.date)} · ${esc(info.transition ? destName(info.dest) + ' ← ' + destName(info.dest2) : destName(info.dest))}</span></p>
+          <label class="sr" for="day-title">שם היום</label><input id="day-title" class="ttl" value="${esc(he(day.title))}" placeholder="שם היום, למשל אסאקוסה ואואנו" data-f="day-title"></div>
+          <div class="row" style="gap:6px">
+            ${SHOW_DUPLICATE ? `<button class="btn ghost sm" type="button" data-act="day-dup" data-v="${d}">${ic('copy', 16)}שכפול יום</button><button class="icon-btn" type="button" data-act="day-dup-opts" aria-label="אפשרויות שכפול">${ic('chev-d')}</button>` : ''}
+            <button class="icon-btn" type="button" data-act="day-del" aria-label="מחיקת יום ${d + 1}"${M.totalNights(t) <= 1 ? ' disabled' : ''}>${ic('trash')}</button>
+          </div></div>
+        ${sugg.map((s) => `<div class="banner warn" style="margin:8px 0 4px">${ic('alert')}<span class="grow">הצעה: קטע הגעה <b>${esc(s.title)}</b></span><button class="btn ghost sm" type="button" data-act="sugg" data-v="${esc(s.suggest)}">${ic('plus', 16)}הוספה ל${esc(s.part)}</button></div>`).join('')}
+        ${bands}
+        <div class="daynav sticky">${prev}${next}</div>
+      </div>
+      <aside class="dside" aria-label="${S.side === 'lib' ? 'הספרייה שלי' : 'היום באפליקציה'}">
+        <div class="ptabs" role="tablist" aria-label="מה להציג בצד">
+          <button type="button" role="tab" data-act="side" data-v="preview" aria-selected="${S.side !== 'lib'}">${ic('phone', 16)}באפליקציה</button>
+          <button type="button" role="tab" data-act="side" data-v="lib" aria-selected="${S.side === 'lib'}">${ic('book', 16)}הספרייה שלי <span class="num">${S.snippets.length}</span></button>
+        </div>
+        ${sideBody}
+      </aside>
+    </div>`;
 }
 
 // ---------- the day as the client app shows it (same order and rules as scripts/agent_trip_to_app.py) ----------
@@ -622,36 +788,38 @@ function viewPublish() {
   const t = S.t, st = M.stepStates(t), c = st.counts, r = S.row;
   const empty = t.days.map((x, i) => (M.dayIsEmpty(x) ? M.shortDate(M.dayInfo(t, i).date) : null)).filter(Boolean);
   const noHotel = t.stays.filter((s) => !M.shownHotel(s)).map((s) => he(s.label));
-  const li = (good, title, sub, link, linkText) => `<li><span class="ck ${good ? 'ok' : 'no'}" aria-hidden="true">${good ? '✓' : '!'}</span><div class="grow"><b>${title}</b>${sub ? `<div class="muted" style="font-size:14px">${sub}</div>` : ''}</div>${!good && link ? `<a class="btn ghost sm" href="#/t/${r.id}/${link}">${linkText}</a>` : ''}</li>`;
+  const checks = [
+    [!!t.stays.length, 'מבנה', t.stays.length ? `${t.stays.length} יעדים, ${M.totalNights(t)} לילות` : 'אין יעדים', 'structure', 'למבנה'],
+    [!empty.length, empty.length ? `${empty.length} ימים ריקים` : 'כל הימים מלאים', empty.length ? `<span class="ltr">${empty.slice(0, 6).join(', ')}</span>${empty.length > 6 ? '…' : ''}. אפשר לשלוח גם כך.` : `${t.days.length} מתוך ${t.days.length}`, 'days', 'לימים'],
+    [!c.pendingTransfers, c.pendingTransfers ? `${c.pendingTransfers} קטעי הגעה לאשר` : 'קטעי ההגעה', c.pendingTransfers ? 'הצעות שעוד לא מולאו' : '', 'transfers', 'לאישור'],
+    [!noHotel.length, noHotel.length ? 'אין מלון ב' + noHotel.map(esc).join(', ') : 'יש מלון בכל יעד', '', 'hotels', 'למלונות'],
+    [true, 'מחירים', t.showPrices ? 'מוצגים למטיילים' : 'לא מוצגים למטיילים'],
+  ];
+  const left = checks.filter((x) => !x[0]).length;
+  const li = ([good, title, sub, link, linkText]) => `<li class="chk"><span class="mark ${good ? 'ok' : 'warn'}" aria-hidden="true">${ic(good ? 'check' : 'alert', 16)}</span><div><b>${title}</b>${sub ? `<small>${sub}</small>` : ''}</div>${!good && link ? `<a class="btn ghost sm" href="#/t/${r.id}/${link}">${linkText}${ic('chev-l', 16)}</a>` : '<span></span>'}</li>`;
   const pub = r.published || {};
-  return `<p class="eyebrow">שלב 06</p><h1 class="display">פרסום</h1>
-    <p class="sub">כשהכל מוכן שולחים לדנה. אחרי שהיא מאשרת, מקבלים כאן את הקישור לאפליקציה ואת ה-PDF.</p>
-    ${viewDocs()}
-    <div class="layout2">
-      <section class="card" style="padding:6px 18px" aria-labelledby="ck-h">
-        <h2 id="ck-h" class="sr">מה בדקנו</h2>
-        <ul class="checklist">
-          ${li(!!t.stays.length, 'מבנה', t.stays.length ? `${t.stays.length} יעדים, ${M.totalNights(t)} לילות` : 'אין יעדים', 'structure', 'למבנה')}
-          ${li(!empty.length, empty.length ? `${empty.length} ימים ריקים` : 'כל הימים מלאים', empty.length ? `<span class="ltr">${empty.slice(0, 6).join(', ')}</span>${empty.length > 6 ? '…' : ''}. אפשר לשלוח גם כך.` : '', 'days', 'לימים')}
-          ${li(!c.pendingTransfers, c.pendingTransfers ? `${c.pendingTransfers} קטעי הגעה לאשר` : 'קטעי ההגעה', c.pendingTransfers ? 'הצעות שעוד לא מולאו' : '', 'days', 'לאישור')}
-          ${li(!noHotel.length, noHotel.length ? 'אין מלון ב' + noHotel.map(esc).join(', ') : 'יש מלון בכל יעד', '', 'hotels', 'למלונות')}
-          ${li(true, 'מחירים', t.showPrices ? 'מוצגים ללקוח' : 'לא מוצגים ללקוח')}
-        </ul>
-        ${r.status === 'submitted' ? `<div class="note" style="margin:12px 0 16px">הטיול אצל דנה. אפשר להמשיך לערוך, והשינויים ייכנסו.</div>`
-          : `<div class="field" style="margin:8px 0 12px"><label for="note">הערה לדנה (רשות)</label><textarea id="note" class="inp" placeholder="למשל: הלקוחות טסים עם ילדה בת 12">${esc(r.note_to_dana || '')}</textarea></div>
-             <div class="row" style="padding-bottom:16px"><button class="btn" type="button" data-act="submit"${t.stays.length ? '' : ' disabled'}>${r.status === 'published' ? 'שליחה שוב לדנה' : 'שליחה לדנה לאישור'}</button></div>`}
-      </section>
-      <aside class="card" style="padding:18px" aria-labelledby="tl-h">
-        <h2 id="tl-h" style="margin-bottom:14px">מה קורה אחר כך</h2>
-        <div class="timeline">
-          <div class="tl"><span class="state done" aria-hidden="true"></span><div><b>טיוטה</b><span>את עובדת על הטיול</span></div></div>
-          <div class="tl"><span class="state ${r.status === 'submitted' ? 'work' : r.status === 'published' ? 'done' : ''}" aria-hidden="true"></span><div><b>אצל דנה</b><span>דנה בודקת ובונה את האפליקציה</span></div></div>
-          <div class="tl"><span class="state ${r.status === 'published' ? 'done' : ''}" aria-hidden="true"></span><div><b>פורסם</b><span>הקישור וה-PDF מופיעים כאן</span></div></div>
-        </div>
+  const stage = r.status === 'published' ? 2 : r.status === 'submitted' ? 1 : 0;
+  const tl = (i, icn, title, sub) => `<div class="it${stage > i ? ' done' : ''}"><span class="mark ${stage >= i ? 'ok' : 'todo'}" aria-hidden="true">${ic(icn, 16)}</span><div><p style="font-weight:700">${title}${stage === i ? '<span class="sr"> (המצב עכשיו)</span>' : ''}</p><p class="small muted">${sub}</p></div></div>`;
+  return phead('07', 'פרסום', 'כשהכול מוכן שולחים לדנה. אחרי שהיא מאשרת, מקבלים כאן את הקישור לאפליקציה ואת ה-PDF.') + `
+    <div class="side2 w340">
+      <div class="col" style="gap:16px">
+        <section class="card" aria-labelledby="h-send">
+          <div class="card-h"><h2 id="h-send">מוכן לשליחה?</h2>${left ? `<span class="badge warn"><span class="bd"></span>${left === 1 ? 'נשאר דבר אחד' : 'נשארו ' + left + ' דברים'}</span>` : '<span class="badge pub">הכול מוכן</span>'}</div>
+          <div class="card-b" style="padding-top:4px"><ul class="checklist">${checks.map(li).join('')}</ul>
+            ${r.status === 'submitted' ? '<div class="banner ok" style="margin-top:14px">הטיול אצל דנה. אפשר להמשיך לערוך, והשינויים ייכנסו.</div>'
+              : `<div class="field" style="margin-top:14px"><label for="note">הערה לדנה <span class="muted">(רשות)</span></label><textarea id="note" class="inp" style="min-height:72px" placeholder="למשל: המטיילים טסים עם ילדה בת 12">${esc(r.note_to_dana || '')}</textarea></div>`}
+          </div>
+          ${r.status === 'submitted' ? '' : `<div class="sendbar"><button class="btn" type="button" data-act="submit"${t.stays.length ? '' : ' disabled'}>${ic('send')}${r.status === 'published' ? 'שליחה שוב לדנה' : 'שליחה לדנה לאישור'}</button>${left ? '<span class="small muted">אפשר לשלוח גם כך. דנה תראה מה פתוח.</span>' : ''}</div>`}
+        </section>
+        ${viewDocs()}
+      </div>
+      <aside class="card" style="padding:20px" aria-labelledby="h-next">
+        <h2 id="h-next" class="h3" style="margin-bottom:16px">מה קורה אחר כך</h2>
+        <div class="tl">${tl(0, 'pencil', 'טיוטה', stage === 0 ? 'את עובדת על הטיול. את כאן.' : 'את עובדת על הטיול')}${tl(1, 'users', 'אצל דנה', 'דנה בודקת ובונה את האפליקציה')}${tl(2, 'send', 'פורסם', 'הקישור וה-PDF מופיעים כאן')}</div>
         ${r.status === 'published' && S.priv.clientLink ? `<hr class="hr" style="margin:6px 0 16px"><div class="result">
-          <div class="linkbox"><code>${esc(S.priv.clientLink.replace(/#.*/, '#…'))}</code><button class="btn sm" type="button" data-act="copy-link">העתקת הקישור</button></div>
-          ${pub.pdfName ? `<p class="muted" style="font-size:13px;margin:0">ה-PDF: <span class="ltr">${esc(pub.pdfName)}</span></p>` : ''}
-          ${r.changed_since_publish ? '<p class="note" style="margin:0">יש שינויים מאז הפרסום. כדי שייכנסו לאפליקציה, שולחים שוב לדנה.</p>' : ''}
+          <div class="linkbox"><code>${esc(S.priv.clientLink.replace(/#.*/, '#…'))}</code><button class="btn sm" type="button" data-act="copy-link">${ic('copy', 16)}העתקה</button></div>
+          ${pub.pdfName ? `<p class="small muted">ה-PDF: <span class="ltr">${esc(pub.pdfName)}</span></p>` : ''}
+          ${r.changed_since_publish ? '<p class="banner warn">יש שינויים מאז הפרסום. כדי שייכנסו לאפליקציה, שולחים שוב לדנה.</p>' : ''}
         </div>` : ''}
       </aside>
     </div>`;
@@ -661,24 +829,24 @@ function viewPublish() {
 function viewDocs() {
   const docs = S.priv.docs || [], opts = M.docBookings(S.t), kindName = Object.fromEntries(M.DOC_KINDS);
   const list = docs.length ? `<ul class="docs">${docs.map((d) => `<li>
-      <span class="doc-ic" aria-hidden="true">${icon('M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5')}</span>
-      <div class="grow"><b><bdi>${esc(d.name)}</bdi></b><div class="muted" style="font-size:13px">${esc(kindName[d.kind] || 'מסמך')}${d.label ? ' · ' + esc(d.label) : ''}</div></div>
-      <button class="btn ghost sm" type="button" data-act="doc-open" data-id="${esc(d.id)}">פתיחה</button>
-      <button class="icon-btn" type="button" data-act="doc-del" data-id="${esc(d.id)}" aria-label="מחיקת ${esc(d.name)}">${icon(I.trash)}</button></li>`).join('')}</ul>`
-    : '<p class="muted" style="font-size:14px;margin:0 0 12px">עוד אין מסמכים.</p>';
-  return `<section class="card" style="padding:18px;margin-bottom:20px" aria-labelledby="docs-h">
-    <h2 id="docs-h" style="margin-bottom:6px">מסמכים לנוסעים</h2>
-    <p class="muted" style="font-size:14px;margin:0 0 14px">כרטיסי טיסה, שוברי מלון, ויזות וכרטיסי כניסה. באפליקציה הם יופיעו במסך "מסמכים", וייפתחו גם מהכרטיס של ההזמנה. PDF או תמונה, עד 8MB.</p>
-    ${list}
-    <div class="docs-add">
-      <div class="field"><span class="lbl">קובץ</span><input id="doc-file" class="fpick" type="file" accept="application/pdf,image/*" data-f="doc-file"><label for="doc-file" class="btn ghost filebtn"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><polyline points="7,8 12,3 17,8"/><path d="M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg><span id="doc-file-name">בחירת קובץ</span></label></div>
-      <div class="field"><label for="doc-booking">שייך להזמנה</label><select id="doc-booking" class="inp" data-f="doc-booking">
-        ${opts.map((o, i) => `<option value="${i}">${esc(o.label)}</option>`).join('')}<option value="other">הזמנה אחרת</option></select></div>
-      <div class="field"><label for="doc-other">הזמנה אחרת (למשל שם המוזיאון)</label><input id="doc-other" class="inp" maxlength="80"></div>
-      <div class="field"><label for="doc-kind">סוג המסמך</label><select id="doc-kind" class="inp">
-        ${M.DOC_KINDS.map(([k, l]) => `<option value="${k}"${opts[0] && opts[0].kind === k ? ' selected' : ''}>${l}</option>`).join('')}</select></div>
-      <div class="field"><label for="doc-name">השם שהנוסעים יראו (רשות)</label><input id="doc-name" class="inp" maxlength="80" placeholder="למשל: כרטיס טיסה הלוך"></div>
-      <div class="row" style="align-items:flex-end"><button class="btn" type="button" data-act="doc-add">${icon(I.plus)}הוספת המסמך</button></div>
+      <span class="doc-ic" aria-hidden="true">${ic('file')}</span>
+      <div class="grow"><b><bdi>${esc(d.name)}</bdi></b><div class="xs muted">${esc(kindName[d.kind] || 'מסמך')}${d.label ? ' · ' + esc(d.label) : ''}</div></div>
+      <button class="btn quiet sm" type="button" data-act="doc-open" data-id="${esc(d.id)}">פתיחה</button>
+      <button class="mini" type="button" data-act="doc-del" data-id="${esc(d.id)}" aria-label="מחיקת ${esc(d.name)}">${ic('trash')}</button></li>`).join('')}</ul>` : '';
+  return `<section class="card" aria-labelledby="docs-h">
+    <div class="card-h"><div><h2 id="docs-h">מסמכים למטיילים</h2><p class="small muted">כרטיסי טיסה, שוברי מלון, ויזות וכרטיסי כניסה. באפליקציה הם מופיעים במסך "מסמכים". PDF או תמונה, עד 8MB.</p></div><span class="badge num">${docs.length === 1 ? 'קובץ אחד' : docs.length + ' קבצים'}</span></div>
+    <div class="card-b col" style="gap:16px">
+      ${list}
+      <div class="docs-add">
+        <div class="field full"><span class="lbl" id="doc-file-l">קובץ</span><input id="doc-file" class="fpick" type="file" accept="application/pdf,image/*" data-f="doc-file" aria-labelledby="doc-file-l doc-file-name"><div class="filebtn"><label for="doc-file" class="btn ghost sm">${ic('upload', 16)}בחירת קובץ</label><span class="fname" id="doc-file-name">עוד לא נבחר קובץ</span></div></div>
+        <div class="field"><label for="doc-booking">שיוך להזמנה</label><select id="doc-booking" class="inp" data-f="doc-booking">
+          ${opts.map((o, i) => `<option value="${i}">${esc(o.label)}</option>`).join('')}<option value="other">הזמנה אחרת</option></select></div>
+        <div class="field"><label for="doc-kind">סוג המסמך</label><select id="doc-kind" class="inp">
+          ${M.DOC_KINDS.map(([k, l]) => `<option value="${k}"${opts[0] && opts[0].kind === k ? ' selected' : ''}>${l}</option>`).join('')}</select></div>
+        <div class="field"><label for="doc-other">הזמנה אחרת (למשל שם המוזיאון)</label><input id="doc-other" class="inp" maxlength="80"></div>
+        <div class="field"><label for="doc-name">השם שהמטיילים יראו (רשות)</label><input id="doc-name" class="inp" maxlength="80" placeholder="למשל כרטיס טיסה הלוך"></div>
+        <div class="full"><button class="btn sm" type="button" data-act="doc-add">${ic('plus')}הוספת המסמך</button></div>
+      </div>
     </div>
   </section>`;
 }
@@ -702,18 +870,18 @@ async function docAdd() {
 // ---------- dialogs ----------
 function dialogShell(id, title, body, foot) {
   return `<div class="scrim on"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="${id}">
-    <div class="dlg-h"><h2 id="${id}">${title}</h2><button class="icon-btn" type="button" aria-label="סגירה" data-act="dlg-close">${icon(I.close)}</button></div>
+    <div class="dlg-h"><h2 id="${id}">${title}</h2><button class="mini" type="button" aria-label="סגירה" data-act="dlg-close">${ic('x')}</button></div>
     <form data-form="${S.dlg.type}"><div class="dlg-b">${body}</div><div class="dlg-f">${foot}<button class="btn ghost" type="button" data-act="dlg-close">ביטול</button></div></form></div></div>`;
 }
 function viewDialog() {
   const g = S.dlg;
   if (g.type === 'new') return dialogShell('dn-h', 'טיול חדש', `
-      <div class="field"><label for="n-name">שם הלקוח או המשפחה <span class="req" aria-hidden="true">*</span></label><input id="n-name" name="name" class="inp" required placeholder="למשל משפחת לוי" data-autofocus></div>
+      <div class="field"><label for="n-name">שם המשפחה או הקבוצה <span class="req" aria-hidden="true">*</span></label><input id="n-name" name="name" class="inp" required placeholder="למשל משפחת לוי" data-autofocus></div>
       <div class="g2">
         <div class="field"><label for="n-date">תאריך התחלה <span class="req" aria-hidden="true">*</span></label><input id="n-date" name="date" class="inp ltr" type="date" required></div>
         <div class="field"><label for="n-country">מדינה</label><input id="n-country" name="country" class="inp" placeholder="למשל יפן"></div>
       </div>
-      <fieldset><legend>מי נוסע (רשות)</legend>
+      <fieldset><legend>מי מטייל (רשות)</legend>
         <div class="g2"><div class="field"><label for="n-ad">מבוגרים</label><input id="n-ad" name="adults" class="inp ltr" type="number" min="0" max="30" value="2"></div><div class="field"><label for="n-kids">גילאי הילדים</label><input id="n-kids" name="kids" class="inp ltr" placeholder="12, 9"></div></div>
       </fieldset>
       ${g.error ? `<div class="err-box" role="alert">${esc(g.error)}</div>` : ''}`,
@@ -723,13 +891,13 @@ function viewDialog() {
     const box = (k, l, on) => `<label class="check"><input type="checkbox" name="${k}"${on ? ' checked' : ''}>${l}</label>`;
     return dialogShell('dc-h', 'שכפול: ' + esc(tripTitle(src.data)), `
       <div class="g2">
-        <div class="field"><label for="c-name">שם הלקוח החדש <span class="req" aria-hidden="true">*</span></label><input id="c-name" name="name" class="inp" required placeholder="למשל משפחת כהן" data-autofocus></div>
+        <div class="field"><label for="c-name">שם המשפחה החדשה <span class="req" aria-hidden="true">*</span></label><input id="c-name" name="name" class="inp" required placeholder="למשל משפחת כהן" data-autofocus></div>
         <div class="field"><label for="c-date">תאריך התחלה חדש <span class="req" aria-hidden="true">*</span></label><input id="c-date" name="date" class="inp ltr" type="date" required></div>
       </div>
       <fieldset><legend>מה להעתיק</legend><div class="checks">
         ${box('structure', 'המבנה (יעדים ולילות)', 1)}${box('hotels', 'המלונות (בלי הזמנות)', 1)}${box('days', 'הימים והקטעים', 1)}${box('transfers', 'ההעברות (בלי הזמנות)', 1)}${box('prices', 'המחירים', 0)}
       </div></fieldset>
-      <div class="never"><b style="font-size:14px">לא עובר אף פעם</b><ul><li>שמות הנוסעים וטיסות</li><li>מספרי הזמנה, שוברים ומסמכים</li><li>הערות הלקוח, אישורים וקישורים</li></ul></div>
+      <div class="never"><b style="font-size:14px">לא עובר אף פעם</b><ul><li>שמות המטיילים וטיסות</li><li>מספרי הזמנה, שוברים ומסמכים</li><li>הערות המטיילים, אישורים וקישורים</li></ul></div>
       <p class="muted" style="font-size:14px;margin:0">כל התאריכים זזים לתאריך החדש. מלון שהוזמן חוזר ל"נבחר", וקטעים שתלויים בעונה יסומנו "לבדוק תאריך".</p>
       ${g.error ? `<div class="err-box" role="alert">${esc(g.error)}</div>` : ''}`,
       `<button class="btn" type="submit">שכפול</button>`);
@@ -807,6 +975,13 @@ function findItemDay(id) { return S.t.days.findIndex((d) => d.items.some((x) => 
 const ACT = {
   filter: (el) => { S.filter = el.dataset.v; render(); },
   menu: (el) => { S.menuFor = S.menuFor === el.dataset.id ? null : el.dataset.id; render(); },
+  'reload-page': () => location.reload(),
+  'retry-save': () => { clearTimeout(S.saveTimer); clearTimeout(S.privTimer); if (S.dirty) saveNow(); if (S.privPending) savePrivNow(); },
+  'nn-minus': () => { const f = $('#newnights'); f.value = Math.max(1, (parseInt(f.value, 10) || 1) - 1); },
+  'nn-plus': () => { const f = $('#newnights'); f.value = Math.min(60, (parseInt(f.value, 10) || 1) + 1); },
+  mtab: (el) => { const v = el.dataset.v; if (v === 'edit') S.mtab = 'edit'; else { S.mtab = 'side'; S.side = v === 'lib' ? 'lib' : 'preview'; } render(); },
+  'all-days': () => { S.allDays = !S.allDays; render(); },
+  'item-menu': (el) => { S.itemMenu = S.itemMenu === el.dataset.id ? null : el.dataset.id; render(); },
   'new-open': () => { S.dlg = { type: 'new' }; render(); },
   'clone-open': (el) => { S.menuFor = null; S.dlg = { type: 'clone', id: el.dataset.id }; render(); },
   archive: async (el) => {
@@ -838,12 +1013,31 @@ const ACT = {
   },
   // hotels
   'hotel-state': (el) => {
-    const s = S.t.stays.find((x) => x.id === el.dataset.id);
-    commit(M.setHotel(S.t, s.id, Object.assign({}, s.hotels[0] || { name: '' }, { state: el.dataset.v })));
+    const s = S.t.stays.find((x) => x.id === el.dataset.id), v = el.dataset.v;
+    const h = s.hotels.find((x) => x.id === el.dataset.hid) || s.hotels[0];
+    let t = M.setHotel(S.t, s.id, Object.assign({}, h || { name: '' }, { state: v }));
+    const id = h ? h.id : t.stays.find((x) => x.id === s.id).hotels[0].id;
+    if (v !== 'proposed') {                                   // only one option is shown to the travellers: the others go back to "proposal"
+      t.stays.find((x) => x.id === s.id).hotels.filter((x) => x.id !== id && x.state !== 'proposed').forEach((x) => { t = M.setHotel(t, s.id, Object.assign({}, x, { state: 'proposed' })); });
+    }
+    S.hopen[s.id] = id; commit(t);
+  },
+  'hotel-open': (el) => { S.hopen[el.dataset.id] = el.dataset.hid; render(); const f = document.getElementById('h-name-' + el.dataset.id); if (f) f.focus(); },
+  'hotel-add': (el) => {
+    const s = S.t.stays.find((x) => x.id === el.dataset.id); if (s.hotels.length >= 3) return;
+    const t = M.setHotel(S.t, s.id, { name: '', state: 'proposed' });
+    const hs = t.stays.find((x) => x.id === s.id).hotels; S.hopen[s.id] = hs[hs.length - 1].id;
+    commit(t); const f = document.getElementById('h-name-' + s.id); if (f) f.focus();
+  },
+  'hotel-del': (el) => {
+    const sid = el.dataset.id, hid = el.dataset.hid, s = S.t.stays.find((x) => x.id === sid), h = s.hotels.find((x) => x.id === hid);
+    const t = clone(S.t); const st = t.stays.find((x) => x.id === sid); st.hotels = st.hotels.filter((x) => x.id !== hid);
+    if (S.hopen[sid] === hid) delete S.hopen[sid];
+    commit(t, 'נמחקה האפשרות ' + (h && h.name ? h.name : ''));
   },
   prices: () => commit(Object.assign({}, S.t, { showPrices: !S.t.showPrices })),
   // days
-  day: (el) => { S.day = Number(el.dataset.v); S.editItem = null; history.replaceState(null, '', '#/t/' + S.row.id + '/days/' + S.day); render(); const h = $('#day-title'); if (h && window.innerWidth < 860) h.scrollIntoView({ block: 'start' }); },
+  day: (el) => { S.day = Number(el.dataset.v); S.editItem = null; S.itemMenu = null; history.replaceState(null, '', '#/t/' + S.row.id + '/days/' + S.day); render(); if (window.innerWidth < 1100 && el.closest('.daynav')) { const h = $('.dayhero'); if (h) h.scrollIntoView({ block: 'start' }); } },
   'day-add': () => tryCommit((t) => M.insertDayAfter(t, t.days.length - 1), 'נוסף יום בסוף הטיול (עוד לילה ביעד האחרון)'),
   'day-dup': (el) => { const d = Number(el.dataset.v); tryCommit((t) => M.duplicateDay(t, d, { target: 'after' }), `יום ${d + 1} שוכפל. העותק אחריו, ונוסף לילה`); S.day = d + 1; render(); },
   'day-dup-opts': () => { S.dlg = { type: 'dup' }; render(); },
@@ -857,12 +1051,13 @@ const ACT = {
     commit(next);
     if (route().step === 'transfers') toast('נוסף קטע הגעה: ' + s.title + '. ממלאים את הפרטים למטה.');
   },
+  'sugg-all': () => { let t = S.t; const all = M.suggestedTransfers(t); all.forEach((s) => { t = M.applySuggestion(t, s); }); commit(t, 'נוספו ' + all.length + ' קטעי הגעה. ממלאים את הפרטים ברשימה.'); },
   'item-add': (el) => { const it = M.newItem({ part: el.dataset.v }); S.editItem = it.id; commit(M.addItem(S.t, S.day, it)); const f = document.getElementById('it-' + it.id); if (f) f.focus(); },
-  'item-edit': (el) => { S.editItem = el.dataset.id; render(); const f = document.getElementById('it-' + el.dataset.id); if (f) f.focus(); },
+  'item-edit': (el) => { S.editItem = el.dataset.id; S.itemMenu = null; render(); const f = document.getElementById('it-' + el.dataset.id); if (f) f.focus(); },
   'item-done': () => { S.editItem = null; render(); },
   'item-dup': (el) => tryCommit((t) => M.duplicateItem(t, el.dataset.id), 'הקטע שוכפל'),
-  'item-del': (el) => { if (S.editItem === el.dataset.id) S.editItem = null; tryCommit((t) => M.deleteItem(t, el.dataset.id), 'הקטע נמחק'); },
-  'item-move': (el) => { S.dlg = { type: 'move', id: el.dataset.id }; render(); },
+  'item-del': (el) => { if (S.editItem === el.dataset.id) S.editItem = null; S.itemMenu = null; tryCommit((t) => M.deleteItem(t, el.dataset.id), 'הקטע נמחק'); },
+  'item-move': (el) => { S.itemMenu = null; S.dlg = { type: 'move', id: el.dataset.id }; render(); },
   'item-kind': (el) => {
     const it = findItem(el.dataset.id), k = el.dataset.v;
     const patch = { kind: k };
@@ -893,7 +1088,7 @@ const ACT = {
     document.body.appendChild(box);
     $('#app').inert = true;
     const fr = box.querySelector('iframe'); fr.srcdoc = html;
-    const close = () => { box.remove(); $('#app').inert = false; const b = $('[data-act="pdf"]'); if (b) b.focus(); document.removeEventListener('keydown', onKey, true); };
+    const close = () => { box.remove(); $('#app').inert = false; const b = [...document.querySelectorAll('[data-act="pdf"]')].find((x) => x.offsetParent); if (b) b.focus(); document.removeEventListener('keydown', onKey, true); };
     const onKey = (e) => { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
     document.addEventListener('keydown', onKey, true);
     box.addEventListener('click', (e) => { const b = e.target.closest('[data-pdf]'); if (!b) return; if (b.dataset.pdf === 'close') close(); else fr.contentWindow.print(); });
@@ -956,12 +1151,13 @@ function moveStay(id, dir) {
 document.addEventListener('click', (e) => {
   if (e.target.classList && e.target.classList.contains('scrim')) { closeDlg(); return; }
   const el = e.target.closest('[data-act]');
-  if (!el || el.disabled) { if (S.menuFor && !e.target.closest('.menu')) { S.menuFor = null; render(); } return; }
+  if (!el || el.disabled) { if ((S.menuFor || S.itemMenu) && !e.target.closest('.menu')) { S.menuFor = null; S.itemMenu = null; render(); } return; }
+  if (S.itemMenu && el.dataset.act !== 'item-menu' && !el.closest('.menu')) S.itemMenu = null;
   const fn = ACT[el.dataset.act];
   if (fn) { if (el.tagName === 'A') return; e.preventDefault(); fn(el, e); }
 });
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') { if (S.dlg) closeDlg(); else if (S.menuFor) { S.menuFor = null; render(); } else if (S.editItem) { S.editItem = null; render(); } }
+  if (e.key === 'Escape') { if (S.dlg) closeDlg(); else if (S.menuFor || S.itemMenu) { S.menuFor = null; S.itemMenu = null; render(); } else if (S.editItem) { S.editItem = null; render(); } }
   if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.target.closest('input,textarea') && toastUndo) { e.preventDefault(); $('#toast-undo').click(); }
 });
 
@@ -974,7 +1170,13 @@ document.addEventListener('input', (e) => {
   if (f === 'day-title') return edit(M.setDayTitle(S.t, S.day, v));
   if (f === 'stay-name') { const t = clone(S.t); t.stays.find((s) => s.id === el.dataset.id).label = { he: v }; return edit(t); }
   if (f === 'country') return edit(Object.assign({}, S.t, { country: v }));
-  if (f === 'hotel') { const s = S.t.stays.find((x) => x.id === el.dataset.id); return edit(M.setHotel(S.t, s.id, Object.assign({}, s.hotels[0] || { state: 'proposed' }, { [el.dataset.k]: v }))); }
+  if (f === 'hotel') {
+    const s = S.t.stays.find((x) => x.id === el.dataset.id);
+    const h = s.hotels.find((x) => x.id === el.dataset.hid) || s.hotels[0];          // no option yet: the first keystroke makes one
+    const next = M.setHotel(S.t, s.id, Object.assign({}, h || { state: 'proposed' }, { [el.dataset.k]: v }));
+    if (!h) { const nh = next.stays.find((x) => x.id === s.id).hotels[0]; S.hopen[s.id] = nh.id; document.querySelectorAll(`[data-f="hotel"][data-id="${s.id}"],[data-act="hotel-state"][data-id="${s.id}"]`).forEach((x) => { x.dataset.hid = nh.id; }); }
+    return edit(next);
+  }
   if (f === 'hotel-ref') { const id = el.dataset.id; return editPrivate((p) => { p.bookings = p.bookings || {}; p.bookings[id] = { ref: v }; }); }
   if (f === 'item') return itemInput(el);
   if (f === 'quote-line') { const k = el.dataset.k; edit(M.setQuoteLine(S.t, el.dataset.id, { [k]: v })); return paintQuote(); }
@@ -1002,7 +1204,7 @@ function itemInput(el) {
 }
 document.addEventListener('change', (e) => {
   const el = e.target, f = el.dataset.f; if (!f) return;
-  if (f === 'doc-file') { const n = el.files && el.files[0]; $('#doc-file-name').innerHTML = n ? '<bdi>' + esc(n.name) + '</bdi>' : 'בחירת קובץ'; return; }
+  if (f === 'doc-file') { const n = el.files && el.files[0]; $('#doc-file-name').innerHTML = n ? '<bdi>' + esc(n.name) + '</bdi> · ' + Math.max(1, Math.round(n.size / 1024)) + 'KB' : 'עוד לא נבחר קובץ'; return; }
   if (f === 'doc-booking') { const o = M.docBookings(S.t)[Number(el.value)]; const k = $('#doc-kind'); if (o && k) k.value = o.kind; return; }
   if (f === 'start') { if (/^\d{4}-\d{2}-\d{2}$/.test(el.value)) commit(M.setStartDate(S.t, el.value), 'תאריך ההתחלה השתנה'); return; }
   if (f === 'item') {
@@ -1047,7 +1249,7 @@ document.addEventListener('submit', async (e) => {
       const data = M.newTrip({ clientName: fd.get('name'), startDate: fd.get('date'), adults: Math.max(0, parseInt(fd.get('adults'), 10) || 0), childAges: kids, country: String(fd.get('country') || '').trim(), agencyName: b.agencyName || S.me.name, logoUrl: b.logoUrl || null });
       const row = await S.store.createTrip(S.me.id, data);
       closeDlg(); go('#/t/' + row.id + '/structure');
-    } catch (err) { S.dlg.error = /required/.test(err.message) ? 'חסרים שם הלקוח ותאריך ההתחלה.' : 'לא נוצר. כדאי לנסות שוב.'; render(); }
+    } catch (err) { S.dlg.error = /required/.test(err.message) ? 'חסרים שם המשפחה ותאריך ההתחלה.' : 'לא נוצר. כדאי לנסות שוב.'; render(); }
     return;
   }
   if (kind === 'clone') {
@@ -1058,7 +1260,7 @@ document.addEventListener('submit', async (e) => {
       const row = await S.store.createTrip(S.me.id, data);
       closeDlg(); go('#/t/' + row.id + '/structure');
       toast('הטיול שוכפל');
-    } catch (err) { S.dlg.error = /required/.test(err.message) ? 'חסרים שם הלקוח ותאריך ההתחלה.' : 'לא שוכפל. כדאי לנסות שוב.'; render(); }
+    } catch (err) { S.dlg.error = /required/.test(err.message) ? 'חסרים שם המשפחה ותאריך ההתחלה.' : 'לא שוכפל. כדאי לנסות שוב.'; render(); }
     return;
   }
   if (kind === 'lib-new') {
@@ -1137,13 +1339,14 @@ document.addEventListener('drop', (e) => {
 // ---------- start ----------
 (async function start() {
   const secret = takeSecret();
-  const gate = (msg) => { $('#app').innerHTML = `<div class="gate-page"><div class="card"><p class="eyebrow">Pack &amp; Board</p><h1 class="display" style="font-size:32px">בונה מסלולים</h1><p class="muted">${msg}</p></div></div>`; };
-  if (!secret) return gate('הבונה נפתח מהקישור האישי שקיבלת מ-Pack &amp; Board. אם אין לך קישור, אפשר לפנות לדנה.');
+  const gate = (icn, title, msg) => { $('#app').innerHTML = gatePage(icn, title, msg); };
+  if (!secret) return gate('lock', 'צריך קישור אישי', 'הבונה נפתח רק מהקישור האישי שקיבלת מ-Pack &amp; Board. אם אין לך קישור, אפשר לפנות לדנה.');
+  $('#app').innerHTML = loadingPage('list');
   S.store = createStore(secret);
   try { S.me = await S.store.me(); }
   catch (e) {
-    if (e instanceof NoAccess) { forgetSecret(); return gate('הקישור הזה כבר לא פעיל. אפשר לבקש מדנה קישור חדש.'); }
-    return gate('אין חיבור כרגע. כדאי לנסות שוב בעוד רגע.');
+    if (e instanceof NoAccess) { forgetSecret(); return gate('link', 'הקישור כבר לא פעיל', 'אולי הוא הוחלף בקישור חדש. אפשר לבקש מדנה קישור חדש, והטיולים שלך נשמרים.'); }
+    return gate('wifi-off', 'אין חיבור כרגע', 'כדאי לנסות שוב בעוד רגע.');
   }
   S.snippets = await S.store.listSnippets().catch(() => []);
   if (!location.hash || location.hash === '#') history.replaceState(null, '', '#/');
