@@ -27,6 +27,7 @@ button,input,select{font:inherit;color:inherit}
 .partner-logo{height:30px;width:auto;max-width:200px;display:block}
 .partner-name{font:800 18px/1.2 var(--f-ui)}
 .lang{display:flex;background:rgba(255,255,255,.14);border-radius:999px;padding:3px;gap:2px}
+.lang[hidden]{display:none}
 .lang button{border:0;background:transparent;color:#fff;font-weight:700;font-size:13px;padding:6px 12px;border-radius:999px;cursor:pointer;min-height:32px}
 .lang button[aria-pressed="true"]{background:rgba(255,255,255,.3)}
 main{max-width:760px;margin:0 auto;padding:24px 16px 48px}
@@ -78,6 +79,7 @@ details.hotels[open] summary::before{content:'−'}
 .trip .tr-act{display:flex;gap:6px;flex-shrink:0;align-items:center}
 .icon{width:44px;height:44px;border-radius:22px;border:0;box-shadow:inset 0 0 0 1.5px var(--hair);background:transparent;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink);text-decoration:none}
 .icon:hover{background:var(--hover)}
+[dir=rtl] select.inp{background-position:left 16px center}
 .gate{text-align:center;padding:48px 20px}
 .foot{margin-top:28px;display:flex;align-items:center;justify-content:center;gap:8px;color:var(--muted);font-size:13px}
 .foot img{height:22px}
@@ -87,7 +89,7 @@ details.hotels[open] summary::before{content:'−'}
 <body>
 <header class="top"><div class="top-in">
   <div id="who"><span class="partner-name">Pack &amp; Board</span></div>
-  <div class="lang" role="group" aria-label="Idioma / Language"><button type="button" data-l="es" aria-pressed="true">ES</button><button type="button" data-l="en" aria-pressed="false">EN</button></div>
+  <div class="lang" id="lang" role="group" aria-label="Idioma / Language"><button type="button" data-l="es" aria-pressed="true">ES</button><button type="button" data-l="en" aria-pressed="false">EN</button></div>
 </div></header>
 
 <main>
@@ -155,6 +157,18 @@ details.hotels[open] summary::before{content:'−'}
       errDate:'Elige la fecha de salida.', errTpl:'Elige un viaje.', errKey:'El enlace de acceso no es válido o se ha cambiado. Pide uno nuevo a Pack & Board.',
       errNet:'No hay conexión. Inténtalo de nuevo.', errQuota:'Se ha alcanzado el máximo de viajes de este mes.', errRate:'Demasiados viajes en poco tiempo. Espera unos minutos.',
       errGeneric:'No se pudo crear el viaje: ', by:'Creado con', past:'La fecha ya ha pasado.', none:'Todavía no hay viajes preparados para tu agencia.' },
+    he: { title:'יצירת טיול', lead:'בוחרים טיול, תאריך יציאה ומלונות אחרים אם צריך. מקבלים קישור לאפליקציה של המטיילים.',
+      tour:'טיול', start:'תאריך יציאה', ref:'קבוצה או מספר הזמנה (לא חובה)', hotels:'החלפת מלונות (לא חובה)',
+      hotelsHint:'משאירים ריק, והאפליקציה תציג את המלון מהתוכנית.', create:'יצירת הטיול', creating:'יוצרים…',
+      summary:function(n,a,b){ return n+' ימים · '+a+' עד '+b; }, night:'לילה', nights:'לילות',
+      ok:'הטיול מוכן ופורסם', wait:'נשלח לאישור', waitP:'Pack & Board בודקים את הטיול לפני שהוא עולה. הקישור יעבוד מיד אחרי האישור, ואפשר כבר להעתיק אותו.',
+      okP:'שלחו את הקישור למטיילים. הוא נפתח בטלפון, בלי להוריד כלום.', copy:'העתקה', copied:'הועתק', open:'פתיחה', wa:'וואטסאפ',
+      waText:'הטיול שלכם, בטלפון: ', recent:'טיולים שנוצרו במכשיר הזה', recentHint:'הרשימה נשמרת רק כאן, בדפדפן הזה.',
+      stPublished:'פורסם', stWait:'ממתין לאישור', refresh:'רענון הסטטוס', remove:'הסרה מהרשימה',
+      gateT:'חסר קישור הכניסה', gateP:'פתחו את העמוד עם הקישור האישי שקיבלתם מ-Pack & Board, כולל כל מה שאחרי הסימן #.',
+      errDate:'בחרו תאריך יציאה.', errTpl:'בחרו טיול.', errKey:'קישור הכניסה לא תקין או שהוחלף. בקשו קישור חדש מ-Pack & Board.',
+      errNet:'אין חיבור. נסו שוב.', errQuota:'הגעתם למספר הטיולים המרבי לחודש הזה.', errRate:'נוצרו הרבה טיולים בזמן קצר. חכו כמה דקות.',
+      errGeneric:'לא הצלחנו ליצור את הטיול: ', by:'נבנה עם', past:'התאריך הזה כבר עבר.', none:'עוד אין טיולים מוכנים לסוכנות שלכם.' },
     en: { title:'Create a trip', lead:'Choose the tour, the start date and, if you like, other hotels. You get the app link for the travellers.',
       tour:'Tour', start:'Start date', ref:'Group or reference (optional)', hotels:'Change hotels (optional)',
       hotelsHint:'Leave empty to use the program text ("a selected hotel or rural house…").', create:'Create the trip', creating:'Creating…',
@@ -167,13 +181,24 @@ details.hotels[open] summary::before{content:'−'}
       errDate:'Choose the start date.', errTpl:'Choose a tour.', errKey:'The access link is not valid or was changed. Ask Pack & Board for a new one.',
       errNet:'No connection. Please try again.', errQuota:'This month’s trip limit is reached.', errRate:'Too many trips in a short time. Please wait a few minutes.',
       errGeneric:'The trip could not be created: ', by:'Built with', past:'This date has already passed.', none:'There are no tours ready for your agency yet.' } };
-  var MON = { es:['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'], en:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] };
-  var WD = { es:['dom','lun','mar','mié','jue','vie','sáb'], en:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] };
+  var MON = { he:['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'], es:['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'], en:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] };
+  var WD = { he:['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'], es:['dom','lun','mar','mié','jue','vie','sáb'], en:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] };
   var store = { get:function(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }, set:function(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} } };
   var KEY_K='packandboard.partner.key', LANG_K='packandboard.partner.lang', TRIPS_K='packandboard.partner.trips';
   var API='https://pab-api.dana-lees.workers.dev';
   var q=/[?&]api=([^&]+)/.exec(location.search); if(q && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) API=decodeURIComponent(q[1]);
   var lang = store.get(LANG_K, 'es');   /* Spanish first; the switch is remembered on this device */
+  if(!T[lang]) lang='es';
+  var LABEL = { he:'עב', es:'ES', en:'EN' };
+  /* the languages of the partner's own templates: a Hebrew-only partner (Nomad) gets Hebrew, right to left, and no switch */
+  function setLangs(){
+    var langs=[]; templates.forEach(function(x){ (x.languages||[x.language]).forEach(function(l){ if(T[l] && langs.indexOf(l)<0) langs.push(l); }); });
+    if(!langs.length) langs=['es','en'];
+    if(langs.indexOf(lang)<0) lang=(templates[0] && T[templates[0].language]) ? templates[0].language : langs[0];
+    var box=$('lang'); box.hidden=langs.length<2;
+    box.innerHTML=langs.map(function(l){ return '<button type="button" data-l="'+l+'" aria-pressed="false">'+LABEL[l]+'</button>'; }).join('');
+    [].forEach.call(box.querySelectorAll('button'),function(b){ b.addEventListener('click',function(){ lang=b.getAttribute('data-l'); store.set(LANG_K,lang); paintTexts(); }); });
+  }
   var key = null, templates = [], me = null;
   var $ = function(id){ return document.getElementById(id); };
   function t(k){ return T[lang][k]; }
@@ -188,11 +213,11 @@ details.hotels[open] summary::before{content:'−'}
       .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){ j.__status=r.status; return j; }); });
   }
   function addDays(iso,n){ var d=new Date(iso+'T12:00:00Z'); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); }
-  function fmt(iso){ var d=new Date(iso+'T12:00:00Z'); return lang==='es' ? WD.es[d.getUTCDay()]+' '+d.getUTCDate()+' '+MON.es[d.getUTCMonth()]+' '+d.getUTCFullYear() : WD.en[d.getUTCDay()]+', '+MON.en[d.getUTCMonth()]+' '+d.getUTCDate()+', '+d.getUTCFullYear(); }
+  function fmt(iso){ var d=new Date(iso+'T12:00:00Z'); if(lang==='he') return WD.he[d.getUTCDay()]+' '+d.getUTCDate()+' ב'+MON.he[d.getUTCMonth()]+' '+d.getUTCFullYear(); return lang==='es' ? WD.es[d.getUTCDay()]+' '+d.getUTCDate()+' '+MON.es[d.getUTCMonth()]+' '+d.getUTCFullYear() : WD.en[d.getUTCDay()]+', '+MON.en[d.getUTCMonth()]+' '+d.getUTCDate()+', '+d.getUTCFullYear(); }
   function current(){ return templates.filter(function(x){ return x.id===$('tpl').value; })[0]; }
 
   function paintTexts(){
-    document.documentElement.lang=lang;
+    document.documentElement.lang=lang; document.documentElement.dir=(lang==='he'?'rtl':'ltr');
     [].forEach.call(document.querySelectorAll('[data-t]'),function(el){ var v=t(el.getAttribute('data-t')); if(typeof v==='string') el.textContent=v; });
     [].forEach.call(document.querySelectorAll('.lang button'),function(b){ b.setAttribute('aria-pressed', String(b.getAttribute('data-l')===lang)); });
     document.title=t('title')+' · '+(me && me.name ? me.name : 'Pack & Board');
@@ -201,7 +226,7 @@ details.hotels[open] summary::before{content:'−'}
   }
   function paintTemplates(){
     var sel=$('tpl'), keep=sel.value;
-    sel.innerHTML = templates.length ? templates.map(function(x){ return '<option value="'+esc(x.id)+'">'+esc((x.name&&(x.name[lang]||x.name.en||x.name.es))||x.id)+'</option>'; }).join('') : '<option value="">'+esc(t('none'))+'</option>';
+    sel.innerHTML = templates.length ? templates.map(function(x){ return '<option value="'+esc(x.id)+'">'+esc((x.name&&(x.name[lang]||x.name.en||x.name.es||x.name.he))||x.id)+'</option>'; }).join('') : '<option value="">'+esc(t('none'))+'</option>';
     if(keep && templates.some(function(x){ return x.id===keep; })) sel.value=keep;
   }
   function paintSummary(){
@@ -217,7 +242,7 @@ details.hotels[open] summary::before{content:'−'}
     var s=$('start').value;
     box.innerHTML = x.stays.map(function(st){
       var when = st.nights.map(function(n){ return s ? fmt(addDays(s,n-1)).replace(/ \d{4}$|, \d{4}$/,'') : '#'+n; }).join(', ');
-      var ph = ((st.default||{})[lang]||'').replace(/\*\*/g,'');
+      var ph = ((st.default||{})[lang]||(st.default||{})[(current()||{}).language]||'').replace(/\*\*/g,'');
       return '<div class="stay"><label class="town" for="h_'+esc(st.key)+'">'+esc(st.town)+'<small>'+esc((st.nights.length>1?t('nights'):t('night'))+' · '+when)+'</small></label>'+
         '<input class="inp" id="h_'+esc(st.key)+'" name="'+esc(st.key)+'" maxlength="80" autocomplete="off" placeholder="'+esc(ph)+'" value="'+esc(typed[st.key]||'')+'"></div>';
     }).join('');
@@ -278,7 +303,7 @@ details.hotels[open] summary::before{content:'−'}
   if(!key) return gate();
   Promise.all([api('GET','/v1/me'), api('GET','/v1/templates')]).then(function(res){
     if(res[0].__status===401 || res[0].__status===403){ try{ localStorage.removeItem(KEY_K); }catch(e){} return gate(); }
-    me=res[0]; templates=(res[1].templates||[]);
+    me=res[0]; templates=(res[1].templates||[]); setLangs();
     var b=me.brand||{}, who=$('who');
     who.innerHTML = b.logo_url && b.logo_dark ? '<img class="partner-logo" alt="'+esc(me.name)+'" referrerpolicy="no-referrer" src="'+esc(b.logo_url)+'" onerror="this.outerHTML=\'<span class=partner-name>'+esc(me.name).replace(/'/g,'')+'</span>\'">' : '<span class="partner-name">'+esc(me.name)+'</span>';
     $('app').hidden=false; paintTexts();
