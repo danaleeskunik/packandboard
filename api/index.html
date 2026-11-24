@@ -80,6 +80,25 @@ summary{cursor:pointer;font-weight:700;color:var(--brand)}
 .partner .brandbar{display:flex}
 .brandbar img{height:40px;width:auto;max-width:220px;display:block}
 .brandbar span{color:#fff;font:800 20px/1.2 Heebo,sans-serif}
+/* agency mode: what this page is and what it gives (an agent asked "who is this for?"), and a phone showing what the travellers see (2026-11-24) */
+.about{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:28px;align-items:start;margin:8px 0 26px}
+.partner .about.only-partner{display:grid}
+.about h2{margin-top:0}
+.links2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
+.lcard{border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:#fff}
+.lcard b{display:block;font-size:16px;margin-bottom:4px;color:var(--brand)}
+.lcard span{color:var(--ink2);font-size:14.5px}
+.phone{width:300px;height:610px;border:11px solid #1F2A24;border-radius:40px;overflow:hidden;background:#fff;box-shadow:0 12px 34px rgba(23,53,42,.18)}
+.phone iframe{width:100%;height:100%;border:0;display:block}
+.phonecap{text-align:center;color:var(--ink2);font-size:14px;margin-top:10px}
+.phonecap a{font-weight:700}
+.result .two{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;align-items:start;margin-top:10px}
+.result .lbox{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0;background:#fff}
+.result .lbox b{display:block;color:var(--brand)}
+.result .lbox .lnk{margin:6px 0}
+.result .lbox button{min-height:40px;padding:8px 16px;border-radius:10px;border:1px solid var(--brand);background:#fff;color:var(--brand);font:700 14.5px Heebo,sans-serif;cursor:pointer}
+@media (max-width:760px){.about,.result .two{grid-template-columns:minmax(0,1fr)}.links2{grid-template-columns:minmax(0,1fr)}.phone{margin:0 auto}}
+@media (max-width:420px){.phone{width:100%;height:560px}}
 </style>
 </head>
 <body>
@@ -89,6 +108,20 @@ summary{cursor:pointer;font-weight:700;color:var(--brand)}
 <p class="eyebrow dev">לשותפים</p>
 <h1>מדריך טיול דיגיטלי אישי, ישר מהמערכת שלכם</h1>
 <p class="lead">שולחים לנו את המסמכים שיש לכם: מייל, PDF, Word, Excel או טקסט. מקבלים בחזרה קישור למדריך אישי שנפתח בטלפון, בלי הורדה מהחנות.</p>
+
+<section class="about only-partner" aria-labelledby="about-h">
+<div>
+<h2 id="about-h">למי הדף הזה ומה מקבלים</h2>
+<p>הדף הזה הוא כלי העבודה של הסוכנות. מי שמכין את הטיול מעלה כאן מהמחשב את החומרים שכבר יש לו: תוכנית, מיילים, אישורי הזמנה. תוך דקה הם הופכים לאפליקציית טיול בטלפון של המטיילים, עם הלוגו שלכם.</p>
+<div class="links2">
+<div class="lcard"><b>קישור למטיילים</b><span>המדריך בטלפון: יום אחר יום, מלונות וטיסות, מפות ו-Waze, מזג אוויר ומסמכים. נפתח בלחיצה, בלי הורדה מהחנות.</span></div>
+<div class="lcard"><b>קישור ניהול לסוכן או למדריך</b><span>אותה אפליקציה עם כפתור עריכה: משנים שעות ופרטים גם תוך כדי הטיול, ושולחים הודעה למטיילים. לא שולחים אותו למטיילים.</span></div>
+</div>
+<p class="note">שמרו את הכתובת של הדף הזה. היא אישית לסוכנות שלכם.</p>
+</div>
+<div><div class="phone"><iframe src="https://packandboard.com/example-ar-1ey5azkh/#p=xmufa973n5mz5lusqrxmsmhga5" title="טיול לדוגמה, כמו שהמטיילים רואים אותו" loading="lazy"></iframe></div>
+<p class="phonecap">ככה זה נראה אצל המטיילים (טיול לדוגמה) · <a href="https://packandboard.com/example-ar-1ey5azkh/#p=xmufa973n5mz5lusqrxmsmhga5" target="_blank" rel="noopener">פתיחה בחלון מלא</a></p></div>
+</section>
 
 <ol class="steps">
 <li><b>1. שולחים מסמכים</b><span>את המסלול, הזמנות וכרטיסי טיסה כמו שהם. אין צורך לסדר או להמיר.</span></li>
@@ -257,9 +290,18 @@ curl -X DELETE https://pab-api.dana-lees.workers.dev/v1/trips/k3j9x0ab/documents
   function done(x){
     if(!x) return; var b=x.body;
     if(x.status===201){
-      var ok=b.status==='published', nodes=[el('strong', ok?'הטיול פורסם. הקישור פעיל:':'הטיול התקבל וממתין לבדיקה לפני שייפתח.')];
-      if(typeof b.link==='string' && b.link.indexOf('https://packandboard.com/t/#')===0){ var a=el('a',b.link,'lnk'); a.href=b.link; a.target='_blank'; a.rel='noopener'; nodes.push(a); }
-      if(!ok && b.review_reason) nodes.push(el('div','סיבה: '+b.review_reason));
+      var ok=b.status==='published', nodes=[el('strong', ok?'הטיול מוכן. שני הקישורים פעילים:':'הטיול התקבל וממתין לבדיקה שלנו. הקישורים יתחילו לעבוד אחרי האישור, ובינתיים אפשר לראות אותו כאן.')];
+      var good=function(u){ return typeof u==='string' && (u.indexOf('https://packandboard.com/t/')===0 || (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && u.indexOf(location.origin+'/t/')===0)); };
+      var lbox=function(title, u, hint){ var d=el('div',null,'lbox'); d.appendChild(el('b',title)); if(hint) d.appendChild(el('div',hint,'note'));
+        var a=el('a',u,'lnk'); a.href=u; a.target='_blank'; a.rel='noopener'; d.appendChild(a);
+        var c=el('button','העתקה'); c.type='button'; c.onclick=function(){ (navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(function(){ c.textContent='הועתק ✓'; setTimeout(function(){ c.textContent='העתקה'; },1500); },function(){ window.prompt('העתיקו:',u); }); }; d.appendChild(c); return d; };
+      var col=el('div');
+      if(good(b.link)) col.appendChild(lbox('קישור למטיילים', b.link, 'לשלוח למטיילים, בוואטסאפ או במייל.'));
+      if(good(b.manager_link)) col.appendChild(lbox('קישור ניהול לסוכן או למדריך', b.manager_link, 'פותחים אותו פעם אחת בטלפון או במחשב, ומופיע כפתור "עריכה". לא שולחים אותו למטיילים.'));
+      var view=ok?b.link:b.preview;
+      if(good(view)){ var two=el('div',null,'two'); two.appendChild(col); var ph=el('div'); var fr=el('div',null,'phone'); var ifr=document.createElement('iframe'); ifr.src=view; ifr.title='הטיול, כמו שהמטיילים יראו אותו'; fr.appendChild(ifr); ph.appendChild(fr); ph.appendChild(el('p','ככה המטיילים יראו את הטיול','phonecap')); two.appendChild(ph); nodes.push(two); }
+      else nodes.push(col);
+      if(!ok && b.review_reason && b.review_reason.indexOf('set to approve')<0) nodes.push(el('div','סיבה: '+b.review_reason));
       if(b.notes && b.notes.length){ nodes.push(el('div','מה שלא היה ברור בקריאה:')); nodes.push(list(b.notes)); }
       if(b.warnings && b.warnings.length){ nodes.push(el('div','אזהרות:')); nodes.push(list(b.warnings)); }
       nodes.push(el('div','מזהה הטיול: '+b.trip_id)); show('ok',nodes);

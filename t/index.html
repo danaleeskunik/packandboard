@@ -181,7 +181,9 @@
   if(x.status!==200) return stop(x.status===404?"הטיול לא נמצא, או שעוד לא אושר לפרסום.":"לא הצלחנו לטעון את הטיול. נסו שוב בעוד רגע.");
   var d; try{ d=JSON.parse(x.responseText); window.__PAB=PAB_RENDER.build(d.trip,d.brand); window.__PAB.firstLang=d.trip.language; window.__PAB.hasProgram=!!d.trip.program;
     window.__PAB.docs=Array.isArray(d.documents)?d.documents:[]; window.__PAB.docBase=API+'/v1/public/trips/'+m[1]+'/documents/'; window.__PAB.rk=m[2];
-    if(window.__PAB.docs.length) document.documentElement.classList.add('pab-has-docs'); }catch(e){ return stop("לא הצלחנו לקרוא את הטיול. פנו אל מי ששלח לכם את הקישור."); }
+    if(window.__PAB.docs.length) document.documentElement.classList.add('pab-has-docs');
+    window.__PAB.api=API; window.__PAB.tid=m[1]; window.__PAB.msgs=Array.isArray(d.messages)?d.messages:[];
+    if(d.edit&&d.edit.worker&&d.edit.trip&&d.edit.key) window.PAB_EDIT={worker:d.edit.worker,trip:d.edit.trip,key:d.edit.key,base:'api1'}; }catch(e){ return stop("לא הצלחנו לקרוא את הטיול. פנו אל מי ששלח לכם את הקישור."); }
 })();
 </script>
 
@@ -2880,12 +2882,28 @@ hydrateFromSupabase();
       n.target='_blank'; n.rel='noopener'; n.style.color=a.style.color||'var(--blue-600)';
       n.setAttribute('aria-label','ניווט אל '+(a.textContent||'').trim()); n.title='ניווט'; n.innerHTML=NAV_SVG;
       w.appendChild(n);
+      var z=document.createElement('a'); z.className='pab-nav pab-waze'; z.href=wazeUrl(m[1]); z.target='_blank'; z.rel='noopener'; z.style.color=n.style.color;
+      z.setAttribute('aria-label','ניווט ב-Waze אל '+(a.textContent||'').trim()); z.title='Waze'; z.textContent='Waze'; w.appendChild(z);
       var row=w.parentNode, card=a.closest('[data-daycard]');
       if(card&&card===document.querySelector('[data-daycard]')&&row&&!row.querySelector('.pab-chip-hint')){
-        var t=document.createElement('div'); t.className='pab-chip-hint'; t.textContent='לחיצה על השם: המקום במפה · על החץ: ניווט'; row.insertBefore(t,row.firstChild);
+        var t=document.createElement('div'); t.className='pab-chip-hint'; t.textContent='לחיצה על השם: המקום במפה · על החץ או על Waze: ניווט'; row.insertBefore(t,row.firstChild);
       }
     });
+    /* Waze next to every "open in maps" button (hotels, bookings, the day map), all apps (Dana 2026-11-24) */
+    [].forEach.call(document.querySelectorAll('a[href*="google."]'),function(a){
+      if(a.getAttribute('data-pab-waze')||a.closest('.pab-chip')||a.closest('[data-pab-panel]')) return;
+      var h=a.getAttribute('href')||'', m=/\/maps\/(?:search|dir)\/\?api=1&(?:amp;)?(?:query|destination)=([^&#]+)/.exec(h);
+      var t=(a.textContent||'').trim();
+      if(!m||!/^(פתיחה במפות|פתח במפות|Open in (Google )?Maps|Abrir en (Google )?Maps|Maps)$/i.test(t)&&!a.closest('.day-map-caption')) return;
+      a.setAttribute('data-pab-waze','1');
+      var z=document.createElement('a'); z.href=wazeUrl(m[1]); z.target='_blank'; z.rel='noopener'; z.textContent='Waze'; z.className='pab-waze-btn';
+      z.setAttribute('aria-label','ניווט ב-Waze'+(t?'':''));
+      if(a.closest('.day-map-caption')){ z.style.cssText='margin-inline-start:10px;font-weight:700;white-space:nowrap'; z.style.color=getComputedStyle(a).color; }
+      else { z.style.cssText=a.style.cssText; z.style.marginInlineStart='8px'; }
+      a.parentNode.insertBefore(z,a.nextSibling);
+    });
   }
+  function wazeUrl(q){ return 'https://waze.com/ul?q='+q+'&navigate=yes'; }
   decorate();
   var dq=0; new MutationObserver(function(){ if(dq) return; dq=requestAnimationFrame(function(){ dq=0; decorate(); }); }).observe(document.body,{childList:true,subtree:true});
 
@@ -3160,6 +3178,436 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
   if(typeof applyLanguage==='function'){ var al=applyLanguage; window.applyLanguage=function(){ var x=al.apply(this,arguments); renderDocs(); paint(); return x; }; }
 })();
 </script>
+<style>
+.pab-msgs{background:var(--surface-card,#fff);border:1px solid var(--border-card,#E2D9C4);border-radius:16px;padding:16px 18px;margin:18px 0 6px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.pab-msgs h3{margin:0 0 8px;font:var(--fw-heavy,800) 15px/1.3 var(--font-ui,Heebo,sans-serif);color:var(--navy-800,#1F2A24);display:flex;align-items:center;gap:8px}
+.pab-msgs h3 i{width:9px;height:9px;border-radius:50%;background:var(--red-600,#C0392B);display:inline-block}
+.pab-msg{padding:10px 0;border-top:1px solid var(--border-card,#E2D9C4);white-space:pre-wrap;overflow-wrap:anywhere;font:500 15px/1.5 var(--font-ui,Heebo,sans-serif);color:var(--ink-2,#2b2f25)}
+.pab-msg:first-of-type{border-top:0;padding-top:2px}
+.pab-msg small{display:block;color:var(--ink-6,#6b776f);font-size:12.5px;margin-top:3px}
+.pab-msg button{margin-inline-start:8px;border:0;background:transparent;color:#791F1F;font:700 12.5px inherit;cursor:pointer;text-decoration:underline}
+.pab-more{border:0;background:transparent;color:var(--blue-600,#1F5FA0);font:700 14px inherit;cursor:pointer;padding:6px 0 0}
+.pab-compose textarea{width:100%;box-sizing:border-box;min-height:84px;border:1px solid #B9AF98;border-radius:12px;padding:10px 12px;font:500 15px/1.5 var(--font-ui,Heebo,sans-serif);color:#1F2A24;background:#fff;resize:vertical}
+.pab-compose button{margin-top:8px;min-height:44px;padding:10px 18px;border:0;border-radius:12px;background:var(--navy-800,#1F2A24);color:#fff;font:700 15px var(--font-ui,Heebo,sans-serif);cursor:pointer}
+.pab-compose .s{color:var(--ink-6,#6b776f);font-size:13px;margin-top:6px}
+</style>
+<script>
+(function(){
+  var P=window.__PAB||{}, E=window.PAB_EDIT; if(!P.tid) return;
+  var EN=function(){ return typeof CURRENT_LANG!=='undefined'&&CURRENT_LANG==='en'; }, ES=function(){ return typeof CURRENT_LANG!=='undefined'&&CURRENT_LANG==='es'; };
+  function tx(he,en,es){ return ES()?(es||en):EN()?en:he; }
+  var tok=''; try{ var U=new URL(location.href), q=U.searchParams.get('m'); tok=U.searchParams.get('traveler')==='1'?'':(q||(E&&localStorage.getItem('pab.edit.'+E.trip+'.m'))||''); }catch(e){}   /* ?traveler=1: the traveller's view on a manager's device */
+  var list=(P.msgs||[]).slice(), open=false;
+  var home=document.querySelector('.home-nav'); if(!home) return;
+  var box=document.createElement('section'); box.className='pab-msgs'; box.setAttribute('aria-live','polite'); home.parentNode.insertBefore(box,home);
+  function when(a){ try{ return new Date(a).toLocaleString(EN()?'en-GB':ES()?'es-ES':'he-IL',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
+  function send(body,btn){
+    if(btn) btn.disabled=true;
+    return fetch(P.api+'/v1/public/trips/'+P.tid+'/messages',{method:'POST',headers:{authorization:'Bearer '+tok,'content-type':'application/json'},body:JSON.stringify(body)})
+      .then(function(r){ return r.json().then(function(j){ if(!r.ok) throw j; return j; }); })
+      .then(function(j){ list=j.messages||[]; paint(); })
+      .catch(function(){ alert(tx('לא נשמר. בודקים את החיבור ומנסים שוב.','Not saved. Check the connection and try again.','No se guardó. Revisa la conexión e inténtalo de nuevo.')); if(btn) btn.disabled=false; });
+  }
+  function paint(){
+    box.textContent=''; var mgr=!!tok&&!!E;
+    if(!list.length&&!mgr){ box.style.display='none'; return; } box.style.display='';
+    var h=document.createElement('h3'); h.innerHTML='<i aria-hidden="true"></i>'; h.appendChild(document.createTextNode(tx('הודעות','Messages','Mensajes')+((P.brand&&P.brand.name)?' · '+P.brand.name:''))); box.appendChild(h);
+    var rev=list.slice().reverse(), show=open?rev:rev.slice(0,2);
+    show.forEach(function(m){ var d=document.createElement('div'); d.className='pab-msg'; d.textContent=m.text; var sm=document.createElement('small'); sm.textContent=when(m.at);
+      if(mgr){ var x=document.createElement('button'); x.type='button'; x.textContent=tx('מחיקה','Delete','Borrar'); x.onclick=function(){ if(confirm(tx('למחוק את ההודעה?','Delete this message?','¿Borrar este mensaje?'))) send({remove:m.at},x); }; sm.appendChild(x); }
+      d.appendChild(sm); box.appendChild(d); });
+    if(rev.length>2){ var b=document.createElement('button'); b.type='button'; b.className='pab-more'; b.textContent=open?tx('פחות','Less','Menos'):tx('כל ההודעות','All messages','Todos los mensajes')+' ('+rev.length+')'; b.onclick=function(){ open=!open; paint(); }; box.appendChild(b); }
+    if(mgr){ var c=document.createElement('div'); c.className='pab-compose';
+      var t=document.createElement('textarea'); t.setAttribute('aria-label',tx('הודעה חדשה למטיילים','New message to the travellers','Nuevo mensaje para los viajeros')); t.placeholder=tx('הודעה חדשה למטיילים, למשל: מחר נפגשים בלובי ב-8:30','A new message to the travellers','Un mensaje nuevo para los viajeros');
+      var s=document.createElement('button'); s.type='button'; s.textContent=tx('שליחה למטיילים','Send to the travellers','Enviar a los viajeros');
+      s.onclick=function(){ var v=t.value.trim(); if(!v){ t.focus(); return; } send({text:v},s); };
+      var n=document.createElement('div'); n.className='s'; n.textContent=tx('רק מי שפתח את קישור הניהול רואה את התיבה הזו. ההודעה מופיעה כאן אצל כל המטיילים.','Only the manager link shows this box. The message shows here for every traveller.','Solo el enlace de gestión muestra este cuadro.');
+      c.appendChild(t); c.appendChild(s); c.appendChild(n); box.appendChild(c); }
+  }
+  paint();
+  if(typeof window.addEventListener==='function') document.addEventListener('pab:lang',paint);
+})();
+</script>
+<!-- pab-edit -->
+<style>
+.pab-e [data-pab-row]:not([data-pab-bk])>div:nth-child(1),.pab-e [data-pab-row]:not([data-pab-bk])>div:nth-child(2){cursor:pointer;border:1px solid #D9D1BE;border-radius:8px;background:#FBF8F1;padding:5px 9px;box-sizing:border-box}
+.pab-e [data-pab-row][data-pab-gone]{opacity:.55}
+.pab-e [data-pab-row][data-pab-gone]>div:nth-child(2){text-decoration:line-through}
+.pab-e [data-pab-new]:not([data-pab-bk])>div:nth-child(2)::after{content:attr(data-pab-tag);display:inline-block;margin-inline-start:8px;font-size:11px;background:#E3F0E8;color:#1F5E48;border-radius:6px;padding:0 6px}
+.pab-mv{flex:none;min-width:34px;min-height:34px;border:0;border-radius:8px;background:#F1EBDD;color:#1F2A24;font:700 16px/1 inherit;cursor:pointer}
+.pab-ctl{display:flex;gap:6px;justify-content:flex-end;margin:-6px 0 10px}
+.pab-ctl button{min-width:36px;min-height:36px;border:0;border-radius:8px;background:#F1EBDD;color:#1F2A24;font:700 15px/1 inherit;cursor:pointer;padding:0 10px}
+.pab-ctl button.d{color:#791F1F}
+.pab-gp{grid-column:1/-1}
+.pab-bkadd{grid-column:1/-1;min-height:48px;border:1px dashed #2F6AA6;border-radius:12px;background:transparent;color:#1F5FA0;font:700 14px/1 inherit;cursor:pointer}
+.pab-e [data-pab-card][data-pab-gone]{opacity:.55}
+.pab-ins{display:block;width:100%;height:24px;border:0;background:transparent;position:relative;cursor:pointer;color:#1F5FA0;font:700 16px/1 inherit;padding:0}
+.pab-ins::before{content:"";position:absolute;inset-inline:0;top:50%;border-top:1px dashed #9DB6D3}
+.pab-ins span{position:relative;background:var(--surface-card,#fff);padding:0 12px}
+.pab-x{flex:none;min-width:36px;min-height:36px;border:0;border-radius:8px;background:#F1EBDD;color:#791F1F;font:700 18px/1 inherit;cursor:pointer}
+.pab-panel{background:#fff;border:1px solid #B9AF98;border-radius:12px;padding:12px;margin:6px 0;font:500 14px/1.5 var(--font-ui,system-ui,sans-serif);color:#1F2A24}
+.pab-panel label{display:block;font-size:12.5px;color:#5A5E62;margin:8px 0 3px}
+.pab-panel select{width:100%;box-sizing:border-box;border:1px solid #B9AF98;border-radius:10px;padding:9px 10px;font:inherit;background-color:#fff;color:#1F2A24;-webkit-appearance:none;appearance:none;padding-left:40px;background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);background-position:left 16px center,left 21px center;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+.pab-panel .pab-lbl{display:block;font-size:12.5px;color:#5A5E62;margin:8px 0 3px}
+.pab-fpick{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none}
+.pab-filebtn{display:inline-flex;align-items:center;gap:8px;max-width:100%;box-sizing:border-box;min-height:44px;padding:9px 14px;border:1px solid #B9AF98;border-radius:10px;background:#fff;color:#1F2A24;font:inherit;font-weight:700;cursor:pointer}
+.pab-filebtn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pab-fpick:focus-visible+.pab-filebtn{outline:3px solid #2B4C9B;outline-offset:2px}
+.pab-panel input[type=text],.pab-panel input[type=time],.pab-panel textarea{width:100%;box-sizing:border-box;border:1px solid #B9AF98;border-radius:10px;padding:9px 10px;font:inherit;background:#fff;color:#1F2A24}
+.pab-panel textarea{min-height:76px}
+.pab-panel .pab-chk{display:flex;gap:8px;align-items:center;margin:8px 0;font-size:13.5px;color:#1F2A24}
+.pab-panel .pab-chk input{width:20px;height:20px}
+.pab-btns{display:flex;gap:8px;margin-top:10px}
+.pab-b{flex:1;min-height:44px;border-radius:10px;border:1px solid #B9AF98;background:#fff;color:#1F2A24;font:700 14px/1 inherit;cursor:pointer}
+.pab-b.p{flex:2;background:#2F6AA6;border-color:#2F6AA6;color:#fff}
+.pab-add{display:block;width:100%;min-height:44px;margin:8px 0 2px;border:1px dashed #2F6AA6;border-radius:10px;background:transparent;color:#1F5FA0;font:700 14px/1 inherit;cursor:pointer}
+.pab-bar{position:fixed;inset-inline:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:99990;display:flex;gap:8px;justify-content:center}
+.pab-bar button{min-height:44px;padding:0 18px;border-radius:999px;border:0;font:700 14px/1 inherit;box-shadow:0 6px 20px rgba(0,0,0,.22);cursor:pointer;background:#17352A;color:#F7F2E8}
+.pab-bar button.y{background:#F6C445;color:#3b2a00}
+.pab-toast{position:fixed;inset-inline:16px;bottom:76px;z-index:99991;background:#17352A;color:#F7F2E8;border-radius:12px;padding:10px 14px;font:500 13.5px/1.5 system-ui,sans-serif}
+.pab-hist{position:fixed;inset:0;z-index:99992;background:rgba(0,0,0,.45);display:flex;align-items:flex-end}
+.pab-hist>div{background:#fff;color:#1F2A24;width:100%;max-height:75vh;overflow:auto;border-radius:18px 18px 0 0;padding:14px 16px;font:500 14px/1.5 system-ui,sans-serif}
+.pab-hi{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-top:1px solid #E2D9C4}
+.pab-hi:first-of-type{border-top:0}
+</style>
+<script>
+(function(){
+  var C=window.PAB_EDIT; if(!C||!C.worker||!C.trip||!C.key) return;
+  var LS='pab.edit.'+C.trip, S={ops:[],can:false,role:'',mode:'off',rev:-1,base:''}, token=C.key, editing=false, busy=false;
+  var T={edit:['עריכה','Edit'],done:['סיום עריכה','Done editing'],hist:['היסטוריה','History'],save:['שמירה','Save'],cancel:['ביטול','Cancel'],add:['+ הוספת בלוק','+ Add block'],
+    time:['שעה או תווית (אפשר להשאיר ריק)','Time or label (optional)'],timeOnly:['שעה או תווית','Time or label'],desc:['תיאור','Description'],
+    shift:['להזיז גם את מה שאחריה','Also move what comes after'],notify:['לשלוח התראה לנוסעים','Notify the travelers'],tr:['יתורגם אוטומטית לשפה השנייה','Translated automatically to the other language'],
+    gone:['נמחק','Deleted'],restore:['שחזור','Restore'],undo:['ביטול','Undo'],saved:['נשמר','Saved'],err:['השמירה נכשלה, נסו שוב','Could not save, try again'],empty:['אין שינויים עדיין','No changes yet'],
+    del:['מחיקת הבלוק','Delete block'],askDel:['למחוק את הבלוק?','Delete this block?'],close:['סגירה','Close'],tlabel:['תרגום','Translation'],old:['המסלול נבנה מחדש, השינויים הישנים לא מוצגים','The trip was rebuilt, older edits are not shown'],addHere:['הוספת בלוק כאן','Add a block here'],isnew:['חדש','New'],up:['הזזה למעלה','Move up'],down:['הזזה למטה','Move down'],moved:['הועבר','Moved'],edBooking:['עריכת ההזמנה','Edit booking'],addBooking:['+ הוספת הזמנה','+ Add booking'],title:['כותרת','Title'],body:['פרטים (שורה חדשה = שורה חדשה; **כך** = מודגש)','Details (new line = new line; **like this** = bold)'],tag:['מספר אישור או תג (אפשר להשאיר ריק)','Confirmation number or tag (optional)'],maps:['מקום במפות: שם או כתובת (אפשר להשאיר ריק)','Place on the map: name or address (optional)'],bookingUpd:['הזמנה עודכנה','Booking updated'],bookingAdd:['נוספה הזמנה','Booking added']};
+  function lang(){ return (typeof CURRENT_LANG!=='undefined'&&CURRENT_LANG==='en')?'en':'he'; }
+  function tx(k){ return T[k][lang()==='en'?1:0]; }
+  /* a document for the booking (ticket, voucher, visa): saved into Documents and opened from the booking's card (add_doc_actions.py, pabUploadDoc) */
+  var DT={docFile:['מסמך להזמנה: כרטיס, שובר או ויזה (לא חובה)','Document for this booking: ticket, voucher or visa (optional)'],docKind:['סוג המסמך','Document type'],
+    docErr:['העלאת המסמך נכשלה. בודקים חיבור לאינטרנט ומנסים שוב.','The document could not be uploaded. Check the connection and try again.'],
+    docBig:['הקובץ גדול מ-8MB ולא הועלה.','The file is over 8 MB and was not uploaded.'],docOk:['המסמך נשמר ב"מסמכים"','The document was saved in Documents'],docPick:['בחירת קובץ','Choose a file']};
+  var KINDS=[['flight','טיסה','Flight'],['hotel','מלון','Hotel'],['train','רכבת','Train'],['entry','כניסה','Entry ticket'],['visa','ויזה','Visa'],['car','רכב','Car'],['transfer','העברה','Transfer'],['insurance','ביטוח','Insurance'],['other','אחר','Other']];
+  function dt(k){ return DT[k][lang()==='en'?1:0]; }
+  function docFields(){ if(typeof window.pabUploadDoc!=='function') return '';
+    return '<span class="pab-lbl">'+dt('docFile')+'</span><input type="file" id="pab-bf" class="pab-fpick" accept="application/pdf,image/*" onchange="var n=this.files&&this.files[0],s=document.getElementById(\'pab-bfn\');s.textContent=n?n.name:s.getAttribute(\'data-e\');">'+
+      '<label for="pab-bf" class="pab-filebtn"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><polyline points="7,8 12,3 17,8"/><path d="M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg><span id="pab-bfn" dir="auto" data-e="'+dt('docPick')+'">'+dt('docPick')+'</span></label>'+
+      '<label for="pab-bk">'+dt('docKind')+'</label><select id="pab-bk">'+KINDS.map(function(k){ return '<option value="'+k[0]+'">'+(lang()==='en'?k[2]:k[1])+'</option>'; }).join('')+'</select>'; }
+  try{
+    var u=new URL(location.href), m=u.searchParams.get('m');
+    /* ?traveler=1 opens the trip as an ordinary traveler on a device that remembers the manager (for showing both views on one device); the manager link brings the manager back */
+    if(u.searchParams.get('traveler')==='1'){ try{ localStorage.removeItem(LS+'.m'); localStorage.removeItem(LS+'.s'); }catch(x){} u.searchParams.delete('traveler'); history.replaceState(null,'',u.pathname+(u.search||'')+u.hash); }
+    if(m){ localStorage.setItem(LS+'.m',m); u.searchParams.delete('m'); history.replaceState(null,'',u.pathname+(u.search||'')+u.hash); }
+    var sv=localStorage.getItem(LS+'.m'); if(sv) token=sv;
+    var cs=localStorage.getItem(LS+'.s'); if(cs) S=JSON.parse(cs);
+  }catch(e){}
+  function api(path,body){
+    var o={headers:{authorization:'Bearer '+token,'content-type':'application/json'},cache:'no-store'};
+    if(body){ o.method='POST'; o.body=JSON.stringify(body); }
+    return fetch(C.worker+'/t/'+C.trip+path,o).then(function(r){ return r.json().then(function(j){ if(!r.ok){ j.status=r.status; throw j; } return j; }); });
+  }
+  function load(){
+    return api('/state').then(function(s){ S=s; try{localStorage.setItem(LS+'.s',JSON.stringify(s));}catch(e){} paint(); })
+      .catch(function(e){ if(e&&e.status===401&&token!==C.key){ token=C.key; try{localStorage.removeItem(LS+'.m');}catch(x){} return load(); } paint(); });
+  }
+  /* ---- the model: what the ops say, with undone groups left out ---- */
+  function model(){
+    var undone={}, m={rows:{},added:[],pos:[],badded:[]};
+    S.ops.forEach(function(o){ if(o.t==='undo') undone[o.target]=1; });
+    S.ops.forEach(function(o){
+      if(o.t==='undo'||undone[o.g]) return;
+      if((o.base||'')!==(C.base||'')) return;   /* written on another build of the trip: the block numbers may not match */
+      if(o.t==='add'){ m.added.push(o); m.rows[o.row]=m.rows[o.row]||{}; if(o.after) m.pos.push({row:o.row,after:o.after}); return; }
+      if(o.t==='move'){ m.pos.push({row:o.row,after:o.after}); return; }
+      if(o.t==='badd'){ m.badded.push(o); m.rows[o.row]=m.rows[o.row]||{}; return; }
+      if(o.t==='bset'){ var b=m.rows[o.row]=m.rows[o.row]||{}; b.b=Object.assign(b.b||{},o.f); return; }
+      var r=m.rows[o.row]=m.rows[o.row]||{};
+      if(o.t==='label') r.label=o.label; else if(o.t==='text') r.text=o.text; else if(o.t==='del') r.del=true; else if(o.t==='restore') r.del=false;
+    });
+    return m;
+  }
+  function isTime(s){ return /^\d{1,2}:\d{2}$/.test((s||'').trim()); }
+  function mins(s){ var p=s.split(':'); return (+p[0])*60+(+p[1]); }
+  function hhmm(n){ n=Math.max(0,Math.min(1439,n)); var h=Math.floor(n/60), m=n%60; return (h<10?'0':'')+h+':'+(m<10?'0':'')+m; }
+  function pickLang(v){ return (v&&typeof v==='object')?v[lang()]:v; }
+  /* a block is recognised by its markup the first time, and by our own mark afterwards (the browser rewrites the style attribute once we set display) */
+  function holder(card){ var w=card.querySelector(':scope > [data-view-rows]'); return w||card; }   /* some pages (Dana's own Japan page) keep the rows inside the app's own [data-view-rows] wrapper */
+  function rowsOf(card){ return [].filter.call(holder(card).children,function(k){ var s=k.getAttribute('style')||''; return k.tagName==='DIV'&&!k.hasAttribute('data-pab-panel')&&k.children.length>=2&&(k.hasAttribute('data-pab-row')||(/padding:\s*10px\s+0/.test(s)&&/border-top/.test(s))); }); }
+  function baseRows(card){ return rowsOf(card).filter(function(r){ return !r.hasAttribute('data-pab-new'); }); }
+  function labEl(r){ return r.children[0]; } function txEl(r){ return r.children[1]; }
+  /* ---- laying the edits over a day card ---- */
+  function paintCard(card,m){
+    var n=card.getAttribute('data-daycard'), key=S.rev+'|'+lang()+'|'+editing+'|'+(S.can?1:0);
+    var br=baseRows(card);
+    if(card.__pabKey===key && card.__pabBase===br.length && br.every(function(r){ return r.hasAttribute('data-pab-row'); })) return;
+    [].forEach.call(card.querySelectorAll('[data-pab-new],[data-pab-panel],.pab-add,.pab-ins,.pab-mv'),function(x){ x.remove(); });
+    var base=baseRows(card);
+    base.forEach(function(r,i){
+      var id='d'+n+'-'+i;
+      if(!r.__pabO){ r.setAttribute('data-pab-row',id); r.__pabO={l:labEl(r).innerHTML,t:txEl(r).innerHTML,d:r.style.display}; }
+      labEl(r).innerHTML=r.__pabO.l; txEl(r).innerHTML=r.__pabO.t; r.style.display=r.__pabO.d; r.removeAttribute('data-pab-gone');
+      var ov=m.rows[id]||{};
+      if(ov.label!==undefined) labEl(r).textContent=pickLang(ov.label)||'';
+      if(ov.text) txEl(r).textContent=ov.text[lang()];
+      decorate(r,ov);
+    });
+    restoreOrder(card);
+    var tmpl=base[0];
+    if(tmpl){
+      m.added.filter(function(o){ return String(o.day)===n; }).forEach(function(o){
+        var r=tmpl.cloneNode(true); [].slice.call(r.querySelectorAll('.pab-x')).forEach(function(x){x.remove();});
+        r.setAttribute('data-pab-new','1'); r.setAttribute('data-pab-row',o.row); r.__pabO=null; r.style.display=tmpl.__pabO?tmpl.__pabO.d:'flex'; r.removeAttribute('data-pab-gone');
+        var ov=m.rows[o.row]||{}; var lab=ov.label!==undefined?ov.label:o.label, txt=ov.text||o.text;
+        labEl(r).textContent=pickLang(lab)||''; txEl(r).textContent=txt[lang()]; txEl(r).setAttribute('data-pab-tag',tx('isnew'));
+        insertByTime(card,r,pickLang(lab)); decorate(r,ov);
+      });
+      m.pos.forEach(function(p){ place(card,p.row,p.after); });
+      if(editing&&S.can) controls(card,n);
+    }
+    card.__pabKey=key; card.__pabBase=baseRows(card).length;
+  }
+  function idx(r){ return parseInt((r.getAttribute('data-pab-row')||'d0-0').split('-')[1],10)||0; }
+  function rowEl(card,id){ return card.querySelector('[data-pab-row="'+id+'"]'); }
+  /* the built order is the starting point of every paint: moves and positioned blocks are laid over it in the order they were made */
+  function restoreOrder(card){
+    var cur=baseRows(card); if(cur.length<2) return;
+    var sorted=cur.slice().sort(function(a,b){ return idx(a)-idx(b); }), anchor=cur[cur.length-1].nextSibling;
+    sorted.forEach(function(r){ r.parentNode.insertBefore(r,anchor); });
+  }
+  function place(card,id,after){
+    var r=rowEl(card,id); if(!r) return; var ref;
+    if(after==='start'){ ref=rowsOf(card)[0]; if(!ref||ref===r) return; }
+    else { var a=rowEl(card,after); if(!a||a===r) return; ref=a.nextSibling; }
+    r.parentNode.insertBefore(r,ref);
+  }
+  /* edit mode, once the order is final: move arrows on every block, and an insert point before the first block, between blocks and at the end */
+  function controls(card,day){
+    var rs=rowsOf(card); if(!rs.length) return;
+    rs.forEach(function(r,i){
+      if(r.hasAttribute('data-pab-gone')) return; var x=r.querySelector('.pab-x'), id=r.getAttribute('data-pab-row');
+      function mv(sym,key,after){ var b=document.createElement('button'); b.type='button'; b.className='pab-mv'; b.textContent=sym; b.setAttribute('aria-label',tx(key)); b.title=tx(key); b.onclick=function(e){ e.stopPropagation(); save([{t:'move',row:id,after:after}]); }; r.insertBefore(b,x); }
+      if(i>0) mv('↑','up',i>=2?rs[i-2].getAttribute('data-pab-row'):'start');
+      if(i<rs.length-1) mv('↓','down',rs[i+1].getAttribute('data-pab-row'));
+    });
+    function handle(after,label){ var b=document.createElement('button'); b.type='button'; b.className=label?'pab-add':'pab-ins'; if(label) b.textContent=label; else { b.innerHTML='<span>+</span>'; b.setAttribute('aria-label',tx('addHere')); b.title=tx('addHere'); }
+      b.onclick=function(){ openAdd(card,day,b,after); }; return b; }
+    rs.slice(0,-1).forEach(function(r){ r.parentNode.insertBefore(handle(r.getAttribute('data-pab-row')),r.nextSibling); });
+    rs[0].parentNode.insertBefore(handle('start'),rs[0]);
+    var last=rs[rs.length-1]; last.parentNode.insertBefore(handle(null,tx('add')),last.nextSibling);   /* the end: a time typed there still puts the block in time order */
+  }
+  function decorate(r,ov){
+    var old=r.querySelector('.pab-x'); if(old) old.remove();
+    labEl(r).onclick=null; txEl(r).onclick=null;
+    r.removeAttribute('data-pab-gone');
+    if(ov&&ov.del){ if(!editing){ r.style.display='none'; return; } r.setAttribute('data-pab-gone','1'); }
+    if(!(editing&&S.can)) return;
+    var b=document.createElement('button'); b.type='button'; b.className='pab-x';
+    if(ov&&ov.del){ b.textContent='↺'; b.setAttribute('aria-label',tx('restore')); b.title=tx('restore'); b.onclick=function(e){ e.stopPropagation(); save([{t:'restore',row:r.getAttribute('data-pab-row')}]); }; }
+    else { b.textContent='×'; b.setAttribute('aria-label',tx('del')); b.title=tx('del'); b.onclick=function(e){ e.stopPropagation(); if(confirm(tx('askDel'))) save([{t:'del',row:r.getAttribute('data-pab-row')}]); }; }
+    r.appendChild(b);
+    labEl(r).onclick=function(){ openLabel(r); }; txEl(r).onclick=function(){ openText(r); };
+  }
+  function insertByTime(card,r,label){
+    var rs=rowsOf(card).filter(function(x){ return x!==r; }), last=rs[rs.length-1], ref=last.nextSibling;
+    if(isTime(label)){
+      var t=mins(label), prev=null, nextT=null;
+      rs.forEach(function(x){ var l=labEl(x).textContent; if(isTime(l)){ if(mins(l)<=t) prev=x; else if(!nextT) nextT=x; } });
+      if(prev) ref=prev.nextSibling; else if(nextT) ref=nextT;
+    }
+    last.parentNode.insertBefore(r,ref);
+  }
+  /* ---- the bookings screen: one card per booking (hotel, flight, train ...): title, details, a tag (the confirmation number), a map link ---- */
+  function cardsOf(g){ return [].filter.call(g.children,function(k){ return k.tagName==='DIV'&&k.firstElementChild&&k.firstElementChild.tagName==='H3'&&!k.hasAttribute('data-pab-panel'); }); }
+  function pEl(c){ return c.querySelector(':scope > p'); }
+  function tagEls(c){ return [].filter.call(c.children,function(k){ return k.tagName==='DIV'&&/radius-pill/.test(k.getAttribute('style')||'')&&!k.classList.contains('pab-ctl'); }); }
+  function mapEls(c){ return [].filter.call(c.querySelectorAll('a[href*="google.com/maps"]'),function(a){ return !a.hasAttribute('data-pab-m'); }); }
+  function toText(p){ var out=''; (function walk(n){ [].forEach.call(n.childNodes,function(k){ if(k.nodeType===3) out+=k.nodeValue; else if(k.tagName==='BR') out+='\n'; else if(k.tagName==='B'||k.tagName==='STRONG'){ out+='**'; walk(k); out+='**'; } else walk(k); }); })(p); return out.replace(/\n{3,}/g,'\n\n').trim(); }
+  /* plain text -> nodes: new lines, **bold**, links for web addresses and phone numbers */
+  function renderBody(p,text){
+    p.textContent='';
+    String(text||'').split('\n').forEach(function(line,i){
+      if(i) p.appendChild(document.createElement('br'));
+      line.split(/(\*\*[^*]+\*\*)/).forEach(function(seg){
+        var bold=/^\*\*[^*]+\*\*$/.test(seg), s=bold?seg.slice(2,-2):seg, host=p;
+        if(bold){ host=document.createElement('b'); host.style.fontWeight='700'; host.style.color='var(--navy-800)'; p.appendChild(host); }
+        s.split(/(https?:\/\/[^\s]+|\+?\d[\d\s().-]{7,}\d)/).forEach(function(x){
+          if(!x) return; var u=/^https?:\/\//.test(x), ph=!u&&/^\+?\d[\d\s().-]{7,}\d$/.test(x);
+          if(u||ph){ var a=document.createElement('a'); a.href=u?x:'tel:'+x.replace(/[^\d+]/g,''); if(u){ a.target='_blank'; a.rel='noopener'; } a.style.color='inherit'; a.style.textDecoration='underline'; a.textContent=x; if(ph) a.setAttribute('dir','ltr'); host.appendChild(a); }
+          else host.appendChild(document.createTextNode(x));
+        });
+      });
+    });
+  }
+  function fillCard(c,o,f){   /* o: what the page had; f: the edited fields {title, body, tag, maps}, each {he,en} or a string */
+    var h=c.querySelector('h3'), p=pEl(c), tg=tagEls(c), mp=mapEls(c);
+    h.innerHTML=o.h; if(p) p.innerHTML=o.p; tg.forEach(function(x,i){ x.innerHTML=o.t[i]||''; x.style.display=o.td[i]||''; }); mp.forEach(function(a,i){ a.setAttribute('href',o.m[i]||a.getAttribute('href')); });
+    if(!f) return;
+    function v(k){ var x=f[k]; return x===undefined?undefined:pickLang(x); }
+    if(v('title')!==undefined&&v('title')!=='') h.textContent=v('title');
+    if(v('body')!==undefined&&p) renderBody(p,v('body'));
+    if(v('tag')!==undefined){ var tv=v('tag'); if(tg[0]){ if(tv){ tg[0].textContent=tv; tg[0].style.display=o.td[0]||'inline-block'; } else tg[0].style.display='none'; } else if(tv&&p){ var d=document.createElement('div'); d.setAttribute('dir','ltr'); d.setAttribute('style','display:inline-block;margin-top:8px;background:var(--surface-muted);color:var(--ink-6);border-radius:var(--radius-pill);padding:4px 10px;font:var(--fw-bold) var(--text-12)/1.2 var(--font-ui)'); d.textContent=tv; p.parentNode.insertBefore(d,p.nextSibling); } }
+    if(v('maps')!==undefined){ var q=v('maps'); if(mp[0]){ if(q) mp[0].setAttribute('href','https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)); } else if(q){ var a=document.createElement('a'); a.href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q); a.target='_blank'; a.rel='noopener'; a.textContent=lang()==='en'?'Open in Maps':'פתיחה במפות'; a.setAttribute('style','display:inline-flex;align-items:center;margin-top:12px;min-height:36px;padding:8px 14px;background:var(--blue-100);color:var(--blue-600);border-radius:var(--radius-pill);font:var(--fw-bold) var(--text-13)/1 var(--font-ui);text-decoration:none'); c.appendChild(a); } }
+  }
+  function paintGrid(g,m){
+    var key=S.rev+'|'+lang()+'|'+editing+'|'+(S.can?1:0), cur=cardsOf(g).filter(function(x){ return !x.hasAttribute('data-pab-new'); });
+    if(g.__pabKey===key && g.__pabN===cur.length && cur.every(function(x){ return x.hasAttribute('data-pab-card'); })) return;
+    [].forEach.call(g.querySelectorAll('[data-pab-new],[data-pab-panel],.pab-bkadd'),function(x){ x.remove(); }); [].forEach.call(g.querySelectorAll('.pab-ctl'),function(x){ x.remove(); });
+    var base=cardsOf(g);
+    base.forEach(function(c,i){
+      if(!c.__pabO){ c.setAttribute('data-pab-card',''); c.setAttribute('data-pab-bk',''); c.setAttribute('data-pab-row','b'+i); var h=c.querySelector('h3'), p=pEl(c); c.__pabO={h:h.innerHTML,p:p?p.innerHTML:'',t:tagEls(c).map(function(x){return x.innerHTML;}),td:tagEls(c).map(function(x){return x.style.display;}),m:mapEls(c).map(function(a){return a.getAttribute('href');}),d:c.style.display}; }
+    });
+    var sorted=base.slice().sort(function(a,b){ return parseInt(a.getAttribute('data-pab-row').slice(1),10)-parseInt(b.getAttribute('data-pab-row').slice(1),10); }), anchor=base.length?base[base.length-1].nextSibling:null;
+    sorted.forEach(function(c){ g.insertBefore(c,anchor); });
+    sorted.forEach(function(c){ var id=c.getAttribute('data-pab-row'), ov=m.rows[id]||{}; fillCard(c,c.__pabO,ov.b); c.style.display=c.__pabO.d; c.removeAttribute('data-pab-gone'); if(ov.del){ if(!editing) c.style.display='none'; else c.setAttribute('data-pab-gone','1'); } });
+    var tmpl=sorted[0];
+    if(tmpl){
+      m.badded.forEach(function(o){
+        var c=tmpl.cloneNode(true); [].forEach.call(c.querySelectorAll('.pab-ctl'),function(x){x.remove();}); c.removeAttribute('data-pab-gone'); c.setAttribute('data-pab-new','1'); c.setAttribute('data-pab-row',o.row); c.removeAttribute('data-pab-card'); c.style.display=tmpl.__pabO.d;
+        var f=Object.assign({},o.f,(m.rows[o.row]||{}).b);
+        var tg=tagEls(c), mp=mapEls(c), o2={h:'',p:'',t:tg.map(function(){return '';}),td:tg.map(function(){return '';}),m:mp.map(function(){return '#';})};
+        c.querySelector('h3').textContent=''; if(pEl(c)) pEl(c).textContent=''; tg.forEach(function(x){ x.remove(); }); mp.forEach(function(a){ a.remove(); });
+        fillCard(c,{h:'',p:'',t:[],td:[],m:[]},f); g.appendChild(c);
+        var ov=m.rows[o.row]||{}; if(ov.del){ if(!editing) c.style.display='none'; else c.setAttribute('data-pab-gone','1'); }
+      });
+      m.pos.forEach(function(p){ var r=g.querySelector('[data-pab-row="'+p.row+'"]'); if(!r||r.parentNode!==g) return; var ref; if(p.after==='start'){ ref=cardsOf(g)[0]; if(!ref||ref===r) return; } else { var a=g.querySelector('[data-pab-row="'+p.after+'"]'); if(!a||a===r||a.parentNode!==g) return; ref=a.nextSibling; } g.insertBefore(r,ref); });
+      if(editing&&S.can) gridControls(g);
+    }
+    g.__pabKey=key; g.__pabN=cardsOf(g).filter(function(x){ return !x.hasAttribute('data-pab-new'); }).length;
+  }
+  function gridControls(g){
+    var cs=cardsOf(g);
+    cs.forEach(function(c,i){
+      var id=c.getAttribute('data-pab-row'), bar=document.createElement('div'); bar.className='pab-ctl';
+      function btn(sym,key,fn,cls){ var b=document.createElement('button'); b.type='button'; b.textContent=sym; if(cls) b.className=cls; b.setAttribute('aria-label',tx(key)); b.title=tx(key); b.onclick=function(e){ e.stopPropagation(); fn(); }; bar.appendChild(b); }
+      if(c.hasAttribute('data-pab-gone')) btn('↺','restore',function(){ save([{t:'restore',row:id}]); });
+      else {
+        btn('✎','edBooking',function(){ openBooking(g,c); });
+        if(i>0) btn('↑','up',function(){ save([{t:'move',row:id,after:i>=2?cs[i-2].getAttribute('data-pab-row'):'start'}]); });
+        if(i<cs.length-1) btn('↓','down',function(){ save([{t:'move',row:id,after:cs[i+1].getAttribute('data-pab-row')}]); });
+        btn('×','del',function(){ if(confirm(tx('askDel'))) save([{t:'del',row:id}]); },'d');
+      }
+      c.insertBefore(bar,c.firstChild);
+    });
+    var add=document.createElement('button'); add.type='button'; add.className='pab-bkadd'; add.textContent=tx('addBooking'); add.onclick=function(){ openBooking(g,null); }; g.appendChild(add);
+  }
+  function openBooking(g,c){
+    closePanels(); var cur=c?{title:c.querySelector('h3').textContent,body:pEl(c)?toText(pEl(c)):'',tag:(tagEls(c)[0]&&tagEls(c)[0].style.display!=='none')?tagEls(c)[0].textContent:'',maps:''}:{title:'',body:'',tag:'',maps:''};
+    var mp=c&&mapEls(c)[0]; if(mp){ try{ cur.maps=decodeURIComponent((new URL(mp.href).searchParams.get('query'))||'').replace(/\+/g,' '); }catch(e){} }
+    var p=el('<label for="pab-bt">'+tx('title')+'</label><input type="text" id="pab-bt" maxlength="100"><label for="pab-bb">'+tx('body')+'</label><textarea id="pab-bb" maxlength="1500" style="min-height:130px"></textarea><label for="pab-bg">'+tx('tag')+'</label><input type="text" id="pab-bg" maxlength="60"><label for="pab-bm">'+tx('maps')+'</label><input type="text" id="pab-bm" maxlength="120">'+docFields()+''+chk('pab-n',tx('notify'),false)+btns());
+    p.classList.add('pab-gp'); p.querySelector('#pab-bt').value=cur.title; p.querySelector('#pab-bb').value=cur.body; p.querySelector('#pab-bg').value=cur.tag; p.querySelector('#pab-bm').value=cur.maps;
+    if(c) c.parentNode.insertBefore(p,c.nextSibling); else g.insertBefore(p,g.querySelector('.pab-bkadd'));
+    p.querySelector('#pab-bt').focus(); p.onkeydown=function(e){ if(e.key==='Escape') p.remove(); }; p.querySelector('[data-c]').onclick=function(){ p.remove(); };
+    p.querySelector('[data-s]').onclick=function(){
+      var f={}, L=lang(), v={title:p.querySelector('#pab-bt').value.trim(),body:p.querySelector('#pab-bb').value.trim(),tag:p.querySelector('#pab-bg').value.trim(),maps:p.querySelector('#pab-bm').value.trim()};
+      if(!c&&!v.title){ p.querySelector('#pab-bt').focus(); return; }
+      var fl=p.querySelector('#pab-bf'), file=fl&&fl.files&&fl.files[0];
+      if(file){ if(file.size>8*1024*1024){ alert(dt('docBig')); return; }
+        window.pabUploadDoc(file,{booking:v.title||cur.title,kind:p.querySelector('#pab-bk').value}).then(function(){ if(typeof toast==='function') toast(dt('docOk')); }).catch(function(){ alert(dt('docErr')); }); }
+      ['title','body','tag'].forEach(function(k){ if(!c||v[k]!==cur[k]){ f[k]={}; f[k][L]=v[k]; } }); if(!c||v.maps!==cur.maps) f.maps=v.maps;
+      if(c&&!Object.keys(f).length) return p.remove();
+      save([c?{t:'bset',row:c.getAttribute('data-pab-row'),f:f}:{t:'badd',f:f}],p.querySelector('#pab-n').checked?(v.title||cur.title)+(v.body?' · '+v.body.split('\n')[0]:''):null);
+    };
+  }
+  function paint(){
+    var m=model();
+    [].forEach.call(document.querySelectorAll('[data-daycard]'),function(c){ paintCard(c,m); });
+    var grid=document.getElementById('bookings-grid'); if(grid) paintGrid(grid,m);
+    var bar=document.getElementById('pab-bar');
+    if(!S.can){ if(bar) bar.remove(); if(editing){ editing=false; document.body.classList.remove('pab-e'); } return; }
+    if(!bar){ bar=document.createElement('div'); bar.id='pab-bar'; bar.className='pab-bar'; document.body.appendChild(bar); }
+    bar.innerHTML=''; var b=document.createElement('button'); b.type='button'; b.className=editing?'y':''; b.textContent=editing?tx('done'):tx('edit');
+    b.onclick=function(){ editing=!editing; document.body.classList.toggle('pab-e',editing); closePanels(); paint(); }; bar.appendChild(b);
+    if(editing){ var h=document.createElement('button'); h.type='button'; h.textContent=tx('hist'); h.onclick=openHist; bar.appendChild(h); }
+    bar.style.display=visibleDays()?'flex':'none';
+  }
+  /* the bar shows when ANY day card is on screen (the app shows one day at a time: looking only at the first card hid the bar on every day but the first) or the bookings grid is */
+  function visibleDays(){ var cs=document.querySelectorAll('[data-daycard]'), g=document.getElementById('bookings-grid'); for(var i=0;i<cs.length;i++){ if(cs[i].offsetParent!==null) return true; } return !!(g&&g.offsetParent!==null); }
+  /* ---- panels ---- */
+  function closePanels(){ [].forEach.call(document.querySelectorAll('[data-pab-panel]'),function(p){ p.remove(); }); }
+  function el(html){ var d=document.createElement('div'); d.className='pab-panel'; d.setAttribute('data-pab-panel','1'); d.innerHTML=html; return d; }
+  function chk(id,txt,on){ return '<label class="pab-chk" style="display:flex"><input type="checkbox" id="'+id+'"'+(on?' checked':'')+'><span>'+txt+'</span></label>'; }
+  function btns(){ return '<div class="pab-btns"><button type="button" class="pab-b p" data-s>'+tx('save')+'</button><button type="button" class="pab-b" data-c>'+tx('cancel')+'</button></div>'; }
+  function after(node,p){ node.parentNode.insertBefore(p,node.nextSibling); var f=p.querySelector('input,textarea'); if(f) f.focus(); p.onkeydown=function(e){ if(e.key==='Escape') p.remove(); }; p.querySelector('[data-c]').onclick=function(){ p.remove(); }; }
+  function openLabel(r){
+    closePanels(); var cur=labEl(r).textContent.trim(), time=isTime(cur)||!cur, id=r.getAttribute('data-pab-row'), card=r.parentNode;
+    var later=rowsOf(card).filter(function(x){ return x!==r&&x.getAttribute('data-pab-gone')===null&&isTime(labEl(x).textContent)&&isTime(cur)&&mins(labEl(x).textContent)>mins(cur); });
+    var p=el('<label for="pab-l">'+tx('timeOnly')+'</label>'+(time?'<input type="time" id="pab-l" value="'+(isTime(cur)?hhmm(mins(cur)):'')+'">':'<input type="text" id="pab-l" maxlength="24" value="">')+
+      (later.length&&time?chk('pab-sh',tx('shift'),false):'')+chk('pab-n',tx('notify'),false)+btns());
+    if(!time) p.querySelector('#pab-l').value=cur;
+    after(r,p);
+    p.querySelector('[data-s]').onclick=function(){
+      var v=p.querySelector('#pab-l').value.trim(); if(v===cur) return p.remove();
+      var ops=[{t:'label',row:id,label:v}], sh=p.querySelector('#pab-sh');
+      if(sh&&sh.checked&&isTime(v)&&isTime(cur)){ var d=mins(v)-mins(cur); later.forEach(function(x){ ops.push({t:'label',row:x.getAttribute('data-pab-row'),label:hhmm(mins(labEl(x).textContent)+d)}); }); }
+      save(ops,p.querySelector('#pab-n').checked?v+' '+txEl(r).textContent.slice(0,60):null);
+    };
+  }
+  function openText(r){
+    closePanels(); var id=r.getAttribute('data-pab-row'), cur=txEl(r).textContent;
+    var p=el('<label for="pab-t">'+tx('desc')+'</label><textarea id="pab-t" maxlength="600"></textarea>'+(S.translate?'<div style="font-size:12px;color:#5A5E62">'+tx('tr')+'</div>':'')+''+chk('pab-n',tx('notify'),false)+btns());
+    p.querySelector('#pab-t').value=cur; after(r,p);
+    p.querySelector('[data-s]').onclick=function(){
+      var v=p.querySelector('#pab-t').value.trim(); if(!v||v===cur) return p.remove(); var t={}; t[lang()]=v;
+      save([{t:'text',row:id,text:t}],p.querySelector('#pab-n').checked?(labEl(r).textContent+' '+v).slice(0,120):null);
+    };
+  }
+  function openAdd(card,day,anchor,afterId){
+    closePanels();
+    var p=el('<label for="pab-l">'+tx('time')+'</label><input type="time" id="pab-l"><label for="pab-t">'+tx('desc')+'</label><textarea id="pab-t" maxlength="600"></textarea>'+(S.translate?'<div style="font-size:12px;color:#5A5E62">'+tx('tr')+'</div>':'')+''+chk('pab-n',tx('notify'),false)+btns());
+    anchor.parentNode.insertBefore(p,anchor); p.querySelector('#pab-l').focus();
+    p.onkeydown=function(e){ if(e.key==='Escape') p.remove(); }; p.querySelector('[data-c]').onclick=function(){ p.remove(); };
+    p.querySelector('[data-s]').onclick=function(){
+      var v=p.querySelector('#pab-t').value.trim(); if(!v){ p.querySelector('#pab-t').focus(); return; } var t={}; t[lang()]=v;
+      var op={t:'add',day:+day,label:p.querySelector('#pab-l').value.trim(),text:t}; if(afterId) op.after=afterId;
+      save([op],p.querySelector('#pab-n').checked?v.slice(0,120):null);
+    };
+  }
+  function toast(msg){ var t=document.getElementById('pab-toast'); if(t) t.remove(); t=document.createElement('div'); t.id='pab-toast'; t.className='pab-toast'; t.setAttribute('role','status'); t.textContent=msg; document.body.appendChild(t); setTimeout(function(){ t.remove(); },4000); }
+  function save(ops,notifyText){
+    if(busy) return; busy=true;
+    var body={ops:ops}; if(notifyText) body.notify={body:notifyText};
+    api('/ops',body).then(function(r){
+      S.ops=S.ops.concat(r.ops); S.rev=r.rev; busy=false; closePanels(); paint();
+      var w=r.ops.filter(function(o){ return o.text&&o.text.auto&&o.text.auto!=='none'; })[0];
+      toast(tx('saved')+(w?' · '+tx('tlabel')+': '+w.text[w.text.auto]:''));
+    }).catch(function(){ busy=false; toast(tx('err')); });
+  }
+  function describe(o){
+    var row=o.row&&document.querySelector('[data-pab-row="'+o.row+'"]'), name=row?txEl(row).textContent.slice(0,40):'';
+    if(o.t==='label') return tx('timeOnly')+': '+(pickLang(o.label)||'-')+(name?' · '+name:'');
+    if(o.t==='text') return tx('desc')+': '+(o.text[lang()]||'').slice(0,50);
+    if(o.t==='add') return tx('add').replace('+ ','')+': '+((pickLang(o.label)||'')+' '+o.text[lang()]).slice(0,50);
+    if(o.t==='bset') return tx('bookingUpd')+': '+(name||'');
+    if(o.t==='badd') return tx('bookingAdd')+': '+((o.f&&o.f.title&&pickLang(o.f.title))||'');
+    if(o.t==='del') return tx('gone')+': '+name; if(o.t==='restore') return tx('restore')+': '+name; if(o.t==='move') return tx('moved')+': '+name; return o.t;
+  }
+  function openHist(){
+    var d=document.createElement('div'); d.className='pab-hist'; d.setAttribute('data-pab-panel','1');
+    var undone={}; S.ops.forEach(function(o){ if(o.t==='undo') undone[o.target]=1; });
+    var seen={}, items=S.ops.filter(function(o){ if(o.t==='undo'||seen[o.g]) return false; seen[o.g]=1; return true; }).reverse().slice(0,20);
+    var html='<div role="dialog" aria-label="'+tx('hist')+'"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><b>'+tx('hist')+'</b><button type="button" class="pab-b" style="flex:none;padding:0 14px" data-c>'+tx('close')+'</button></div>';
+    html+=items.length?'':'<p>'+tx('empty')+'</p>'; d.innerHTML=html+'</div>'; document.body.appendChild(d);
+    var box=d.firstChild;
+    items.forEach(function(o){
+      var row=document.createElement('div'); row.className='pab-hi'; var dt=new Date(o.ts);
+      var left=document.createElement('div'); left.style.flex='1'; left.innerHTML='<div></div><div style="font-size:12px;color:#5A5E62"></div>'; left.firstChild.textContent=describe(o)+(undone[o.g]?' (×)':'');
+      left.lastChild.textContent=dt.toLocaleString(lang()==='en'?'en-GB':'he-IL',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'})+(o.by==='manager'?'':' · '+(lang()==='en'?'traveler':'נוסע'));
+      row.appendChild(left);
+      if(!undone[o.g]){ var u=document.createElement('button'); u.type='button'; u.className='pab-b'; u.style.flex='none'; u.style.padding='0 14px'; u.textContent=tx('undo');
+        u.onclick=function(){ if(busy) return; busy=true; api('/undo',{op:o.id}).then(function(r){ S.rev=r.rev; busy=false; d.remove(); return load(); }).catch(function(){ busy=false; toast(tx('err')); }); }; row.appendChild(u); }
+      box.appendChild(row);
+    });
+    d.onclick=function(e){ if(e.target===d) d.remove(); }; box.querySelector('[data-c]').onclick=function(){ d.remove(); };
+  }
+  /* ---- keep up with the page: days are re-rendered when the language changes ---- */
+  var timer=null; function later(){ clearTimeout(timer); timer=setTimeout(paint,150); }
+  function relevant(t){ if(!t||!t.closest) return false; if(t.closest('[data-pab-panel],.pab-bar,.pab-toast')) return false; return t===document.body||!!t.closest('[data-screen="days"],[data-screen="bookings"],#days-content,#bookings-grid,[data-daycard]'); }
+  if(window.MutationObserver) new MutationObserver(function(ms){ for(var i=0;i<ms.length;i++){ if(relevant(ms[i].target)){ later(); return; } } }).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['style']});
+  document.addEventListener('visibilitychange',function(){ if(!document.hidden) load(); });
+  setInterval(function(){ if(!document.hidden&&!document.querySelector('[data-pab-panel]')) load(); },90000);
+  window.__pabEdit={paint:paint,state:function(){return S;},load:load,model:model};
+  paint(); load();
+})();
+</script>
+<!-- /pab-edit -->
 <!-- pab-a2hs --><style>
 #a2hs-banner{display:flex;align-items:center;gap:12px;background:var(--surface-card);border:1px solid var(--border-card);border-radius:16px;
   box-shadow:0 2px 8px rgba(0,0,0,.06);padding:14px;margin:28px 0 0;font-family:var(--font-ui)}
@@ -3218,7 +3666,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
 <script>
 (function(){
   function lang(){ return (typeof CURRENT_LANG!=='undefined' && CURRENT_LANG && CURRENT_LANG!=='he') ? CURRENT_LANG : 'he'; }
-  /* Hebrew, English, or another language from window.PAB_TX[lang][english text] (e.g. Spanish in the ZocoCamino app); English when missing */
+  /* Hebrew, English, or another language from window.PAB_TX[lang][english text] (e.g. Spanish in a Spanish app); English when missing */
   function tx(he,en){ var l=lang(); if(l==='he') return he; var d=window.PAB_TX&&window.PAB_TX[l]; return (d&&d[en])||en; }
   /* 1. the worker that keeps the app on the phone */
   if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
