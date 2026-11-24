@@ -104,8 +104,26 @@ h2{font:900 clamp(32px,4.6vw,54px)/1.05 var(--f);letter-spacing:-.02em;text-wrap
 .out{margin-top:22px;font-size:16px;color:var(--ink2)}
 .out b{color:var(--ink)}
 
+
+/* builder */
+.builder{background:var(--cream);padding-block:90px}
+.cols2{display:grid;grid-template-columns:1fr 1fr;column-gap:40px}
+.cols2 li:nth-last-child(2){border-bottom:1px solid var(--rule)}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin-top:36px}
+.tabs button{min-height:46px;padding:0 20px;border-radius:999px;border:2px solid var(--ink);background:transparent;color:var(--ink);font:700 16px/1 var(--f);cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--ink);color:#fff}
+.tabs button:focus-visible{outline:3px solid var(--mint);outline-offset:3px}
+.bpanel{display:grid;grid-template-columns:1fr 280px;gap:34px;align-items:center;margin-top:22px}
+.shot{border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 30px 60px -30px rgba(20,48,42,.45),0 0 0 1px var(--rule)}
+.shot img{width:100%;height:auto}
+.bcap h3{font:900 26px/1.2 var(--f);margin-bottom:8px}
+.bcap p{font-size:17px;color:var(--ink2)}
+.bfeat{margin-top:44px}
+@media (max-width:900px){.bpanel{grid-template-columns:1fr}.cols2{grid-template-columns:1fr}.cols2 li:nth-last-child(2){border-bottom:0}}
+@media (max-width:560px){.builder{padding-block:60px}.tabs{display:grid;grid-template-columns:1fr 1fr}.tabs button{padding:0 10px;font-size:15px}}
+
 /* be agent */
-.forthem{background:var(--cream);padding-block:90px}
+.forthem{background:var(--paper);padding-block:90px}
 .cols{display:grid;grid-template-columns:repeat(3,1fr);margin-top:46px}
 .cols div{padding:0 0 0 30px}
 .cols div+div{padding-right:30px;border-right:1px solid var(--rule)}
@@ -115,7 +133,7 @@ h2{font:900 clamp(32px,4.6vw,54px)/1.05 var(--f);letter-spacing:-.02em;text-wrap
 .next b{color:var(--ink)}
 
 /* how + demos */
-.how{padding-block:90px}
+.how{background:var(--cream);padding-block:90px}
 .steps{list-style:none;padding:0;margin:40px 0 0;counter-reset:s;display:grid;grid-template-columns:repeat(3,1fr);gap:40px}
 .steps li{counter-increment:s;font-size:17px;color:var(--ink2)}
 .steps li::before{content:counter(s);display:block;font:900 64px/1 var(--f);color:var(--green);margin-bottom:12px}
@@ -187,7 +205,7 @@ footer img{height:22px;width:auto}
     <div class="hero-in">
       <div>
         <h1>הטיול בכיס,<br><span>בשם של הסוכן.</span></h1>
-        <p class="lede">הסוכנים שלכם כבר מזמינים מלונות, טיסות וחבילות. אנחנו מוסיפים את מה שקורה <b>אחרי ההזמנה</b>: מדריך טיול דיגיטלי אישי בטלפון של הלקוח, עם השם של הסוכן.</p>
+        <p class="lede">הסוכנים שלכם כבר מזמינים מלונות, טיסות וחבילות. אנחנו נותנים להם את מה שמסביב: <b>בונה מסלולים</b> שבו הם מתכננים את הטיול, ו<b>מדריך טיול דיגיטלי אישי</b> בטלפון של הלקוח, עם השם של הסוכן.</p>
         <p class="note">נפתח בלחיצה על קישור, בלי הורדה מהחנות, ואפשר להוסיף אותו למסך הבית כמו אפליקציה.</p>
       </div>
       <div class="fan" aria-hidden="true">
@@ -239,28 +257,42 @@ footer img{height:22px;width:auto}
 </section>
 
 <section class="agent">
-  <div class="w two">
-    <div>
-      <h2 id="a">מה הסוכן מקבל</h2>
-      <p class="lede">רוב הסוכנים שלכם בתחילת הדרך. המדריך נותן להם מראה של סוכנות מקצועית מהטיול הראשון.</p>
-      <ul class="lines">
-        <li><b>השם שלו על הטיול</b><span>השם, הלוגו והטלפון של הסוכן בתוך המדריך.</span></li>
-        <li><b>פחות שאלות באמצע הלילה</b><span>שעת הצ׳ק אין, כתובת המלון, מה לארוז. הכול כתוב.</span></li>
-        <li><b>לקוח שחוזר וממליץ</b><span>בכל מדריך יש קישור לאתר של הסוכן.</span></li>
-        <li><b>הצעת מחיר מעוצבת</b><span>עוד לפני ההזמנה, עם המסלול והמלונות.</span></li>
-      </ul>
+  <div class="w">
+    <h2 id="a">מה הסוכן מקבל</h2>
+    <p class="lede">רוב הסוכנים שלכם בתחילת הדרך. המדריך נותן להם מראה של סוכנות מקצועית מהטיול הראשון.</p>
+    <ul class="lines cols2">
+      <li><b>השם שלו על הטיול</b><span>השם, הלוגו והטלפון של הסוכן בתוך המדריך.</span></li>
+      <li><b>פחות שאלות באמצע הלילה</b><span>שעת הצ׳ק אין, כתובת המלון, מה לארוז. הכול כתוב.</span></li>
+      <li><b>לקוח שחוזר וממליץ</b><span>בכל מדריך יש קישור לאתר של הסוכן.</span></li>
+      <li><b>הצעת מחיר מעוצבת</b><span>עוד לפני ההזמנה, עם המסלול והמלונות.</span></li>
+    </ul>
+  </div>
+</section>
+
+<section class="builder" aria-labelledby="bl">
+  <div class="w">
+    <h2 id="bl">בונה המסלולים: הסוכן מתכנן, הכול נבנה לבד</h2>
+    <p class="lede">כלי עבודה לסוכן, בעברית, בדפדפן. הסוכן עובר שלב אחרי שלב, ובסוף יוצאים ממנו הצעת מחיר, קובץ PDF ומדריך טיול דיגיטלי אישי ללקוח.</p>
+    <div class="tabs" role="tablist" aria-label="שלבי הבונה">
+      <button role="tab" aria-selected="true" aria-controls="bp" data-i="0">יעדים ולילות</button>
+      <button role="tab" aria-selected="false" aria-controls="bp" data-i="1">מלונות</button>
+      <button role="tab" aria-selected="false" aria-controls="bp" data-i="2">יום אחר יום</button>
+      <button role="tab" aria-selected="false" aria-controls="bp" data-i="3">הגעה ותחבורה</button>
     </div>
-    <div>
-      <h2 id="bl">טיול חדש מתוך המאגר של הסוכן</h2>
-      <p class="lede">בנינו בונה מסלולים שבו כל מקום, מלון או המלצה שהסוכן כותב פעם אחת נשמרים אצלו, ומשמשים אותו גם בטיול הבא.</p>
-      <ul class="lines">
-        <li><b>ספרייה אישית לכל יעד</b><span>אטרקציות, מסעדות, דרכי הגעה וטיפים. מוסיפים ליום בלחיצה.</span></li>
-        <li><b>תבניות ושכפול</b><span>מסלול שעבד טוב נשמר כתבנית. ללקוח הבא משנים תאריכים ומתאימים.</span></li>
-        <li><b>יום אחר יום, בסדר הנכון</b><span>יעדים ולילות, מלונות, תוכנית יומית והעברות.</span></li>
-        <li><b>אישור הלקוח</b><span>הלקוח מאשר, והמדריך יוצא לדרך.</span></li>
-      </ul>
-      <p class="out">מאותם נתונים יוצאים <b>מדריך טיול דיגיטלי אישי</b>, <b>קובץ PDF</b> ו<b>הצעת מחיר</b>.</p>
+    <div class="bpanel" id="bp" role="tabpanel">
+      <div class="shot"><img id="bimg" src="b-structure.jpg" alt="בונה המסלולים: שלב היעדים והלילות" width="1600" height="1000"></div>
+      <div class="bcap">
+        <h3 id="bh">יעדים ולילות</h3>
+        <p id="bt">הסוכן קובע לאן נוסעים ובאיזה סדר, וכמה לילות בכל מקום. התאריכים וימי המעבר מתעדכנים לבד, וגרירה משנה את הסדר.</p>
+      </div>
     </div>
+    <ul class="lines cols2 bfeat">
+      <li><b>ספרייה אישית לכל יעד</b><span>אטרקציות, מסעדות, דרכי הגעה וטיפים. כל מה שהסוכן כתב פעם אחת נשמר, ונכנס ליום בלחיצה.</span></li>
+      <li><b>תבניות ושכפול</b><span>מסלול שעבד טוב נשמר כתבנית. ללקוח הבא משנים תאריכים ומתאימים.</span></li>
+      <li><b>תצוגה חיה</b><span>תוך כדי עבודה הסוכן רואה איך היום ייראה במדריך של הלקוח.</span></li>
+      <li><b>אישור הלקוח</b><span>הלקוח מקבל הצעה מעוצבת, מאשר, והמדריך יוצא לדרך.</span></li>
+    </ul>
+    <p class="out">מאותם נתונים יוצאים <b>הצעת מחיר</b>, <b>קובץ PDF</b> ו<b>מדריך טיול דיגיטלי אישי</b>. הסוכן לא מקליד שום דבר פעמיים.</p>
   </div>
 </section>
 
@@ -281,7 +313,7 @@ footer img{height:22px;width:auto}
     <h2 id="h">איך זה עובד</h2>
     <ol class="steps">
       <li><b>הסוכן מזמין</b>ב-<bdi>Be Agent</bdi>, בדיוק כמו היום.</li>
-      <li><b>המדריך נבנה</b>בבונה המסלולים שלנו, או שהסוכן שולח לנו את התוכנית.</li>
+      <li><b>הסוכן בונה את המסלול</b>בבונה המסלולים: יעדים, מלונות, תחבורה ופעילויות. הלקוח מאשר את ההצעה.</li>
       <li><b>הלקוח מקבל קישור</b>אחד, בוואטסאפ או במייל, עם השם של הסוכן.</li>
     </ol>
     <p class="keep">הסוכנים ממשיכים להזמין ב-<bdi>Be Agent</bdi> בדיוק כמו היום. אנחנו רק אורזים את הטיול בשביל הלקוח.</p>
@@ -314,5 +346,20 @@ footer img{height:22px;width:auto}
   </div>
 </footer>
 
+
+<script>
+(function(){
+  var S=[
+    ['b-structure.jpg','יעדים ולילות','הסוכן קובע לאן נוסעים ובאיזה סדר, וכמה לילות בכל מקום. התאריכים וימי המעבר מתעדכנים לבד, וגרירה משנה את הסדר.'],
+    ['b-hotels.jpg','מלונות','עד 3 אפשרויות לכל יעד, עם אזור, מחיר ללילה ולמה הסוכן ממליץ. רק המלון שנבחר מופיע אצל הלקוח.'],
+    ['b-days.jpg','יום אחר יום','פעילויות לבוקר, לצהריים ולערב, עם שעות וטיפים. מה שחוזר על עצמו נלקח מהספרייה, ובצד רואים איך זה ייראה במדריך.'],
+    ['b-transfers.jpg','הגעה ותחבורה','כל ההעברות במקום אחד: מהשדה למלון, בין הערים וחזרה לשדה. אמצעי, שעה, משך ומחיר, וכל קטע מופיע גם ביום עצמו.']
+  ];
+  var tabs=document.querySelectorAll('.tabs button'),img=document.getElementById('bimg'),h=document.getElementById('bh'),t=document.getElementById('bt');
+  S.forEach(function(x){var i=new Image();i.src=x[0];});
+  function go(i){tabs.forEach(function(b,j){b.setAttribute('aria-selected',j===i?'true':'false');});img.src=S[i][0];img.alt='בונה המסלולים: '+S[i][1];h.textContent=S[i][1];t.textContent=S[i][2];}
+  tabs.forEach(function(b,i){b.addEventListener('click',function(){go(i);});});
+})();
+</script>
 </body>
 </html>
