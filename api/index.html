@@ -81,7 +81,7 @@ summary{cursor:pointer;font-weight:700;color:var(--brand)}
 .brandbar img{height:40px;width:auto;max-width:220px;display:block}
 .brandbar span{color:#fff;font:800 20px/1.2 Heebo,sans-serif}
 /* agency mode: what this page is and what it gives (an agent asked "who is this for?"), and a phone showing what the travellers see (2026-11-24) */
-.about{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:28px;align-items:start;margin:8px 0 26px}
+.about{display:none;grid-template-columns:minmax(0,1fr) 300px;gap:28px;align-items:start;margin:8px 0 26px}
 .partner .about.only-partner{display:grid}
 .about h2{margin-top:0}
 .links2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
@@ -158,99 +158,14 @@ summary{cursor:pointer;font-weight:700;color:var(--brand)}
 <button class="go" id="send" type="button">יצירת טיול</button>
 <button class="ghost dev" id="me" type="button">בדיקת מפתח</button>
 </div>
-<details class="dev" style="margin-top:18px"><summary>יש לכם נתונים מובנים? שליחה כ-JSON</summary>
+<details class="dev" style="margin-top:18px" hidden><summary>יש לכם נתונים מובנים? שליחה כ-JSON</summary>
 <textarea id="t" spellcheck="false" aria-label="טיול ב-JSON" style="margin-top:10px"></textarea>
 <div class="row"><button class="ghost" id="sendj" type="button">שליחת JSON</button><button class="ghost" id="reset" type="button">חזרה לדוגמה</button></div>
 </details>
 <div class="result" id="out" role="status" aria-live="polite"></div>
 </div>
 
-<div class="dev">
-<h2>יצירה ממסמכים</h2>
-<p>כתובת בסיס: <code>https://pab-api.dana-lees.workers.dev</code>. בכל קריאה: <code>Authorization: Bearer pab_...</code></p>
-<pre tabindex="0"><code>curl -X POST https://pab-api.dana-lees.workers.dev/v1/trips/from-documents \
-  -H "Authorization: Bearer $PAB_KEY" -H "Content-Type: application/json" \
-  -d '{"files": [{"name": "itinerary.pdf", "data": "&lt;base64&gt;"}],
-       "text": "אפשר גם טקסט חופשי או מייל מודבק",
-       "title": "שם (לא חובה)", "reference": "מספר הזמנה שלכם",
-       "brand": {"name": "החברה שלכם", "colors": ["#1F5F6B"]}}'</code></pre>
-<p>עד 8 קבצים ו-6MB בסך הכול. נתמכים PDF, <code>.docx</code>, <code>.xlsx</code>, <code>.eml</code> (כולל PDF מצורף), תמונות וטקסט. קבצי <code>.doc</code> ו-<code>.xls</code> ישנים: שמרו כ-docx/xlsx או PDF. התשובה זהה ליצירה מ-JSON ויש בה גם <code>notes</code> (מה הוסק או לא היה ברור) ו-<code>confidence</code>. הקריאה פתוחה עד כדקה. בביטחון נמוך הטיול ממתין לאישור גם אם החשבון מוגדר לפרסום מיידי.</p>
-
-<h2>מסמכים לנוסעים</h2>
-<p>שדה נפרד מ-<code>files</code>: <code>files</code> נקראים כדי לבנות את הטיול ונמחקים. <code>documents</code> <b>נשמרים בטיול</b>: הנוסעים מוצאים אותם במסך "מסמכים", ומסמך עם <code>booking</code> נפתח גם מהכרטיס של ההזמנה. עובד בכל דרכי היצירה (מסמכים, JSON ותבנית), ואפשר להוסיף אחר כך:</p>
-<pre tabindex="0"><code>"documents": [
-  {"name": "כרטיס טיסה הלוך", "data": "&lt;base64&gt;", "kind": "flight", "booking": "LY 395"},
-  {"name": "כניסה למוזיאון הפראדו", "data": "&lt;base64&gt;", "kind": "entry"}
-]
-
-curl -X POST https://pab-api.dana-lees.workers.dev/v1/trips/k3j9x0ab/documents \
-  -H "Authorization: Bearer $PAB_KEY" -H "Content-Type: application/json" \
-  -d '{"documents": [{"name": "שובר מלון", "data": "&lt;base64&gt;", "kind": "hotel", "booking": "Hotel Gracery"}]}'
-
-curl -X DELETE https://pab-api.dana-lees.workers.dev/v1/trips/k3j9x0ab/documents/2 -H "Authorization: Bearer $PAB_KEY"</code></pre>
-<ul>
-<li><code>kind</code>: <code>flight</code>, <code>train</code>, <code>entry</code>, <code>hotel</code>, <code>visa</code>, <code>car</code>, <code>transfer</code>, <code>insurance</code>, <code>other</code>.</li>
-<li><code>booking</code>: טקסט שמופיע בכרטיס ההזמנה, כמו מספר טיסה או שם המלון. בלעדיו המסמך מופיע רק במסך "מסמכים".</li>
-<li>PDF, JPEG, PNG, WEBP או GIF. עד 8 מסמכים לטיול, עד 8MB כל אחד. במחיקת הטיול נמחקים גם המסמכים.</li>
-</ul>
-
-<h2>יצירה מנתונים מובנים, עדכון ומחיקה</h2>
-<h3>יצירת טיול מ-JSON</h3>
-<pre tabindex="0"><code>curl -X POST https://pab-api.dana-lees.workers.dev/v1/trips \
-  -H "Authorization: Bearer $PAB_KEY" \
-  -H "Content-Type: application/json" \
-  -d @trip.json</code></pre>
-<p>התשובה (201):</p>
-<pre tabindex="0"><code>{ "trip_id": "k3j9x0ab", "status": "published",
-  "link": "https://packandboard.com/t/#k3j9x0ab.&lt;key&gt;",
-  "warnings": [], "review_reason": null }</code></pre>
-<p>את <code>link</code> שולחים למטייל כמו שהוא, כולל כל מה שאחרי <code>#</code>.</p>
-<h3>עדכון טיול</h3>
-<pre tabindex="0"><code>curl -X PATCH https://pab-api.dana-lees.workers.dev/v1/trips/k3j9x0ab \
-  -H "Authorization: Bearer $PAB_KEY" -H "Content-Type: application/json" \
-  -d '{"patch": {"title": "שם חדש"}}'</code></pre>
-<p>הקישור נשאר זהה. המטייל רואה את העדכון בפתיחה הבאה (או ברענון).</p>
-<h3>מחיקה</h3>
-<pre tabindex="0"><code>curl -X DELETE https://pab-api.dana-lees.workers.dev/v1/trips/k3j9x0ab -H "Authorization: Bearer $PAB_KEY"</code></pre>
-
-<h2>סטטוסים</h2>
-<div class="scroll" tabindex="0" role="region" aria-label="טבלה, ניתנת לגלילה"><table>
-<tr><th>סטטוס</th><th>משמעות</th></tr>
-<tr><td><code>published</code></td><td>הקישור פעיל.</td></tr>
-<tr><td><code>needs_review</code></td><td>ממתין לאישור (החשבון מוגדר לאישור, או שהבדיקות מצאו משהו חריג, למשל יום מחוץ לתאריכי הטיול). <code>warnings</code> מסבירים. הקישור לא מציג כלום עד לאישור.</td></tr>
-<tr><td>422</td><td>הטיול נדחה. <code>details</code> אומר מה לתקן, ושולחים שוב.</td></tr>
-</table></div>
-
-<h2>מבנה הטיול</h2>
-<p>חובה: <code>title</code>, <code>dates.start</code> ו-<code>dates.end</code> (בפורמט YYYY-MM-DD, עד 60 יום), ו-<code>days</code> עם <code>date</code> ו-<code>title</code> לכל יום. כל השאר אופציונלי.</p>
-<div class="scroll" tabindex="0" role="region" aria-label="טבלה, ניתנת לגלילה"><table>
-<tr><th>שדה</th><th>מה</th></tr>
-<tr><td><code>days[].rows</code></td><td>שורות הפעילות של היום: <code>label</code> (בוקר, ערב...) ו-<code>text</code>.</td></tr>
-<tr><td><code>days[].tip</code>, <code>days[].places</code></td><td>טיפ ליום, ומקומות (נפתחים במפה).</td></tr>
-<tr><td><code>flights</code></td><td><code>dir</code> (out או back), <code>number</code>, <code>from</code>, <code>to</code>, <code>dep</code>, <code>arr</code> (תאריך ושעה עם אזור זמן).</td></tr>
-<tr><td><code>bookings</code>, <code>packing</code>, <code>tips</code>, <code>emergency</code></td><td>הזמנות, רשימת אריזה, טיפים כלליים ומספרי חירום.</td></tr>
-<tr><td><code>currency</code></td><td>קוד מטבע בן 3 אותיות, למשל <code>EUR</code>.</td></tr>
-<tr><td><code>brand</code></td><td><code>name</code>, <code>logo_url</code> (https בלבד), <code>colors</code> (<code>#RRGGBB</code>). ערכת הצבעים של המדריך נגזרת מהצבע הראשון. בלי צבע נבחר צבע לפי היעד.</td></tr>
-<tr><td><code>reference</code></td><td>מזהה שלכם (מספר הזמנה). לא מוצג למטייל.</td></tr>
-</table></div>
-<p>טקסט הוא טקסט רגיל. <code>**כך**</code> מדגיש. HTML מוצג כטקסט ולא מופעל.</p>
-<div class="box"><b>לא שולחים</b> מספרי דרכון, כרטיסי אשראי או פרטי תשלום. אין בהם צורך במדריך.</div>
-
-<h2>שגיאות ומגבלות</h2>
-<div class="scroll" tabindex="0" role="region" aria-label="טבלה, ניתנת לגלילה"><table>
-<tr><th>קוד</th><th>מה קרה</th></tr>
-<tr><td>401</td><td>מפתח לא תקין.</td></tr>
-<tr><td>403</td><td>החשבון הושבת, או שאין לו הרשאה לפעולה.</td></tr>
-<tr><td>404</td><td>טיול לא קיים או שאינו שלכם.</td></tr>
-<tr><td>413</td><td>הבקשה גדולה מדי: 200KB לטיול, 8MB לחומרים לבניית הטיול, ועד 8MB לכל מסמך לנוסעים.</td></tr>
-<tr><td>422</td><td>הטיול לא תקין. <code>details</code> מפרט.</td></tr>
-<tr><td>429</td><td>עברתם את המכסה החודשית, או 30 בקשות בשעה.</td></tr>
-</table></div>
-
-<h2>איך מקבלים מפתח</h2>
-<p class="contact">המפתח מונפק על ידינו, והוא מוצג פעם אחת בלבד. בחשבון חדש כל טיול ממתין לאישור שלנו עד שנצבר אמון, ואז עוברים לפרסום מיידי. פנו אלינו: <a href="https://wa.me/972537004934">וואטסאפ</a> או <a href="mailto:office@packandboard.com" dir="ltr">office@packandboard.com</a>.</p>
-
-</div>
+<p class="note dev">לצוות הפיתוח שלכם: <a href="/api/dev/">התיעוד הטכני של ה-API</a> (חיבור ישיר מהמערכת שלכם).</p>
 
 <h2>פרטיות</h2>
 <p>אתם אחראים לנתוני המטיילים שאתם שולחים. Pack &amp; Board מעבדת אותם רק כדי לבנות את המדריך. טיול שנמחק מוסר, והקישור מפסיק לעבוד. הסכם עיבוד מידע זמין לפי בקשה. ראו גם את <a href="/privacy/">מדיניות הפרטיות</a>.</p>

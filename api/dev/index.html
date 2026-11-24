@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>API לשותפים · Pack &amp; Board</title>
+<meta name="description" content="יוצרים מדריכי טיול דיגיטליים אישיים אוטומטית: שולחים את הטיול, מקבלים קישור.">
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="canonical" href="https://packandboard.com/api/dev/">
+<meta name="theme-color" content="#F7F2E8">
+<meta name="color-scheme" content="light only">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&family=Miriam+Libre:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F7F2E8;--surface:#fff;--line:#E2D9C4;--ink:#1F2A24;--ink2:#4B5A51;--brand:#17352A;--blue:#2F7FC8;--tint:#E3F0E8;--code:#17352A;--codeink:#E8F1EA;--bad:#9B2C2C;--badbg:#FBEAEA;--ok:#1E6B45}
+html{color-scheme:light;scroll-behavior:smooth}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.7 Heebo,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:860px;margin:0 auto;padding:28px 20px 90px}
+.back{display:inline-block;margin-bottom:22px;color:var(--ink2);text-decoration:none;font-size:15px}
+.eyebrow{font:700 13px/1 Heebo,sans-serif;letter-spacing:.08em;color:var(--ink2);margin:0 0 12px}
+h1{font:700 clamp(30px,6vw,44px)/1.15 'Miriam Libre',serif;color:var(--brand);margin:0 0 12px}
+.lead{font-size:19px;line-height:1.6;color:var(--ink);max-width:640px;margin:0 0 6px}
+h2{font:800 22px/1.3 Heebo,sans-serif;color:var(--brand);margin:46px 0 10px}
+h3{font:700 17px/1.4 Heebo,sans-serif;color:var(--brand);margin:22px 0 6px}
+p{margin:8px 0}
+a{color:#1F5FA0}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0 0;padding:0;list-style:none}
+.steps li{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 16px 14px}
+.steps b{display:block;font-weight:800;color:var(--brand);margin-bottom:4px}
+.steps span{color:var(--ink2);font-size:15.5px;line-height:1.55}
+@media(max-width:640px){.steps{grid-template-columns:1fr}}
+pre,code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+code{background:#EFE9D8;padding:1px 6px;border-radius:6px;font-size:.9em;direction:ltr;unicode-bidi:isolate}
+pre{background:var(--code);color:var(--codeink);border-radius:12px;padding:14px 16px;overflow-x:auto;direction:ltr;text-align:left;font-size:13.5px;line-height:1.6;margin:10px 0}
+pre code{background:none;padding:0;color:inherit;font-size:inherit}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;margin:10px 0;font-size:15.5px}
+th,td{text-align:start;vertical-align:top;padding:10px;border-bottom:1px solid var(--line)}
+th{color:var(--ink2);font-weight:700;font-size:13.5px}
+.box{background:var(--tint);border-radius:14px;padding:14px 16px;margin:16px 0;font-size:16px}
+.try{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px;margin:16px 0}
+label{display:block;font-weight:700;font-size:15px;margin:0 0 6px;color:var(--brand)}
+input,textarea{width:100%;font:inherit;font-size:15px;color:var(--ink);background:#FDFBF6;border:1px solid #CFC5AC;border-radius:10px;padding:10px 12px}
+input{direction:ltr;text-align:left}
+textarea{direction:ltr;text-align:left;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;line-height:1.55;min-height:260px;resize:vertical}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+button{font:700 16px/1 Heebo,sans-serif;border-radius:12px;padding:13px 20px;border:1px solid var(--brand);cursor:pointer;min-height:44px}
+.go{background:var(--brand);color:#fff}
+.ghost{background:#fff;color:var(--brand)}
+button:disabled{opacity:.55;cursor:wait}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.result{margin-top:16px;border-radius:12px;padding:14px 16px;font-size:16px;display:none}
+.result.show{display:block}
+.result.ok{background:var(--tint)}
+.result.bad{background:var(--badbg);color:var(--bad)}
+.result.wait{background:#F2EEE0}
+.result ul{margin:6px 0 0;padding-inline-start:20px}
+.result .lnk{display:block;direction:ltr;text-align:left;word-break:break-all;font-weight:700;margin:6px 0}
+.note{color:var(--ink2);font-size:14.5px;margin-top:10px}
+details{border-top:1px solid var(--line);padding:12px 0}
+.fpick{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none}
+.filebtn{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:11px 18px;border-radius:12px;border:1px solid var(--brand);background:#fff;color:var(--brand);font:700 15px/1 Heebo,sans-serif;cursor:pointer;margin:0}
+.filebtn:hover{background:var(--tint)}
+.fpick:focus-visible+.filebtn{outline:3px solid var(--blue);outline-offset:2px}
+.tdocs{margin-top:20px;border:1px dashed #CFC5AC;border-radius:14px;padding:14px 16px;background:#FDFBF6}
+.tdoc{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr) minmax(0,1fr);gap:8px;align-items:center;margin-top:10px}
+.tdoc b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14.5px}
+.tdoc select{width:100%;font:inherit;font-size:15px;color:var(--ink);background-color:#FDFBF6;border:1px solid #CFC5AC;border-radius:10px;padding:10px 12px;-webkit-appearance:none;appearance:none;padding-left:40px;background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);background-position:left 16px center,left 21px center;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+.tdoc input{direction:rtl;text-align:start}
+@media (max-width:640px){.tdoc{grid-template-columns:minmax(0,1fr)}}
+summary{cursor:pointer;font-weight:700;color:var(--brand)}
+.contact a{font-weight:700}
+/* agency mode: the page opened from an agency's personal link (#k=...). Its logo on top, no key field, no developer section */
+.only-partner{display:none}
+.partner .only-partner{display:block}
+.partner .dev{display:none !important}
+.brandbar{display:none;background:var(--brand-dark,#17352A);border-radius:16px;padding:16px 20px;margin:0 0 18px;align-items:center;justify-content:space-between;gap:12px}
+.partner .brandbar{display:flex}
+.brandbar img{height:40px;width:auto;max-width:220px;display:block}
+.brandbar span{color:#fff;font:800 20px/1.2 Heebo,sans-serif}
+/* agency mode: what this page is and what it gives (an agent asked "who is this for?"), and a phone showing what the travellers see (2026-11-24) */
+.about{display:none;grid-template-columns:minmax(0,1fr) 300px;gap:28px;align-items:start;margin:8px 0 26px}
+.partner .about.only-partner{display:grid}
+.about h2{margin-top:0}
+.links2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
+.lcard{border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:#fff}
+.lcard b{display:block;font-size:16px;margin-bottom:4px;color:var(--brand)}
+.lcard span{color:var(--ink2);font-size:14.5px}
+.phone{width:300px;height:610px;border:11px solid #1F2A24;border-radius:40px;overflow:hidden;background:#fff;box-shadow:0 12px 34px rgba(23,53,42,.18)}
+.phone iframe{width:100%;height:100%;border:0;display:block}
+.phonecap{text-align:center;color:var(--ink2);font-size:14px;margin-top:10px}
+.phonecap a{font-weight:700}
+.result .two{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;align-items:start;margin-top:10px}
+.result .lbox{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0;background:#fff}
+.result .lbox b{display:block;color:var(--brand)}
+.result .lbox .lnk{margin:6px 0}
+.result .lbox button{min-height:40px;padding:8px 16px;border-radius:10px;border:1px solid var(--brand);background:#fff;color:var(--brand);font:700 14.5px Heebo,sans-serif;cursor:pointer}
+@media (max-width:760px){.about,.result .two{grid-template-columns:minmax(0,1fr)}.links2{grid-template-columns:minmax(0,1fr)}.phone{margin:0 auto}}
+@media (max-width:420px){.phone{width:100%;height:560px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<a class="back" href="/">Pack &amp; Board <span aria-hidden="true">←</span></a>
+<div class="brandbar" id="brand" aria-label="הסוכנות"></div>
+<p class="eyebrow dev">לשותפים</p>
+<h1>מדריך טיול דיגיטלי אישי, ישר מהמערכת שלכם</h1>
+<p class="lead">שולחים לנו את המסמכים שיש לכם: מייל, PDF, Word, Excel או טקסט. מקבלים בחזרה קישור למדריך אישי שנפתח בטלפון, בלי הורדה מהחנות.</p>
+
+<section class="about only-partner" aria-labelledby="about-h">
+<div>
+<h2 id="about-h">למי הדף הזה ומה מקבלים</h2>
+<p>הדף הזה הוא כלי העבודה של הסוכנות. מי שמכין את הטיול מעלה כאן מהמחשב את החומרים שכבר יש לו: תוכנית, מיילים, אישורי הזמנה. תוך דקה הם הופכים לאפליקציית טיול בטלפון של המטיילים, עם הלוגו שלכם.</p>
+<div class="links2">
+<div class="lcard"><b>קישור למטיילים</b><span>המדריך בטלפון: יום אחר יום, מלונות וטיסות, מפות ו-Waze, מזג אוויר ומסמכים. נפתח בלחיצה, בלי הורדה מהחנות.</span></div>
+<div class="lcard"><b>קישור ניהול לסוכן או למדריך</b><span>אותה אפליקציה עם כפתור עריכה: משנים שעות ופרטים גם תוך כדי הטיול, ושולחים הודעה למטיילים. לא שולחים אותו למטיילים.</span></div>
+</div>
+<p class="note">שמרו את הכתובת של הדף הזה. היא אישית לסוכנות שלכם.</p>
+</div>
+<div><div class="phone"><iframe src="https://packandboard.com/example-ar-1ey5azkh/#p=xmufa973n5mz5lusqrxmsmhga5" title="טיול לדוגמה, כמו שהמטיילים רואים אותו" loading="lazy"></iframe></div>
+<p class="phonecap">ככה זה נראה אצל המטיילים (טיול לדוגמה) · <a href="https://packandboard.com/example-ar-1ey5azkh/#p=xmufa973n5mz5lusqrxmsmhga5" target="_blank" rel="noopener">פתיחה בחלון מלא</a></p></div>
+</section>
+
+<ol class="steps">
+<li><b>1. שולחים מסמכים</b><span>את המסלול, הזמנות וכרטיסי טיסה כמו שהם. אין צורך לסדר או להמיר.</span></li>
+<li><b>2. מקבלים קישור</b><span>הקריאה לוקחת עד דקה. אם משהו לא ברור, הטיול ממתין לבדיקה שלנו לפני שהוא נפתח.</span></li>
+<li><b>3. שולחים למטייל</b><span>הוא פותח, והמדריך נשמר גם לשימוש בלי אינטרנט אחרי פתיחה ראשונה.</span></li>
+</ol>
+
+<h2 id="try" class="dev">נסו עכשיו</h2>
+<h2 class="only-partner">יצירת טיול</h2>
+<p class="only-partner">צרפו את המסמכים ו/או הדביקו טקסט, ולחצו "יצירת טיול". תוך דקה תקבלו קישור לשלוח למטיילים.</p>
+<p class="dev">הדביקו את מפתח ה-API שקיבלתם, צרפו את המסמכים ו/או הדביקו טקסט, ולחצו "יצירת טיול". המפתח נשלח ישירות לשרת שלנו ולא נשמר בדפדפן.</p>
+<p>יש שני מקומות לקבצים. <b>חומרים לבניית הטיול</b> (תוכנית, מיילים, אישורים) נקראים רק כדי לבנות את הטיול ואינם נשמרים. <b>מסמכים לנוסעים</b> (כרטיסי טיסה, רכבת, כניסה למוזיאון, שוברים, ויזות) נשמרים בטיול: הנוסעים מוצאים אותם במסך "מסמכים", וגם בכרטיס של ההזמנה.</p>
+<div class="try">
+<div class="dev"><label for="k">מפתח API</label>
+<input id="k" type="password" autocomplete="off" spellcheck="false" placeholder="pab_..."></div>
+<h3 style="margin:20px 0 4px">1. חומרים לבניית הטיול</h3>
+<p class="note" style="margin:0 0 10px">נקראים ונמחקים. לא נשמרים בטיול.</p>
+<label for="f">קבצים (PDF, Word, Excel, מייל eml, תמונה, טקסט)</label>
+<input id="f" class="fpick" type="file" multiple accept=".pdf,.docx,.xlsx,.eml,.txt,.csv,.png,.jpg,.jpeg,.webp"><label for="f" class="filebtn"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><polyline points="7,8 12,3 17,8"/><path d="M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg><span>בחירת קבצים</span></label>
+<p class="note" id="fl"></p>
+<label for="x" style="margin-top:12px">או הדביקו טקסט (מייל, מסלול, פרטי הזמנה)</label>
+<textarea id="x" spellcheck="false" style="direction:rtl;text-align:start;font-family:inherit;font-size:15px;min-height:130px"></textarea>
+<label for="ti" style="margin-top:12px">שם הטיול (לא חובה, אחרת נקרא מהמסמכים)</label>
+<input id="ti" type="text" autocomplete="off" style="direction:rtl;text-align:start">
+<p class="note">אל תשלחו דרכונים או פרטי תשלום. מספרי כרטיס ודרכון שבטקסט מוסרים אוטומטית לפני הקריאה, אבל לא ניתן לסנן אותם מתוך קובצי PDF ותמונות.</p>
+<div class="tdocs">
+<h3 style="margin:0 0 4px">2. מסמכים לנוסעים (לא חובה)</h3>
+<p class="note" style="margin:0 0 10px">נשמרים בטיול. כרטיסי טיסה ורכבת, כניסות, שוברים וויזות. PDF או תמונה, עד 8 מסמכים, עד 8MB כל אחד.</p>
+<label for="td">מסמכים</label>
+<input id="td" class="fpick" type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp,.gif"><label for="td" class="filebtn"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><polyline points="7,8 12,3 17,8"/><path d="M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg><span>בחירת מסמכים</span></label>
+<div id="tdl"></div>
+</div>
+<div class="row">
+<button class="go" id="send" type="button">יצירת טיול</button>
+<button class="ghost dev" id="me" type="button">בדיקת מפתח</button>
+</div>
+<details class="dev" style="margin-top:18px"><summary>יש לכם נתונים מובנים? שליחה כ-JSON</summary>
+<textarea id="t" spellcheck="false" aria-label="טיול ב-JSON" style="margin-top:10px"></textarea>
+<div class="row"><button class="ghost" id="sendj" type="button">שליחת JSON</button><button class="ghost" id="reset" type="button">חזרה לדוגמה</button></div>
+</details>
+<div class="result" id="out" role="status" aria-live="polite"></div>
+</div>
+
+<div class="dev" id="techdocs">
+<h2>יצירה ממסמכים</h2>
+<p>כתובת בסיס: <code>https://pab-api.dana-lees.workers.dev</code>. בכל קריאה: <code>Authorization: Bearer pab_...</code></p>
+<pre tabindex="0"><code>curl -X POST https://pab-api.dana-lees.workers.dev/v1/trips/from-documents \
+  -H "Authorization: Bearer $PAB_KEY" -H "Content-Type: application/json" \
+  -d '{"files": [{"name": "itinerary.pdf", "data": "&lt;base64&gt;"}],
+       "text": "אפשר גם טקסט חופשי או מייל מודבק",
+       "title": "שם (לא חובה)", "reference": "מספר הזמנה שלכם",
+       "brand": {"name": "החברה שלכם", "colors": ["#1F5F6B"]}}'</code></pre>
+<p>עד 8 קבצים ו-6MB בסך הכול. נתמכים PDF, <code>.docx</code>, <code>.xlsx</code>, <code>.eml</code> (כולל PDF מצורף), תמונות וטקסט. קבצי <code>.doc</code> ו-<code>.xls</code> ישנים: שמרו כ-docx/xlsx או PDF. התשובה זהה ליצירה מ-JSON ויש בה גם <code>notes</code> (מה הוסק או לא היה ברור) ו-<code>confidence</code>. הקריאה פתוחה עד כדקה. בביטחון נמוך הטיול ממתין לאישור גם אם החשבון מוגדר לפרסום מיידי.</p>
+
+<h2>מסמכים לנוסעים</h2>
+<p>שדה נפרד מ-<code>files</code>: <code>files</code> נקראים כדי לבנות את הטיול ונמחקים. <code>documents</code> <b>נשמרים בטיול</b>: הנוסעים מוצאים אותם במסך "מסמכים", ומסמך עם <code>booking</code> נפתח גם מהכרטיס של ההזמנה. עובד בכל דרכי היצירה (מסמכים, JSON ותבנית), ואפשר להוסיף אחר כך:</p>
+<pre tabindex="0"><code>"documents": [
+  {"name": "כרטיס טיסה הלוך", "data": "&lt;base64&gt;", "kind": "flight", "booking": "LY 395"},
+  {"name": "כניסה למוזיאון הפראדו", "data": "&lt;base64&gt;", "kind": "entry"}
+]
+
+curl -X POST https://pab-api.dana-lees.workers.dev/v1/trips/k3j9x0ab/documents \
+  -H "Authorization: Bearer $PAB_KEY" -H "Content-Type: application/json" \
+  -d '{"documents": [{"name": "שובר מלון", "data": "&lt;base64&gt;", "kind": "hotel", "booking": "Hotel Gracery"}]}'
+
+curl -X DELETE https://pab-api.dana-lees.workers.dev/v1/trips/k3j9x0ab/documents/2 -H "Authorization: Bearer $PAB_KEY"</code></pre>
+<ul>
+<li><code>kind</code>: <code>flight</code>, <code>train</code>, <code>entry</code>, <code>hotel</code>, <code>visa</code>, <code>car</code>, <code>transfer</code>, <code>insurance</code>, <code>other</code>.</li>
+<li><code>booking</code>: טקסט שמופיע בכרטיס ההזמנה, כמו מספר טיסה או שם המלון. בלעדיו המסמך מופיע רק במסך "מסמכים".</li>
+<li>PDF, JPEG, PNG, WEBP או GIF. עד 8 מסמכים לטיול, עד 8MB כל אחד. במחיקת הטיול נמחקים גם המסמכים.</li>
+</ul>
+
+<h2>יצירה מנתונים מובנים, עדכון ומחיקה</h2>
+<h3>יצירת טיול מ-JSON</h3>
+<pre tabindex="0"><code>curl -X POST https://pab-api.dana-lees.workers.dev/v1/trips \
+  -H "Authorization: Bearer $PAB_KEY" \
+  -H "Content-Type: application/json" \
+  -d @trip.json</code></pre>
+<p>התשובה (201):</p>
+<pre tabindex="0"><code>{ "trip_id": "k3j9x0ab", "status": "published",
+  "link": "https://packandboard.com/t/#k3j9x0ab.&lt;key&gt;",
+  "warnings": [], "review_reason": null }</code></pre>
+<p>את <code>link</code> שולחים למטייל כמו שהוא, כולל כל מה שאחרי <code>#</code>.</p>
+<h3>עדכון טיול</h3>
+<pre tabindex="0"><code>curl -X PATCH https://pab-api.dana-lees.workers.dev/v1/trips/k3j9x0ab \
+  -H "Authorization: Bearer $PAB_KEY" -H "Content-Type: application/json" \
+  -d '{"patch": {"title": "שם חדש"}}'</code></pre>
+<p>הקישור נשאר זהה. המטייל רואה את העדכון בפתיחה הבאה (או ברענון).</p>
+<h3>מחיקה</h3>
+<pre tabindex="0"><code>curl -X DELETE https://pab-api.dana-lees.workers.dev/v1/trips/k3j9x0ab -H "Authorization: Bearer $PAB_KEY"</code></pre>
+
+<h2>סטטוסים</h2>
+<div class="scroll" tabindex="0" role="region" aria-label="טבלה, ניתנת לגלילה"><table>
+<tr><th>סטטוס</th><th>משמעות</th></tr>
+<tr><td><code>published</code></td><td>הקישור פעיל.</td></tr>
+<tr><td><code>needs_review</code></td><td>ממתין לאישור (החשבון מוגדר לאישור, או שהבדיקות מצאו משהו חריג, למשל יום מחוץ לתאריכי הטיול). <code>warnings</code> מסבירים. הקישור לא מציג כלום עד לאישור.</td></tr>
+<tr><td>422</td><td>הטיול נדחה. <code>details</code> אומר מה לתקן, ושולחים שוב.</td></tr>
+</table></div>
+
+<h2>מבנה הטיול</h2>
+<p>חובה: <code>title</code>, <code>dates.start</code> ו-<code>dates.end</code> (בפורמט YYYY-MM-DD, עד 60 יום), ו-<code>days</code> עם <code>date</code> ו-<code>title</code> לכל יום. כל השאר אופציונלי.</p>
+<div class="scroll" tabindex="0" role="region" aria-label="טבלה, ניתנת לגלילה"><table>
+<tr><th>שדה</th><th>מה</th></tr>
+<tr><td><code>days[].rows</code></td><td>שורות הפעילות של היום: <code>label</code> (בוקר, ערב...) ו-<code>text</code>.</td></tr>
+<tr><td><code>days[].tip</code>, <code>days[].places</code></td><td>טיפ ליום, ומקומות (נפתחים במפה).</td></tr>
+<tr><td><code>flights</code></td><td><code>dir</code> (out או back), <code>number</code>, <code>from</code>, <code>to</code>, <code>dep</code>, <code>arr</code> (תאריך ושעה עם אזור זמן).</td></tr>
+<tr><td><code>bookings</code>, <code>packing</code>, <code>tips</code>, <code>emergency</code></td><td>הזמנות, רשימת אריזה, טיפים כלליים ומספרי חירום.</td></tr>
+<tr><td><code>currency</code></td><td>קוד מטבע בן 3 אותיות, למשל <code>EUR</code>.</td></tr>
+<tr><td><code>brand</code></td><td><code>name</code>, <code>logo_url</code> (https בלבד), <code>colors</code> (<code>#RRGGBB</code>). ערכת הצבעים של המדריך נגזרת מהצבע הראשון. בלי צבע נבחר צבע לפי היעד.</td></tr>
+<tr><td><code>reference</code></td><td>מזהה שלכם (מספר הזמנה). לא מוצג למטייל.</td></tr>
+</table></div>
+<p>טקסט הוא טקסט רגיל. <code>**כך**</code> מדגיש. HTML מוצג כטקסט ולא מופעל.</p>
+<div class="box"><b>לא שולחים</b> מספרי דרכון, כרטיסי אשראי או פרטי תשלום. אין בהם צורך במדריך.</div>
+
+<h2>שגיאות ומגבלות</h2>
+<div class="scroll" tabindex="0" role="region" aria-label="טבלה, ניתנת לגלילה"><table>
+<tr><th>קוד</th><th>מה קרה</th></tr>
+<tr><td>401</td><td>מפתח לא תקין.</td></tr>
+<tr><td>403</td><td>החשבון הושבת, או שאין לו הרשאה לפעולה.</td></tr>
+<tr><td>404</td><td>טיול לא קיים או שאינו שלכם.</td></tr>
+<tr><td>413</td><td>הבקשה גדולה מדי: 200KB לטיול, 8MB לחומרים לבניית הטיול, ועד 8MB לכל מסמך לנוסעים.</td></tr>
+<tr><td>422</td><td>הטיול לא תקין. <code>details</code> מפרט.</td></tr>
+<tr><td>429</td><td>עברתם את המכסה החודשית, או 30 בקשות בשעה.</td></tr>
+</table></div>
+
+<h2>איך מקבלים מפתח</h2>
+<p class="contact">המפתח מונפק על ידינו, והוא מוצג פעם אחת בלבד. בחשבון חדש כל טיול ממתין לאישור שלנו עד שנצבר אמון, ואז עוברים לפרסום מיידי. פנו אלינו: <a href="https://wa.me/972537004934">וואטסאפ</a> או <a href="mailto:office@packandboard.com" dir="ltr">office@packandboard.com</a>.</p>
+
+</div>
+
+<h2>פרטיות</h2>
+<p>אתם אחראים לנתוני המטיילים שאתם שולחים. Pack &amp; Board מעבדת אותם רק כדי לבנות את המדריך. טיול שנמחק מוסר, והקישור מפסיק לעבוד. הסכם עיבוד מידע זמין לפי בקשה. ראו גם את <a href="/privacy/">מדיניות הפרטיות</a>.</p>
+</div>
+
+<script>
+(function(){
+  var API='https://pab-api.dana-lees.workers.dev';
+  var qa=/[?&]api=([^&]+)/.exec(location.search); if(qa && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) API=decodeURIComponent(qa[1]);   /* local test only */
+  var EXAMPLE={"title": "פורטוגל בחמישה ימים", "language": "he", "reference": "MY-ORDER-1", "dates": {"start": "2027-05-10", "end": "2027-05-14"}, "destination": {"country": "PT", "cities": [{"name": "Lisbon", "lat": 38.7223, "lng": -9.1393}, {"name": "Porto", "lat": 41.1579, "lng": -8.6291}]}, "days": [{"date": "2027-05-10", "title": "נחיתה בליסבון", "city": "Lisbon", "rows": [{"label": "טיסה", "text": "טיסה מ**תל אביב** ל**ליסבון**, נחיתה אחר הצהריים."}, {"label": "ערב", "text": "טיול רגלי בשכונת **אלפמה** וארוחת ערב בטברנה קטנה."}, {"label": "לינה", "text": "**Hotel Alfama Demo**, ליסבון."}], "tip": "החשמלית 28 צפופה בשעות היום. עדיף לעלות מוקדם בבוקר.", "places": [{"name": "אלפמה"}]}, {"date": "2027-05-11", "title": "ליסבון הקלאסית", "city": "Lisbon", "rows": [{"label": "בוקר", "text": "מגדל בלם ומנזר הירונימוס."}, {"label": "צהריים", "text": "פשטידות **פאשטל דה נאטה** במאפייה ההיסטורית."}, {"label": "ערב", "text": "שקיעה במרפסת **מיראדורו דה סנטה לוזיה**."}], "tip": "כרטיס משולב למנזר ולמגדל חוסך תור.", "places": [{"name": "מגדל בלם"}, {"name": "מנזר הירונימוס"}]}, {"date": "2027-05-12", "title": "סינטרה ביום אחד", "city": "Lisbon", "rows": [{"label": "בוקר", "text": "רכבת לסינטרה (40 דקות) וביקור בארמון **פנה**."}, {"label": "צהריים", "text": "ארוחה בעיירה ההיסטורית."}, {"label": "ערב", "text": "חזרה לליסבון וערב חופשי."}], "tip": "נעלי הליכה נוחות. יש עליות תלולות.", "places": [{"name": "ארמון פנה"}]}, {"date": "2027-05-13", "title": "רכבת לפורטו", "city": "Porto", "rows": [{"label": "בוקר", "text": "רכבת מהירה מליסבון לפורטו (כ-3 שעות)."}, {"label": "צהריים", "text": "ספריית **לבראריה לו** והשוק המקומי."}, {"label": "לינה", "text": "**Hotel Ribeira Demo**, פורטו."}], "tip": "הזמינו כרטיסי רכבת מראש.", "places": [{"name": "ריברה"}]}, {"date": "2027-05-14", "title": "יין, נהר ובית", "city": "Porto", "rows": [{"label": "בוקר", "text": "שיט על נהר הדורו."}, {"label": "צהריים", "text": "טעימות פורט במרתפי **וילה נובה דה גאיה**."}, {"label": "ערב", "text": "טיסה הביתה."}], "tip": "שעת ההמראה בשובר ההזמנה.", "places": [{"name": "וילה נובה דה גאיה"}]}], "flights": [{"dir": "out", "number": "XX 100", "from": "TLV", "to": "LIS", "dep": "2027-05-10T07:00:00+03:00", "arr": "2027-05-10T11:30:00+01:00"}, {"dir": "back", "number": "XX 101", "from": "OPO", "to": "TLV", "dep": "2027-05-14T20:00:00+01:00", "arr": "2027-05-15T02:00:00+03:00"}], "bookings": [{"type": "hotel", "title": "Hotel Alfama Demo", "body": "10-13 במאי, 3 לילות"}, {"type": "hotel", "title": "Hotel Ribeira Demo", "body": "13-14 במאי, לילה אחד"}], "packing": [{"group": "בגדים", "items": ["נעלי הליכה", "מעיל קל לערב", "כובע"]}, {"group": "מסמכים", "items": ["דרכון", "ביטוח נסיעות"]}], "tips": [{"title": "תשלום", "text": "כרטיס אשראי מתקבל כמעט בכל מקום. מזומן לקפה קטן."}], "emergency": [{"label": "חירום", "tel": "112"}], "currency": "EUR", "brand": {"name": "השם של החברה שלכם", "colors": ["#1F5F6B"]}};
+  var $=function(i){return document.getElementById(i)}, out=$('out'), t=$('t'), files=[];
+  function setExample(){ t.value=JSON.stringify(EXAMPLE,null,2); }
+  setExample();
+  var hk=/[#&]k=(pab_[a-z0-9]{20,60})/.exec(location.hash||'');
+  if(hk){ $('k').value=hk[1]; document.body.classList.add('partner');
+    fetch(API+'/v1/me',{headers:{'Authorization':'Bearer '+hk[1]}}).then(function(r){ return r.json(); }).then(function(me){
+      var b=(me&&me.brand)||{}, box=$('brand'); if(!me||!me.name) return;
+      if(b.colors&&/^#[0-9a-fA-F]{6}$/.test(b.colors[0])) box.style.background=b.colors[0];
+      if(b.logo_url&&b.logo_dark){ var i=document.createElement('img'); i.alt=b.name||me.name; i.referrerPolicy='no-referrer'; i.src=b.logo_url; box.appendChild(i); }
+      else box.appendChild(el('span',b.name||me.name));
+      document.title='יצירת טיול · '+(b.name||me.name);
+    }).catch(function(){});
+  }
+  function show(kind, nodes){ out.className='result show '+kind; out.textContent=''; nodes.forEach(function(n){ out.appendChild(typeof n==='string'?document.createTextNode(n):n); }); }
+  function el(tag, text, cls){ var e=document.createElement(tag); if(text) e.textContent=text; if(cls) e.className=cls; return e; }
+  function list(items){ var u=el('ul'); items.forEach(function(x){ u.appendChild(el('li', typeof x==='string'?x:JSON.stringify(x))); }); return u; }
+  var MSG={401:'המפתח לא תקין. בדקו שהדבקתם אותו כולו.',403:'החשבון הושבת או שאין לו הרשאה לפעולה.',413:'הבקשה גדולה מדי.',429:'עברתם את המכסה: 30 בקשות בשעה או המכסה החודשית.'};
+  var ERR={extraction_unavailable:'הקריאה האוטומטית אינה פעילה כרגע. פנו אלינו.',extraction_budget_reached:'הקריאה האוטומטית הגיעה לתקרה החודשית. פנו אלינו.',extraction_failed:'הקריאה האוטומטית נכשלה. נסו שוב בעוד רגע.',nothing_to_read:'צרפו קובץ או הדביקו טקסט.'};
+  function busy(b){ ['send','me','sendj'].forEach(function(i){ $(i).disabled=b; }); }
+  function call(method, path, body, msg){
+    var key=$('k').value.trim(); if(!key){ show('bad',['הדביקו קודם את מפתח ה-API.']); return Promise.resolve(null); }
+    busy(true); show('wait',[msg||'שולח...']);
+    var ac=new AbortController(), to=setTimeout(function(){ ac.abort(); },150000);
+    return fetch(API+path,{method:method,headers:{'Authorization':'Bearer '+key,'Content-Type':'application/json'},body:body,signal:ac.signal}).then(function(r){ return r.json().catch(function(){return {};}).then(function(j){ return {status:r.status,body:j}; }); })
+      .catch(function(){ show('bad',['אין חיבור לשרת, או שהקריאה לקחה יותר מדי זמן. נסו שוב.']); return null; }).then(function(x){ clearTimeout(to); busy(false); return x; });
+  }
+  function done(x){
+    if(!x) return; var b=x.body;
+    if(x.status===201){
+      var ok=b.status==='published', nodes=[el('strong', ok?'הטיול מוכן. שני הקישורים פעילים:':'הטיול התקבל וממתין לבדיקה שלנו. הקישורים יתחילו לעבוד אחרי האישור, ובינתיים אפשר לראות אותו כאן.')];
+      var good=function(u){ return typeof u==='string' && (u.indexOf('https://packandboard.com/t/')===0 || (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && u.indexOf(location.origin+'/t/')===0)); };
+      var lbox=function(title, u, hint){ var d=el('div',null,'lbox'); d.appendChild(el('b',title)); if(hint) d.appendChild(el('div',hint,'note'));
+        var a=el('a',u,'lnk'); a.href=u; a.target='_blank'; a.rel='noopener'; d.appendChild(a);
+        var c=el('button','העתקה'); c.type='button'; c.onclick=function(){ (navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(function(){ c.textContent='הועתק ✓'; setTimeout(function(){ c.textContent='העתקה'; },1500); },function(){ window.prompt('העתיקו:',u); }); }; d.appendChild(c); return d; };
+      var col=el('div');
+      if(good(b.link)) col.appendChild(lbox('קישור למטיילים', b.link, 'לשלוח למטיילים, בוואטסאפ או במייל.'));
+      if(good(b.manager_link)) col.appendChild(lbox('קישור ניהול לסוכן או למדריך', b.manager_link, 'פותחים אותו פעם אחת בטלפון או במחשב, ומופיע כפתור "עריכה". לא שולחים אותו למטיילים.'));
+      var view=ok?b.link:b.preview;
+      if(good(view)){ var two=el('div',null,'two'); two.appendChild(col); var ph=el('div'); var fr=el('div',null,'phone'); var ifr=document.createElement('iframe'); ifr.src=view; ifr.title='הטיול, כמו שהמטיילים יראו אותו'; fr.appendChild(ifr); ph.appendChild(fr); ph.appendChild(el('p','ככה המטיילים יראו את הטיול','phonecap')); two.appendChild(ph); nodes.push(two); }
+      else nodes.push(col);
+      if(!ok && b.review_reason && b.review_reason.indexOf('set to approve')<0) nodes.push(el('div','סיבה: '+b.review_reason));
+      if(b.notes && b.notes.length){ nodes.push(el('div','מה שלא היה ברור בקריאה:')); nodes.push(list(b.notes)); }
+      if(b.warnings && b.warnings.length){ nodes.push(el('div','אזהרות:')); nodes.push(list(b.warnings)); }
+      nodes.push(el('div','מזהה הטיול: '+b.trip_id)); show('ok',nodes);
+    } else if(x.status===422 && b.details){ show('bad',[el('strong', b.error==='extraction_incomplete'?'לא הצלחנו לבנות טיול שלם מהמסמכים:':'מה לתקן:'), list(b.details)].concat(b.notes&&b.notes.length?[el('div','הערות:'),list(b.notes)]:[])); }
+    else if(b.upstream_message && /credit balance/i.test(b.upstream_message)) show('bad',['הקריאה האוטומטית אינה זמינה כרגע. פנו אלינו.']);
+    else show('bad',[ERR[b.error]||MSG[x.status]||('שגיאה '+x.status+(b.error?' ('+b.error+')':''))]);
+  }
+  $('f').onchange=function(){
+    files=[]; var sel=Array.prototype.slice.call($('f').files), total=0; $('fl').textContent='';
+    if(sel.length>8){ $('fl').textContent='עד 8 קבצים.'; $('f').value=''; return; }
+    sel.forEach(function(f){ total+=f.size; });
+    if(total>6*1024*1024){ $('fl').textContent='הקבצים גדולים מדי (עד 6MB בסך הכול).'; $('f').value=''; return; }
+    var left=sel.length; if(!left) return;
+    sel.forEach(function(f){ var r=new FileReader(); r.onload=function(){ files.push({name:f.name,data:String(r.result).split(',')[1]||''}); if(--left===0){ $('fl').innerHTML=''; files.forEach(function(x,i){ if(i) $('fl').appendChild(document.createTextNode(' · ')); var b=document.createElement('bdi'); b.textContent=x.name; $('fl').appendChild(b); }); } }; r.readAsDataURL(f); });
+  };
+  // the travellers' documents: kept in the trip, each with its kind and the booking it belongs to
+  var tdocs=[], KINDS=[['flight','טיסה'],['train','רכבת'],['entry','כניסה'],['hotel','מלון'],['visa','ויזה'],['car','רכב'],['transfer','העברה'],['insurance','ביטוח'],['other','אחר']];
+  $('td').onchange=function(){
+    tdocs=[]; $('tdl').innerHTML=''; var sel=Array.prototype.slice.call($('td').files);
+    if(sel.length>8){ $('tdl').textContent='עד 8 מסמכים.'; $('td').value=''; return; }
+    if(sel.some(function(f){ return f.size>8*1024*1024; })){ $('tdl').textContent='כל מסמך עד 8MB.'; $('td').value=''; return; }
+    sel.forEach(function(f,i){ var d={name:f.name.replace(/\.[a-z0-9]+$/i,''),data:'',kind:/train|rail|רכבת/i.test(f.name)?'train':/visa|ויזה/i.test(f.name)?'visa':/hotel|voucher|מלון/i.test(f.name)?'hotel':'flight',booking:''}; tdocs.push(d);
+      var row=document.createElement('div'); row.className='tdoc';
+      row.innerHTML='<b><bdi></bdi></b><select aria-label="סוג המסמך">'+KINDS.map(function(k){ return '<option value="'+k[0]+'"'+(k[0]===d.kind?' selected':'')+'>'+k[1]+'</option>'; }).join('')+'</select><input type="text" aria-label="לאיזו הזמנה" placeholder="מספר טיסה או שם המלון (לא חובה)">';
+      row.querySelector('bdi').textContent=f.name; row.querySelector('select').onchange=function(){ d.kind=this.value; }; row.querySelector('input').oninput=function(){ d.booking=this.value.trim(); };
+      $('tdl').appendChild(row);
+      var r=new FileReader(); r.onload=function(){ d.data=String(r.result).split(',')[1]||''; }; r.readAsDataURL(f); });
+  };
+  $('send').onclick=function(){
+    var txt=$('x').value.trim(); if(!files.length && !txt){ show('bad',['צרפו קובץ או הדביקו טקסט.']); return; }
+    if(tdocs.some(function(d){ return !d.data; })){ show('bad',['המסמכים עוד נטענים. נסו שוב בעוד רגע.']); return; }
+    var body={files:files,text:txt}; if($('ti').value.trim()) body.title=$('ti').value.trim();
+    if(tdocs.length) body.documents=tdocs.map(function(d){ var o={name:d.name,data:d.data,kind:d.kind}; if(d.booking) o.booking=d.booking; return o; });
+    call('POST','/v1/trips/from-documents',JSON.stringify(body),'קוראים את המסמכים ובונים את הטיול. זה לוקח עד דקה...').then(done);
+  };
+  $('sendj').onclick=function(){
+    var data; try{ data=JSON.parse(t.value); }catch(e){ show('bad',['ה-JSON לא תקין: '+e.message]); return; }
+    call('POST','/v1/trips',JSON.stringify(data)).then(done);
+  };
+  $('me').onclick=function(){
+    call('GET','/v1/me').then(function(x){ if(!x) return; var b=x.body;
+      if(x.status===200) show('ok',[el('strong','המפתח תקין.'), list(['שם: '+b.name,'מצב פרסום: '+(b.approval==='manual'?'כל טיול ממתין לאישור':'מיידי'),'מכסה חודשית: '+b.quota.used+' מתוך '+b.quota.per_month])]);
+      else show('bad',[MSG[x.status]||('שגיאה '+x.status)]); });
+  };
+  $('reset').onclick=function(){ setExample(); show('wait',['הוחזרה הדוגמה.']); };
+})();
+</script>
+</body>
+</html>
