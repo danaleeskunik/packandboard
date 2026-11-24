@@ -1,0 +1,18 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["BGBC2H7334.com.packandboard.app"],
+        "components": [
+          { "/": "/dana/*", "exclude": true, "comment": "dashboard" },
+          { "/": "/agent/*", "exclude": true, "comment": "agent builder" },
+          { "/": "/api/*", "exclude": true },
+          { "/": "/meet-*", "exclude": true, "comment": "meeting pages" },
+          { "/": "/proposal-*", "exclude": true, "comment": "price proposals open in the browser" },
+          { "/": "/cover-*", "exclude": true },
+          { "/": "/*", "#": "p=*", "comment": "a trip link (traveller, guide or manager) carries #p=<key>: it opens in the app when installed" }
+        ]
+      }
+    ]
+  }
+}
