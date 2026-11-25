@@ -3236,7 +3236,150 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
   document.addEventListener('pab:msgs',function(){ list=(P.msgs||[]).slice(); paint(); });   /* a message sent from the guide screen */
 })();
 </script>
-<style>
+<style id="pab-gdl-css">
+.pab-gb{margin:12px 0 6px;border-radius:16px;background:color-mix(in srgb,var(--navy-800,#1A3B34) 7%,#fff);border:1px solid color-mix(in srgb,var(--navy-800,#1A3B34) 20%,#fff);overflow:hidden;font-family:var(--font-ui,Heebo,system-ui,sans-serif)}
+.pab-gb-h{display:flex;align-items:center;gap:10px;width:100%;padding:11px 12px;background:none;border:0;font:inherit;color:var(--navy-800,#1A3B34);text-align:start;cursor:pointer;min-height:52px}
+.pab-gb-ic{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--navy-800,#1A3B34);color:#fff}
+.pab-gb-ic svg,.pab-gb-call svg{width:16px;height:16px}
+.pab-gb-t{flex:1;min-width:0}.pab-gb-t b{display:block;font-size:13px;letter-spacing:.02em}
+.pab-gb-t span{display:block;font-size:13.5px;line-height:1.4;color:var(--ink-2,#3a4a55)}
+.pab-gb-ch{flex:none;width:18px;height:18px}
+.pab-gb.open .pab-gb-ch{transform:rotate(180deg)}
+.pab-gb-b{display:none;padding:0 12px 12px}.pab-gb.open .pab-gb-b{display:block}
+.pab-gb-r{display:flex;gap:10px;align-items:center;padding:9px 0;border-top:1px solid color-mix(in srgb,var(--navy-800,#1A3B34) 13%,#fff);font-size:14px;line-height:1.4;color:var(--ink-1,#14212E)}
+.pab-gb-r .k{flex:0 0 76px;font-size:12.5px;font-weight:700;color:var(--ink-2,#56677A)}
+.pab-gb-r .v{flex:1;min-width:0}.pab-gb-r .v small{display:block;color:var(--ink-2,#56677A);font-size:12.5px}
+.pab-gb-r .it{white-space:nowrap}
+@media (max-width:380px){.pab-gb-r .k{flex-basis:62px}}
+.pab-gb-call{position:relative;flex:none;width:36px;height:36px;margin:4px;border-radius:50%;border:1px solid color-mix(in srgb,var(--navy-800,#1A3B34) 25%,#fff);background:#fff;display:grid;place-items:center;color:var(--navy-800,#1A3B34);text-decoration:none}
+.pab-gb-call::after{content:'';position:absolute;inset:-4px;border-radius:50%}
+.pab-gb-tag{display:inline-block;font-size:11.5px;font-weight:700;border-radius:999px;padding:1px 8px;margin:2px 0 0;margin-inline-end:4px;background:#E4F3EB;color:#1E6B4A}
+.pab-gb-tag.r{background:#FCE8EA;color:#A3202C}.pab-gb-tag.b{background:#E5EEF9;color:#1D5FA6}
+.pab-gb-acts{display:flex;gap:8px;margin-top:10px}
+.pab-gb-acts button{flex:1;min-height:42px;border-radius:12px;border:1.5px solid var(--navy-800,#1A3B34);background:var(--navy-800,#1A3B34);color:#fff;font:700 14px/1.2 var(--font-ui,Heebo,system-ui,sans-serif);cursor:pointer}
+.pab-gb-acts button.g{background:#fff;color:var(--navy-800,#1A3B34)}
+#pab-gfab{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);z-index:950;display:flex;align-items:center;gap:8px;padding:0 18px;height:46px;border-radius:999px;border:0;background:var(--navy-800,#1A3B34);color:#fff;font:700 15px/1 var(--font-ui,Heebo,system-ui,sans-serif);box-shadow:0 8px 22px rgba(0,0,0,.25);cursor:pointer;white-space:nowrap}
+#pab-gfab svg{width:18px;height:18px}
+body.pab-gl-on{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+body.pab-gs-open #pab-gfab,body.pab-gsh-open #pab-gfab{display:none}
+#pab-gsh{position:fixed;inset:0;z-index:9980;background:rgba(10,20,25,.45);display:none;align-items:flex-end;justify-content:center}
+#pab-gsh.open{display:flex}
+#pab-gsh .c{background:#fff;width:100%;max-width:520px;border-radius:22px 22px 0 0;padding:10px 16px calc(22px + env(safe-area-inset-bottom,0px));font-family:var(--font-ui,Heebo,system-ui,sans-serif)}
+#pab-gsh .c{position:relative}#pab-gsh .x{position:absolute;top:10px;inset-inline-end:10px;width:44px;height:44px;border-radius:50%;border:0;background:#F1F4F2;color:#1A3B34;display:grid;place-items:center;cursor:pointer}
+#pab-gsh .g{width:40px;height:5px;border-radius:3px;background:#E2E8EF;margin:0 auto 12px}
+#pab-gsh h2{margin:0 0 2px;font-size:18px;color:var(--navy-800,#1A3B34)}#pab-gsh p{margin:0 0 12px;font-size:13px;color:#56677A}
+#pab-gsh .l{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#pab-gsh .l button{display:flex;align-items:center;gap:10px;min-height:56px;padding:0 12px;border-radius:14px;border:1px solid color-mix(in srgb,var(--navy-800,#1A3B34) 20%,#fff);background:color-mix(in srgb,var(--navy-800,#1A3B34) 7%,#fff);font:700 14.5px/1.25 var(--font-ui,Heebo,system-ui,sans-serif);color:var(--navy-800,#1A3B34);text-align:start;cursor:pointer}
+#pab-gsh .l i{flex:none;width:32px;height:32px;border-radius:50%;background:var(--navy-800,#1A3B34);color:#fff;display:grid;place-items:center}
+#pab-gsh .l i svg{width:17px;height:17px}
+@media print{.pab-gb,#pab-gfab,#pab-gsh{display:none!important}}
+</style>
+<script>
+window.PAB_GUIDE_LAYER=function(opts){
+  function curLang(){ return (typeof CURRENT_LANG!=='undefined'&&CURRENT_LANG&&CURRENT_LANG!=='he')?'en':'he'; }
+  var LANG=opts.lang||curLang();
+  function tx(he,en){ return LANG==='he'?he:en; }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  var SV=function(p){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+p+'</svg>'; };
+  var IC={flag:SV('<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>'), phone:SV('<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/>'),
+    ch:'<svg class="pab-gb-ch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>',
+    sup:SV('<path d="M3 7h18v13H3zM8 7V4h8v3"/>'), hot:SV('<path d="M3 20V6l9-3 9 3v14M9 20v-5h6v5"/>'), pax:SV('<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 4.5a3 3 0 0 1 0 6M21 20c0-2.6-1.6-4.8-4-5.6"/>'),
+    fly:SV('<path d="M2 16l20-6-3-2-6 2-7-5-2 1 4 6-4 1-2-1-1 1 3 3z"/>'), msg:SV('<path d="M4 5h16v11H8l-4 4z"/>'), off:SV('<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5h6v2M3 13h18"/>')};
+  function tabs(){ return [['sup',tx('ספקים','Suppliers')],['hot',tx('מלונות','Hotels')],['pax',tx('נוסעים וחדרים','Travellers & rooms')],['fly',tx('טיסות','Flights')],['msg',tx('הודעות לקבוצה','Messages to the group')],['off',tx('המשרד','Office')]]; }
+  var D=null;
+
+  /* ---- day numbers out of "יום 5", "ימים 1–3", "לילות 4–5", "Days 1–7", "כל הטיול", "Every day" */
+  function covers(when,n){
+    var s=String(when||''); if(!s) return false;
+    if(/כל|every|all/i.test(s)) return true;
+    var m=s.match(/\d+/g); if(!m) return false;
+    var a=+m[0], b=m.length>1?+m[1]:a; return n>=a&&n<=b;
+  }
+  function isTransport(t){ return /תחבור|הסע|transport|transfer/i.test(String(t||'')); }
+  function tel(p,who){ var d=String(p||'').replace(/[^\d+]/g,''); return d.length>5?'<a class="pab-gb-call" href="tel:'+esc(d)+'" aria-label="'+esc(tx('שיחה','Call')+(who?' '+who:''))+'">'+IC.phone+'</a>':''; }
+  /* the small details line: each part kept whole (no '·' left at a line end), codes in <bdi> so they keep their order in Hebrew */
+  function det(parts){ return parts.filter(function(x){ return x; }).map(function(x,i){ return '<span class="it">'+(i?'· ':'')+x+'</span>'; }).join(' '); }
+  function code(label,x){ return x?esc(label)+' <bdi>'+esc(x)+'</bdi>':''; }
+  function cnt(k){ return (D.people||[]).filter(function(p){ return p.need===k; }).length; }
+  function cardDM(card){ var hd=card.children[1]?card.children[1].textContent:card.textContent.slice(0,120); var m=hd.match(/(\d{1,2})\.(\d{1,2})(?!\d)/); return m?(+m[1])+'.'+(+m[2]):''; }
+  function isToday(card){ var t=new Date(); return cardDM(card)===t.getDate()+'.'+(t.getMonth()+1); }
+
+  function band(card){
+    var n=+card.getAttribute('data-daycard'); if(!n) return;
+    var old=card.querySelector(':scope > .pab-gb'); if(old) old.remove();
+    var rows=[], sum=[], today=isToday(card);
+    var sup=(D.suppliers||[]).filter(function(s){ return covers(s[5],n); });
+    sup.filter(function(s){ return isTransport(s[0]); }).slice(0,1).forEach(function(s){
+      rows.push('<div class="pab-gb-r"><span class="k">'+esc(tx('נהג','Transport'))+'</span><span class="v">'+esc(s[2]||s[1])+'<small>'+det([esc(s[1]),code(tx('הזמנה','Booking'),s[4])])+'</small></span>'+tel(s[3],s[2]||s[1])+'</div>');
+      sum.push((s[2]||s[1]).split(',')[0]); });
+    sup.filter(function(s){ return !isTransport(s[0]); }).forEach(function(s,i){
+      rows.push('<div class="pab-gb-r"><span class="k">'+(i?'':esc(tx('ספקים היום','Suppliers today')))+'</span><span class="v">'+esc(s[1])+'<small>'+det([esc(s[2]),code(tx('הזמנה','Booking'),s[4])])+'</small></span>'+tel(s[3],s[1])+'</div>');
+      if(i<1) sum.push(s[1]); });
+    var P=D.people||[];
+    if(P.length){
+      var tags=[['veg',tx('צמחונים','vegetarian'),''],['gf',tx('ללא גלוטן','gluten-free'),''],['allergy',tx('אלרגיה','allergy'),' r'],['med',tx('רפואי','medical'),' r'],['mobility',tx('ניידות','mobility'),' b']]
+        .map(function(t){ var c=cnt(t[0]); return c?'<span class="pab-gb-tag'+t[2]+'">'+c+' '+esc(t[1])+'</span>':''; }).join('');
+      rows.push('<div class="pab-gb-r"><span class="k">'+esc(tx('ארוחות','Meals'))+'</span><span class="v">'+P.length+' '+esc(tx('סועדים','diners'))+(tags?'<small>'+tags+'</small>':'')+'</span></div>');
+      sum.push(P.length+' '+tx('סועדים','diners'));
+    }
+    (D.hotels||[]).filter(function(h){ return h.nights&&covers(h.nights,n); }).slice(0,1).forEach(function(h){
+      var rooms=P.length?Math.ceil(P.length/2):0;
+      rows.push('<div class="pab-gb-r"><span class="k">'+esc(tx('מלון הלילה','Tonight'))+'</span><span class="v">'+esc(h.name)+(h.city?', '+esc(h.city):'')+'<small>'+det([code(tx('הזמנה','Booking'),h.ref),rooms?esc(rooms+' '+tx('חדרים','rooms')):'',h.cin?esc(tx('צ׳ק-אין','Check-in'))+' <bdi>'+esc(h.cin)+'</bdi>':''])+'</small></span>'+tel(h.phone,h.name)+'</div>');
+      if(sum.length<3) sum.push(h.short||h.name); });
+    var dm=cardDM(card);
+    (D.flights||[]).filter(function(f){ var w=String(f[3]||''), iso=/(\d{4})-(\d{2})-(\d{2})/.exec(w); return iso?(dm&&(+iso[3])+'.'+(+iso[2])===dm):covers(w.split('·')[0],n); }).forEach(function(f){
+      rows.push('<div class="pab-gb-r"><span class="k">'+esc(tx('טיסה','Flight'))+'</span><span class="v"><bdi>'+esc(f[1])+'</bdi><small>'+det([esc(f[2]),'<bdi>'+esc(String(f[3]).replace(/^\d{4}-\d{2}-\d{2}[ T]?/,''))+'</bdi>'])+'</small></span></div>'); sum.unshift(tx('טיסה','Flight')+' '+f[1]); });
+    var O=D.office||{};
+    if(today&&(O.name||O.phone)){
+      var last=(O.msgs||[]).filter(function(m){ return m[0]==='them'; }).slice(-1)[0];
+      rows.push('<div class="pab-gb-r"><span class="k">'+esc(tx('המשרד','Office'))+'</span><span class="v">'+esc(last?last[2]:O.name)+'<small>'+esc(last?O.name:O.org||'')+'</small></span>'+tel(O.phone,O.name)+'</div>');
+    }
+    var acts='<div class="pab-gb-acts">'+(P.length?'<button type="button" data-go="count">'+esc(tx('ספירה לפני יציאה','Head count'))+'</button>':'')+'<button type="button"'+(P.length?' class="g"':'')+' data-go="msg">'+esc(tx('הודעה לקבוצה','Message the group'))+'</button></div>';
+    var b=document.createElement('div'); b.className='pab-gb'; b.setAttribute('data-noprint','');
+    var bid='pab-gb-'+n; b.innerHTML='<button class="pab-gb-h" type="button" aria-expanded="false" aria-controls="'+bid+'"><span class="pab-gb-ic">'+IC.flag+'</span><span class="pab-gb-t"><b>'+esc(tx('למדריך','For the guide'))+'</b><span>'+
+      esc(sum.length?sum.slice(0,3).join(' · '):tx('הודעה לקבוצה וכלי המדריך','Messages and the guide tools'))+'</span></span>'+IC.ch+'</button><div class="pab-gb-b" id="'+bid+'">'+rows.join('')+acts+'</div>';
+    b.querySelector('.pab-gb-h').addEventListener('click',function(){ var o=b.classList.toggle('open'); this.setAttribute('aria-expanded',o?'true':'false'); });
+    [].forEach.call(b.querySelectorAll('[data-go]'),function(x){ x.addEventListener('click',function(){ opts.open(x.getAttribute('data-go')); }); });
+    var head=card.children[1]&&!card.children[1].classList.contains('day-watermark')?card.children[1]:card.firstElementChild;
+    if(head&&head.nextSibling) card.insertBefore(b,head.nextSibling); else card.appendChild(b);
+  }
+  function paintAll(){ if(!D) return; [].forEach.call(document.querySelectorAll('[data-daycard]'),band); }
+
+  /* ---- the floating button and its sheet */
+  var fab=document.createElement('button'); fab.type='button'; fab.id='pab-gfab'; fab.setAttribute('data-noprint','');
+  fab.innerHTML=IC.flag+esc(tx('מסך המדריך','Guide screen'));
+  var sh=document.createElement('div'); sh.id='pab-gsh'; sh.setAttribute('role','dialog'); sh.setAttribute('aria-modal','true'); sh.setAttribute('aria-label',tx('מסך המדריך','Guide screen'));
+  function sheet(){
+    var hide=(D&&D.hideTabs)||[];
+    sh.innerHTML='<div class="c"><div class="g"></div><button type="button" class="x" aria-label="'+esc(tx('סגירה','Close'))+'"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button><h2>'+esc(tx('מסך המדריך','Guide screen'))+'</h2><p>'+esc(tx('רק המדריך רואה את זה.','Only the guide sees this.'))+'</p><div class="l">'+
+      tabs().filter(function(t){ return hide.indexOf(t[0])<0; }).map(function(t){ return '<button type="button" data-go="'+t[0]+'"><i>'+IC[t[0]]+'</i>'+esc(t[1])+'</button>'; }).join('')+'</div></div>';
+    [].forEach.call(sh.querySelectorAll('[data-go]'),function(x){ x.addEventListener('click',function(){ closeSheet(true); opts.open(x.getAttribute('data-go')); }); });
+    sh.querySelector('.x').addEventListener('click',function(){ closeSheet(); });
+  }
+  function closeSheet(keep){ sh.classList.remove('open'); document.body.classList.remove('pab-gsh-open'); if(!keep) fab.focus(); }
+  fab.addEventListener('click',function(){ sheet(); sh.classList.add('open'); document.body.classList.add('pab-gsh-open'); var f=sh.querySelector('button'); if(f) f.focus(); });
+  sh.addEventListener('click',function(e){ if(e.target===sh) closeSheet(); });
+  document.addEventListener('keydown',function(e){ if(!sh.classList.contains('open')) return; if(e.key==='Escape') closeSheet();
+    if(e.key==='Tab'){ var f=[].slice.call(sh.querySelectorAll('button')); if(!f.length) return; var a=f[0], z=f[f.length-1];   /* keep the focus inside the sheet */
+      if(e.shiftKey&&document.activeElement===a){ e.preventDefault(); z.focus(); } else if(!e.shiftKey&&document.activeElement===z){ e.preventDefault(); a.focus(); } } });
+  document.body.appendChild(fab); document.body.appendChild(sh); document.body.classList.add('pab-gl-on');
+
+  /* ---- during the trip: open straight on today's day card (once per visit, only from the home screen) */
+  var todayDone=false, T0=Date.now();
+  function openToday(){
+    if(todayDone||Date.now()-T0>8000) return; if(/[#&?](screen|day)=/.test(location.hash+location.search)){ todayDone=true; return; }
+    var cards=[].slice.call(document.querySelectorAll('[data-daycard]')), c=cards.filter(isToday)[0]; if(!c) return; todayDone=true;
+    try{ if(typeof showScreen==='function') showScreen('days'); var n=c.getAttribute('data-daycard'), pill=document.querySelector('[data-pill="'+n+'"]'); if(pill&&typeof selectDay==='function') selectDay(pill); setTimeout(function(){ var y=c.getBoundingClientRect().top+window.pageYOffset-24; window.scrollTo({top:y,behavior:'instant'}); },60); }catch(e){}
+  }
+
+  Promise.resolve(typeof opts.data==='function'?opts.data():opts.data).then(function(d){ if(!d) return; D=d; paintAll(); openToday();
+    /* day cards drawn again later (language switch, manager edits) get their band again */
+    var mo=new MutationObserver(function(){ [].forEach.call(document.querySelectorAll('[data-daycard]'),function(c){ if(!c.querySelector(':scope > .pab-gb')) band(c); }); openToday(); });   /* API trips draw their days after loading */
+    mo.observe(document.body,{childList:true,subtree:true});
+    document.addEventListener('pab:lang',function(){ LANG=curLang(); sh.setAttribute('aria-label',tx('מסך המדריך','Guide screen')); fab.innerHTML=IC.flag+esc(tx('מסך המדריך','Guide screen')); paintAll(); });
+  }).catch(function(){});
+};
+</script><style>
 #pab-gs-card{display:flex;align-items:center;gap:12px;margin:14px 0 4px;padding:14px 16px;border-radius:16px;background:var(--navy-800,#17352A);color:#fff;border:0;width:100%;text-align:start;cursor:pointer;font-family:var(--font-ui,Heebo,sans-serif)}
 #pab-gs-card .i{flex:0 0 42px;height:42px;border-radius:12px;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center}
 #pab-gs-card b{display:block;font:700 16px/1.3 var(--font-ui,Heebo,sans-serif)}#pab-gs-card span.s{display:block;opacity:.85;font:500 13px/1.4 var(--font-ui,Heebo,sans-serif)}
@@ -3276,22 +3419,19 @@ body.pab-gs-open{overflow:hidden}
   }
   var BUS='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="15" rx="3"/><path d="M4 11h16M8 18v3M16 18v3"/><circle cx="8" cy="14.5" r=".6"/><circle cx="16" cy="14.5" r=".6"/></svg>';
   var X='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
-  var nav=document.querySelector('.home-nav'); if(!nav) return;
-  var c=document.createElement('button'); c.type='button'; c.id='pab-gs-card';
-  c.innerHTML='<span class="i">'+BUS+'</span><span><b>מסך המדריך</b><span class="s">התוכנית של היום, מלונות, טיסות, חירום והודעות לקבוצה</span></span>';
-  nav.parentNode.insertBefore(c,nav);
-  function sync(){ c.style.display=(nav.style.display==='none')?'none':'flex'; }
-  ['showScreen','showHome'].forEach(function(f){ var o=window[f]; if(typeof o==='function') window[f]=function(){ var r=o.apply(this,arguments); sync(); return r; }; });
   var box=null;
-  function open(){
+  function open(tab){ if(typeof tab!=='string') tab='';
     if(!box){ box=document.createElement('div'); box.id='pab-gs'; box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true'); box.setAttribute('aria-label','מסך המדריך');
       box.innerHTML='<button type="button" class="x" aria-label="סגירה">'+X+'</button>'; box.querySelector('.x').addEventListener('click',close); document.body.appendChild(box); }
     window.PAB_GD=data();
-    var f=box.querySelector('iframe'); if(f) f.remove(); f=document.createElement('iframe'); f.title='מסך המדריך'; box.insertBefore(f,box.firstChild); f.srcdoc=APP;
+    var f=box.querySelector('iframe'); if(f) f.remove(); f=document.createElement('iframe'); f.title='מסך המדריך'; box.insertBefore(f,box.firstChild);
+    if(tab) f.addEventListener('load',function(){ try{ f.contentWindow.postMessage({pabGuide:tab},'*'); }catch(x){} },{once:true});
+    f.srcdoc=APP;
     box.classList.add('open'); document.body.classList.add('pab-gs-open');
   }
   function close(){ if(box) box.classList.remove('open'); document.body.classList.remove('pab-gs-open'); }
-  c.addEventListener('click',open);
+  /* the guide's way in (scripts/guide_day_layer.py, 2026-11-25): a band in every day card, the floating button, today's day first */
+  if(window.PAB_GUIDE_LAYER) window.PAB_GUIDE_LAYER({data:data,open:open});   /* the page's own language (Hebrew, or English on /t/es-en/) */
   document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&box&&box.classList.contains('open')) close(); });
   window.addEventListener('message',function(e){
     if(!e.data||!e.data.pabSend||!box||!box.querySelector('iframe')||e.source!==box.querySelector('iframe').contentWindow) return;
