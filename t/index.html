@@ -3360,6 +3360,11 @@ window.PAB_GUIDE_LAYER=function(opts){
     if(e.key==='Tab'){ var f=[].slice.call(sh.querySelectorAll('button')); if(!f.length) return; var a=f[0], z=f[f.length-1];   /* keep the focus inside the sheet */
       if(e.shiftKey&&document.activeElement===a){ e.preventDefault(); z.focus(); } else if(!e.shiftKey&&document.activeElement===z){ e.preventDefault(); a.focus(); } } });
   document.body.appendChild(fab); document.body.appendChild(sh); document.body.classList.add('pab-gl-on');
+  /* the trip manager's editing bar (add_trip_editing.py, #pab-bar) also sits at the bottom centre: the guide button goes above it */
+  function place(){ var bar=document.getElementById('pab-bar'), h=0; if(bar&&bar.children.length&&getComputedStyle(bar).display!=='none'){ var r=bar.getBoundingClientRect(); if(r.height>0) h=Math.round(r.height)+12; }   /* fixed: no offsetParent */
+    if(h===place.h) return; place.h=h;   /* only when it changes, so the observer does not call itself */
+    fab.style.bottom=h?'calc('+(h+20)+'px + env(safe-area-inset-bottom,0px))':''; document.body.style.paddingBottom=h?'calc('+(h+84)+'px + env(safe-area-inset-bottom,0px))':''; }
+  place.h=0; place(); new MutationObserver(place).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['style','class','hidden']}); window.addEventListener('resize',place);
 
   /* ---- during the trip: open straight on today's day card (once per visit, only from the home screen) */
   var todayDone=false, T0=Date.now();
