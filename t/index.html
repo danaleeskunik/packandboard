@@ -179,7 +179,7 @@
   var x=new XMLHttpRequest(); x.open('GET',API+'/v1/public/trips/'+m[1],false); x.setRequestHeader('Authorization','Bearer '+m[2]);
   try{ x.send(); }catch(e){ return stop("אין חיבור לשרת. נסו שוב כשיש חיבור."); }
   if(x.status!==200) return stop(x.status===404?"הטיול לא נמצא, או שעוד לא אושר לפרסום.":"לא הצלחנו לטעון את הטיול. נסו שוב בעוד רגע.");
-  var d; try{ d=JSON.parse(x.responseText); window.__PAB=PAB_RENDER.build(d.trip,d.brand); window.__PAB.firstLang=d.trip.language; window.__PAB.hasProgram=!!d.trip.program;
+  var d; try{ d=JSON.parse(x.responseText); window.__PAB=PAB_RENDER.build(d.trip,d.brand); window.__PAB.firstLang=d.trip.language; window.PAB_WAZE=d.trip.waze===true; window.__PAB.hasProgram=!!d.trip.program;
     window.__PAB.docs=Array.isArray(d.documents)?d.documents:[]; window.__PAB.docBase=API+'/v1/public/trips/'+m[1]+'/documents/'; window.__PAB.rk=m[2];
     if(window.__PAB.docs.length) document.documentElement.classList.add('pab-has-docs');
     window.__PAB.api=API; window.__PAB.tid=m[1]; window.__PAB.msgs=Array.isArray(d.messages)?d.messages:[];
@@ -2864,6 +2864,13 @@ hydrateFromSupabase();
     '#app-footer{padding-inline:20px;box-sizing:border-box;overflow-wrap:anywhere}'+
     /* home buttons: 4px more room on each side (was 10px), so labels do not hug the edge of the tile (Dana, 2026-11-04) */
     '.home-tile:not(#tile-days-featured){padding-inline:14px}'+
+    /* where tiles are ~160px wide (a computer's 5 columns, a 360px phone's 2): 12px a side so a three-word label ("מסעדות והמלצות אוכל") stays on one line like the others (design-review 2026-11-25) */
+    '@media (max-width:379px),(min-width:900px){.home-tile:not(#tile-days-featured){padding-inline:12px}}'+
+    /* the big day number ("02") behind each day card sat 20px above the card and its top was cut by the card edge */
+    '.day-watermark{top:-4px !important}'+
+    /* the days screen had "חזרה לתפריט" twice in a row (above the day strip and again above the day): keep the first one only.
+       Only while the day strip is on (applyTripDemo removes its data-screen when a trip has no day pills; then this is the only back button) */
+    'body:has(#days-pillbar[data-screen="days"]) #days-content>div[data-dir-flip]:first-child:has(>button[data-i18n="back"]){display:none !important}'+
     /* EVERY dropdown: the arrow is a custom chevron set in from the edge (16px), never the native arrow hugging the border. Dana's standing rule (asked many times, 2026-11-06). !important because inline background shorthands reset background-image. */
     'select{-webkit-appearance:none !important;appearance:none !important;background-image:url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMiIgaGVpZ2h0PSI4IiB2aWV3Qm94PSIwIDAgMTIgOCI+PHBhdGggZD0iTTEgMS41bDUgNSA1LTUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzVCNUU1MCIgc3Ryb2tlLXdpZHRoPSIxLjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPg==) !important;background-repeat:no-repeat !important;background-position:left 16px center !important;background-size:12px 8px !important;padding-left:40px !important}';
   document.head.appendChild(cst);
@@ -2882,28 +2889,25 @@ hydrateFromSupabase();
       n.target='_blank'; n.rel='noopener'; n.style.color=a.style.color||'var(--blue-600)';
       n.setAttribute('aria-label','ניווט אל '+(a.textContent||'').trim()); n.title='ניווט'; n.innerHTML=NAV_SVG;
       w.appendChild(n);
-      var z=document.createElement('a'); z.className='pab-nav pab-waze'; z.href=wazeUrl(m[1]); z.target='_blank'; z.rel='noopener'; z.style.color=n.style.color;
-      z.setAttribute('aria-label','ניווט ב-Waze אל '+(a.textContent||'').trim()); z.title='Waze'; z.textContent='Waze'; w.appendChild(z);
       var row=w.parentNode, card=a.closest('[data-daycard]');
       if(card&&card===document.querySelector('[data-daycard]')&&row&&!row.querySelector('.pab-chip-hint')){
-        var t=document.createElement('div'); t.className='pab-chip-hint'; t.textContent='לחיצה על השם: המקום במפה · על החץ או על Waze: ניווט'; row.insertBefore(t,row.firstChild);
+        var t=document.createElement('div'); t.className='pab-chip-hint'; t.textContent='לחיצה על השם: המקום במפה · על החץ: ניווט'; row.insertBefore(t,row.firstChild);
       }
     });
-    /* Waze next to every "open in maps" button (hotels, bookings, the day map), all apps (Dana 2026-11-24) */
-    [].forEach.call(document.querySelectorAll('a[href*="google."]'),function(a){
-      if(a.getAttribute('data-pab-waze')||a.closest('.pab-chip')||a.closest('[data-pab-panel]')) return;
-      var h=a.getAttribute('href')||'', m=/\/maps\/(?:search|dir)\/\?api=1&(?:amp;)?(?:query|destination)=([^&#]+)/.exec(h);
-      var t=(a.textContent||'').trim();
-      if(!m||!/^(פתיחה במפות|פתח במפות|Open in (Google )?Maps|Abrir en (Google )?Maps|Maps)$/i.test(t)&&!a.closest('.day-map-caption')) return;
-      a.setAttribute('data-pab-waze','1');
-      var z=document.createElement('a'); z.href=wazeUrl(m[1]); z.target='_blank'; z.rel='noopener'; z.textContent='Waze'; z.className='pab-waze-btn';
-      z.setAttribute('aria-label','ניווט ב-Waze'+(t?'':''));
-      if(a.closest('.day-map-caption')){ z.style.cssText='margin-inline-start:10px;font-weight:700;white-space:nowrap'; z.style.color=getComputedStyle(a).color; }
-      else { z.style.cssText=a.style.cssText; z.style.marginInlineStart='8px'; }
-      a.parentNode.insertBefore(z,a.nextSibling);
-    });
+    /* Waze: only in a trip that asked for it at creation (window.PAB_WAZE = true: 'waze': True in build_private_trip.py TRIPS, waze: true in the API).
+       One row in the apps screen, in the transport group (or the first group), with the same look as the other links. Never next to the map buttons:
+       Dana 2026-11-25, most travellers don't drive. */
+    var al=document.getElementById('apps-links');
+    if(window.PAB_WAZE===true&&al&&!al.querySelector('[data-pab-waze],a[href*="waze.com"]')){   /* a trip whose content already has Waze keeps that one */
+      var groups=[].filter.call(al.children,function(g){ return g.querySelector('a[href]'); }), grp=null;
+      groups.forEach(function(g){ var h=g.firstElementChild; if(!grp&&h&&/תחבורה|ניווט|נסיעות|Transport|Getting around|Transporte|Moverse/i.test(h.textContent||'')) grp=g; });
+      grp=grp||groups[0];
+      var tpl=grp&&grp.querySelector('a[href]');
+      if(tpl){ var z=tpl.cloneNode(false); ['data-i18n','data-ms','id','data-pab-nav'].forEach(function(x){ z.removeAttribute(x); });
+        z.href='https://waze.com/'; z.target='_blank'; z.rel='noopener'; z.textContent='Waze'; z.setAttribute('data-pab-waze','1'); z.setAttribute('dir','ltr');
+        tpl.parentNode.appendChild(z); }
+    }
   }
-  function wazeUrl(q){ return 'https://waze.com/ul?q='+q+'&navigate=yes'; }
   decorate();
   var dq=0; new MutationObserver(function(){ if(dq) return; dq=requestAnimationFrame(function(){ dq=0; decorate(); }); }).observe(document.body,{childList:true,subtree:true});
 
@@ -3295,7 +3299,8 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
     var u=new URL(location.href), m=u.searchParams.get('m');
     /* ?traveler=1 opens the trip as an ordinary traveler on a device that remembers the manager (for showing both views on one device); the manager link brings the manager back */
     if(u.searchParams.get('traveler')==='1'){ try{ localStorage.removeItem(LS+'.m'); localStorage.removeItem(LS+'.s'); }catch(x){} u.searchParams.delete('traveler'); history.replaceState(null,'',u.pathname+(u.search||'')+u.hash); }
-    if(m){ localStorage.setItem(LS+'.m',m); u.searchParams.delete('m'); history.replaceState(null,'',u.pathname+(u.search||'')+u.hash); }
+    /* m stays in the address: "Add to Home Screen" on iPhone saves the address, and the home-screen app has its own storage, so this is how it keeps editing (Dana, 2026-11-24) */
+    if(m){ localStorage.setItem(LS+'.m',m); }
     var sv=localStorage.getItem(LS+'.m'); if(sv) token=sv;
     var cs=localStorage.getItem(LS+'.s'); if(cs) S=JSON.parse(cs);
   }catch(e){}
@@ -3652,6 +3657,8 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
   function onHome(){ var n=document.querySelector('.home-nav'); return !n || n.style.display!=='none'; }
   function sync(){ b.hidden = standalone || !onHome(); }
   ['showScreen','showHome'].forEach(function(f){ var o=window[f]; if(typeof o==='function') window[f]=function(){ var r=o.apply(this,arguments); sync(); return r; }; });
+  // also follow the home buttons themselves, so a screen opened by any other path (a layer that kept the old showScreen) still hides the card
+  var nav=document.querySelector('.home-nav'); if(nav && window.MutationObserver) new MutationObserver(sync).observe(nav,{attributes:true,attributeFilter:['style']});
   sync();
   window.a2hsTab=function(os){
     document.querySelectorAll('#a2hs-sheet [data-os]').forEach(function(t){ t.setAttribute('aria-selected', t.getAttribute('data-os')===os ? 'true':'false'); });
