@@ -3204,6 +3204,9 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
   var list=(P.msgs||[]).slice(), open=false;
   var home=document.querySelector('.home-nav'); if(!home) return;
   var box=document.createElement('section'); box.className='pab-msgs'; box.setAttribute('aria-live','polite'); home.parentNode.insertBefore(box,home);
+  /* only on the main screen (Dana, 2026-11-25: "not on every screen, only the main one"), like the home tiles */
+  function onHome(){ return home.style.display!=='none'; }
+  ['showScreen','showHome'].forEach(function(f){ var o=window[f]; if(typeof o==='function') window[f]=function(){ var r=o.apply(this,arguments); paint(); return r; }; });
   function when(a){ try{ return new Date(a).toLocaleString(EN()?'en-GB':ES()?'es-ES':'he-IL',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
   function send(body,btn){
     if(btn) btn.disabled=true;
@@ -3214,7 +3217,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
   }
   function paint(){
     box.textContent=''; var mgr=!!tok&&!!E;
-    if(!list.length&&!mgr){ box.style.display='none'; return; } box.style.display='';
+    if(!onHome()||(!list.length&&!mgr)){ box.style.display='none'; return; } box.style.display='';
     var h=document.createElement('h3'); h.innerHTML='<i aria-hidden="true"></i>'; h.appendChild(document.createTextNode(tx('הודעות','Messages','Mensajes')+((P.brand&&P.brand.name)?' · '+P.brand.name:''))); box.appendChild(h);
     var rev=list.slice().reverse(), show=open?rev:rev.slice(0,2);
     show.forEach(function(m){ var d=document.createElement('div'); d.className='pab-msg'; d.textContent=m.text; var sm=document.createElement('small'); sm.textContent=when(m.at);
