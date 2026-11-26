@@ -1,8 +1,8 @@
 // Agent itinerary builder: the screens (PLAN.md tasks A3-A8). Plain JS, no build step.
 // State lives in S; every change to the trip goes through commit() (undo + autosave) or edit() (typing: autosave only).
-import * as M from './model.js?v=20261126a';
-import { createStore, takeSecret, forgetSecret, Conflict, NoAccess } from './store.js?v=20261126a';
-import { buildPdfHtml, buildQuoteHtml, loadPack } from './pdf.js?v=20261126a';
+import * as M from './model.js?v=20261126c';
+import { createStore, takeSecret, forgetSecret, Conflict, NoAccess } from './store.js?v=20261126c';
+import { buildPdfHtml, buildQuoteHtml, loadPack } from './pdf.js?v=20261126c';
 
 const S = {
   store: null, me: null, trips: [], filter: 'all', q: '', menuFor: null,
@@ -11,7 +11,7 @@ const S = {
   day: 0, editItem: null, side: (() => { try { return localStorage.getItem('packandboard.agent.side') || 'preview'; } catch (e) { return 'preview'; } })(),
   save: 'saved', saveTimer: null, saving: false, dirty: false, privTimer: null,
   dlg: null, conflict: false,
-  hopen: {}, mtab: 'edit', itemMenu: null, libMenu: null, allDays: false, scrolledDay: null,
+  hopen: {}, mtab: 'edit', itemMenu: null, libMenu: null, addOpen: null, pickQ: '', askLibFor: null, askLib: null, allDays: false, scrolledDay: null,
 };
 // day and item duplication are hidden for now (Dana, 2026-11-15: confusing). Whole-trip cloning in the trips list stays.
 const SHOW_DUPLICATE = false;
@@ -594,6 +594,10 @@ const KIND_IC = { activity: ['flag', 'act'], meal: ['meal', 'meal'], tip: ['bulb
 const PART_IC = { 'בוקר': 'sun', 'צהריים': 'meal', 'ערב': 'clock', 'לילה': 'moon' };
 function itemCard(it, d) {
   if (S.editItem === it.id) return itemEditor(it, d);
+  const ask = S.askLib === it.id ? `<div class="banner ok" role="status">${ic('book')}<span class="grow">לשמור את "${esc(he(it.title))}" גם בספרייה של ${esc(destName(M.dayInfo(S.t, d).dest))}?</span><button class="btn sm" type="button" data-act="item-lib" data-id="${it.id}">שמירה לספרייה</button><button class="btn quiet sm" type="button" data-act="ask-lib-no">לא עכשיו</button></div>` : '';
+  return itemCardBody(it, d) + ask;
+}
+function itemCardBody(it, d) {
   const tr = it.transfer || {};
   const nav = it.kind === 'transfer' ? M.navUrl(tr) : null;
   const meta = [];
@@ -665,6 +669,21 @@ function itemEditor(it) {
   </div>`;
 }
 
+// "+ add to <part>": a new item, or one from the library (the open day's destinations and general items first)
+function addPicker(p, d) {
+  const t = S.t, info = M.dayInfo(t, d);
+  const dests = [info.dest, info.dest2].filter(Boolean);
+  const all = M.librarySubset(S.snippets, t, d, { query: S.pickQ, allDests: true });
+  const mine = all.filter((x) => x.dest === 'all' || dests.includes(x.dest)), other = all.filter((x) => !mine.includes(x));
+  const row = (x) => `<button class="pickrow" type="button" data-act="lib-add" data-id="${x.id}" data-v="${p}"><span class="dot" style="${x.dest === 'all' ? 'background:var(--line)' : paint(x.dest)}"></span><span class="grow"><b>${esc(he(x.data.title))}</b><span class="xs muted" style="display:block">${esc(x.dest === 'all' ? 'כללי' : destName(x.dest))} · ${esc(KIND_HE[x.data.kind] || '')}</span></span>${ic('plus', 16)}</button>`;
+  return `<div class="addpick" role="group" aria-label="הוספה ל${p}">
+    <div class="row between" style="gap:8px"><button class="btn sm" type="button" data-act="item-add" data-v="${p}">${ic('pencil', 16)}קטע חדש</button><button class="mini" type="button" data-act="add-close" aria-label="סגירה">${ic('x')}</button></div>
+    <p class="lbl" style="margin-top:12px">או מהספרייה שלי</p>
+    ${S.snippets.length ? `<label class="inp-ic" style="margin-top:6px"><span class="sr">חיפוש בספרייה</span><input id="pickq" class="inp" type="search" placeholder="חיפוש בספרייה" value="${esc(S.pickQ)}" data-f="pickq">${ic('search')}</label>
+      <div class="picklist">${mine.map(row).join('')}${other.length ? `<p class="xs muted" style="margin:8px 10px 2px">יעדים אחרים</p>${other.map(row).join('')}` : ''}${all.length ? '' : '<p class="small muted" style="padding:8px 10px">אין קטעים שמתאימים לחיפוש.</p>'}</div>`
+      : '<p class="small muted" style="margin-top:4px">הספרייה עוד ריקה. כל קטע חדש אפשר לשמור בה בסיום.</p>'}
+  </div>`;
+}
 function viewDays() {
   const t = S.t;
   if (!t.stays.length) return needStays('03', 'ימים', 'קודם מוסיפים יעדים ולילות בשלב המבנה. הימים נוצרים מהם.');
@@ -684,7 +703,7 @@ function viewDays() {
       <div class="lane"><h3>${ic(PART_IC[p], 16)}${p}</h3><span class="rng">${PART_RANGE[p]}</span></div>
       <div class="body" data-drop-part="${p}">
         ${groups[p].map((it) => itemCard(it, d)).join('')}
-        <button class="addq" type="button" data-act="item-add" data-v="${p}">${ic('plus', 16)}הוספה ל${p}</button>
+        ${S.addOpen === p ? addPicker(p, d) : `<button class="addq" type="button" data-act="add-open" data-v="${p}" aria-expanded="false">${ic('plus', 16)}הוספה ל${p}</button>`}
       </div></section>`).join('');
   // which destinations the library shows: the open day's by default, or the one the agent picked (general items always come along)
   const dayDests = [info.dest, info.dest2].filter(Boolean);
@@ -699,7 +718,7 @@ function viewDays() {
         ${uniq.map((x) => libChip(x.dest, he(x.label), !!pick && pick.includes(x.dest), paint(x.dest))).join('')}
         ${libChip('all', 'כל היעדים', !pick)}
       </div>
-      ${lib.length ? `<p class="xs muted" style="margin:0 0 8px">גוררים קטע לחלק ביום, או לוחצים + ובוחרים מתי.</p><ul class="lib">${lib.map((s) => `<li draggable="true" data-drag-snip="${s.id}"><div><div class="mt">${esc(s.dest === 'all' ? 'כללי' : destName(s.dest))} · ${esc(KIND_HE[s.data.kind] || '')}</div><div class="tt">${esc(he(s.data.title))}</div>${he(s.data.text) ? `<p>${esc(he(s.data.text))}</p>` : ''}</div>
+      ${lib.length ? `<p class="xs muted" style="margin:0 0 8px">גוררים קטע לחלק ביום, או לוחצים + ובוחרים מתי.</p><ul class="lib">${lib.map((s) => `<li draggable="true" data-drag-snip="${s.id}"><div><div class="mt">${esc(s.dest === 'all' ? 'כללי' : destName(s.dest))} · ${esc(KIND_HE[s.data.kind] || '')}</div><div class="tt">${esc(he(s.data.title))}</div>${he(s.data.text) ? `<p dir="auto">${esc(he(s.data.text))}</p>` : ''}</div>
         <button class="plus" type="button" data-act="lib-pick" data-id="${s.id}" aria-label="הוספת ${esc(he(s.data.title))} ליום ${S.day + 1}" aria-expanded="${S.libMenu === s.id}">${ic('plus')}</button>${S.libMenu === s.id ? `<div class="menu" role="menu" aria-label="מתי ביום ${S.day + 1}">${M.PARTS.map((p) => `<button role="menuitem" type="button" data-act="lib-add" data-id="${s.id}" data-v="${p}">${ic(PART_IC[p])}ל${p}</button>`).join('')}</div>` : ''}<div class="libacts"><button class="mini" type="button" data-act="lib-edit" data-id="${s.id}" aria-label="עריכת ${esc(he(s.data.title))} בספרייה">${ic('pencil')}</button><button class="mini" type="button" data-act="lib-del" data-id="${s.id}" aria-label="מחיקת ${esc(he(s.data.title))} מהספרייה">${ic('trash')}</button></div></li>`).join('')}</ul>`
         : `<p class="small muted">${S.snippets.length ? 'אין כאן קטעים שמתאימים.' : 'הספרייה ריקה. מוסיפים כאן קטע חדש, או "שמירה לספרייה" מתוך קטע ביום.'}</p>`}`
     : `<div id="preview">${previewDay(d)}</div><p class="xs muted" style="margin-top:8px;text-align:center">כך המטיילים יראו את היום באפליקציה. מתעדכן תוך כדי כתיבה.</p>`;
@@ -1040,7 +1059,7 @@ const ACT = {
   },
   prices: () => commit(Object.assign({}, S.t, { showPrices: !S.t.showPrices })),
   // days
-  day: (el) => { S.day = Number(el.dataset.v); S.editItem = null; S.itemMenu = null; S.libDest = ''; S.libMenu = null; history.replaceState(null, '', '#/t/' + S.row.id + '/days/' + S.day); render(); if (window.innerWidth < 1100 && el.closest('.daynav')) { const h = $('.dayhero'); if (h) h.scrollIntoView({ block: 'start' }); } },
+  day: (el) => { S.day = Number(el.dataset.v); S.editItem = null; S.itemMenu = null; S.libDest = ''; S.libMenu = null; S.addOpen = null; S.askLib = null; history.replaceState(null, '', '#/t/' + S.row.id + '/days/' + S.day); render(); if (window.innerWidth < 1100 && el.closest('.daynav')) { const h = $('.dayhero'); if (h) h.scrollIntoView({ block: 'start' }); } },
   'day-add': () => tryCommit((t) => M.insertDayAfter(t, t.days.length - 1), 'נוסף יום בסוף הטיול (עוד לילה ביעד האחרון)'),
   'day-dup': (el) => { const d = Number(el.dataset.v); tryCommit((t) => M.duplicateDay(t, d, { target: 'after' }), `יום ${d + 1} שוכפל. העותק אחריו, ונוסף לילה`); S.day = d + 1; render(); },
   'day-dup-opts': () => { S.dlg = { type: 'dup' }; render(); },
@@ -1055,9 +1074,16 @@ const ACT = {
     if (route().step === 'transfers') toast('נוסף קטע הגעה: ' + s.title + '. ממלאים את הפרטים למטה.');
   },
   'sugg-all': () => { let t = S.t; const all = M.suggestedTransfers(t); all.forEach((s) => { t = M.applySuggestion(t, s); }); commit(t, 'נוספו ' + all.length + ' קטעי הגעה. ממלאים את הפרטים ברשימה.'); },
-  'item-add': (el) => { const it = M.newItem({ part: el.dataset.v }); S.editItem = it.id; commit(M.addItem(S.t, S.day, it)); const f = document.getElementById('it-' + it.id); if (f) f.focus(); },
+  'add-open': (el) => { S.addOpen = el.dataset.v; S.pickQ = ''; S.askLib = null; render(); const f = $('.addpick [data-act="item-add"]'); if (f) f.focus(); },
+  'add-close': () => { const p = S.addOpen; S.addOpen = null; render(); const f = $(`[data-act="add-open"][data-v="${p}"]`); if (f) f.focus(); },
+  'ask-lib-no': () => { S.askLib = null; render(); },
+  'item-add': (el) => { const it = M.newItem({ part: el.dataset.v }); S.editItem = it.id; S.addOpen = null; S.askLibFor = it.id; S.askLib = null; commit(M.addItem(S.t, S.day, it)); const f = document.getElementById('it-' + it.id); if (f) f.focus(); },
   'item-edit': (el) => { S.editItem = el.dataset.id; S.itemMenu = null; render(); const f = document.getElementById('it-' + el.dataset.id); if (f) f.focus(); },
-  'item-done': () => { S.editItem = null; render(); },
+  'item-done': () => {
+    const id = S.editItem; S.editItem = null;
+    if (id && S.askLibFor === id) { const it = findItem(id); if (it && he(it.title).trim() && it.src !== 'library') S.askLib = id; S.askLibFor = null; }   // a new item: offer to keep it in the library too
+    render();
+  },
   'item-dup': (el) => tryCommit((t) => M.duplicateItem(t, el.dataset.id), 'הקטע שוכפל'),
   'item-del': (el) => { if (S.editItem === el.dataset.id) S.editItem = null; S.itemMenu = null; tryCommit((t) => M.deleteItem(t, el.dataset.id), 'הקטע נמחק'); },
   'item-move': (el) => { S.itemMenu = null; S.dlg = { type: 'move', id: el.dataset.id }; render(); },
@@ -1077,7 +1103,7 @@ const ACT = {
     const it = findItem(el.dataset.id), d = findItemDay(it.id);
     const info = M.dayInfo(S.t, d);
     const snip = M.snippetFromItem(it, info.dest);
-    try { const row = await S.store.addSnippet(S.me.id, snip); S.snippets.unshift(row); render(); toast('נשמר בספרייה של ' + destName(info.dest)); }
+    try { const row = await S.store.addSnippet(S.me.id, snip); S.snippets.unshift(row); if (S.askLib === it.id) S.askLib = null; render(); toast('נשמר בספרייה של ' + destName(info.dest)); }
     catch (e) { toast('לא נשמר בספרייה. כדאי לנסות שוב.'); }
   },
   pdf: async () => {
@@ -1112,7 +1138,7 @@ const ACT = {
   'lib-edit': (el) => { S.dlg = { type: 'lib-new', editId: el.dataset.id }; render(); },
   'lib-dest': (el) => { S.libDest = el.dataset.v; render(); },
   'lib-pick': (el) => { S.libMenu = S.libMenu === el.dataset.id ? null : el.dataset.id; render(); const f = $('.lib .menu button'); if (f) f.focus(); },
-  'lib-add': (el) => { S.libMenu = null; addFromLibrary(el.dataset.id, el.dataset.v); },
+  'lib-add': (el) => { S.libMenu = null; S.addOpen = null; addFromLibrary(el.dataset.id, el.dataset.v); },
   'lib-del': async (el) => {
     const s = S.snippets.find((x) => x.id === el.dataset.id);
     try { await S.store.deleteSnippet(s.id); } catch (e) { toast('לא נמחק. כדאי לנסות שוב.'); return; }
@@ -1160,7 +1186,7 @@ document.addEventListener('click', (e) => {
   if (fn) { if (el.tagName === 'A') return; e.preventDefault(); fn(el, e); }
 });
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') { if (S.dlg) closeDlg(); else if (S.menuFor || S.itemMenu || S.libMenu) { S.menuFor = null; S.itemMenu = null; S.libMenu = null; render(); } else if (S.editItem) { S.editItem = null; render(); } }
+  if (e.key === 'Escape') { if (S.dlg) closeDlg(); else if (S.menuFor || S.itemMenu || S.libMenu) { S.menuFor = null; S.itemMenu = null; S.libMenu = null; render(); } else if (S.addOpen) { ACT['add-close'](); } else if (S.editItem) { S.editItem = null; render(); } }
   if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.target.closest('input,textarea') && toastUndo) { e.preventDefault(); $('#toast-undo').click(); }
 });
 
@@ -1170,6 +1196,7 @@ document.addEventListener('input', (e) => {
   const v = el.value;
   if (f === 'q') { S.q = v; render(); return; }
   if (f === 'libq') { S.libQuery = v; render(); return; }
+  if (f === 'pickq') { S.pickQ = v; render(); const q = $('#pickq'); if (q) q.setSelectionRange(v.length, v.length); return; }
   if (f === 'day-title') return edit(M.setDayTitle(S.t, S.day, v));
   if (f === 'stay-name') { const t = clone(S.t); t.stays.find((s) => s.id === el.dataset.id).label = { he: v }; return edit(t); }
   if (f === 'country') return edit(Object.assign({}, S.t, { country: v }));

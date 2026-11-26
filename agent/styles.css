@@ -351,6 +351,11 @@ legend{margin-bottom:6px;padding:0}
 .pill:hover,.lk:hover{background:var(--hover);color:var(--ink)}
 .addq{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 16px;border-radius:22px;border:1.5px dashed var(--line);background:transparent;color:var(--ink-2);font-size:14px;font-weight:600;cursor:pointer}
 .addq:hover{border-color:var(--brand);color:var(--brand-dark);background:var(--stock)}
+.addpick{align-self:stretch;border:1.5px dashed var(--line);border-radius:12px;padding:12px;background:var(--stock)}
+.picklist{max-height:280px;overflow:auto;margin-top:8px;display:flex;flex-direction:column;gap:2px}
+.pickrow{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;border:0;background:transparent;border-radius:8px;padding:6px 10px;text-align:start;cursor:pointer;color:var(--ink)}
+.pickrow:hover{background:var(--hover)}
+.pickrow b{font-weight:600;font-size:15px}
 .edit{border:2px solid var(--brand);border-radius:12px;padding:16px;background:var(--stock);box-shadow:var(--sh-2)}
 .daynav{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:20px;padding-top:16px;border-top:1px solid var(--hair)}
 .daynav .btn{max-width:100%;overflow:hidden;text-overflow:ellipsis}
@@ -368,7 +373,7 @@ legend{margin-bottom:6px;padding:0}
 .lib .libacts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:2px;margin:-4px 0 -6px}
 .lib .tt{font-weight:700;font-size:14px}
 .lib .mt{font-size:12px;color:var(--muted)}
-.lib p{font-size:13px;color:var(--ink-2);margin-top:2px}
+.lib p{font-size:13px;color:var(--ink-2);margin-top:2px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;text-align:start}   /* two lines are enough to recognise an item; the full text is in the edit form */
 .plus{width:44px;height:44px;border-radius:22px;border:1px solid var(--line);background:var(--stock);display:flex;align-items:center;justify-content:center;color:var(--board);cursor:pointer}
 .plus:hover{background:var(--board);color:#fff;border-color:var(--board)}
 
