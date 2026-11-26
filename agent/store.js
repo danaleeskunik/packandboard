@@ -96,6 +96,9 @@ export function createStore(secret) {
     async addSnippet(agentId, s) {
       return one(await call('POST', '/rest/v1/agent_snippets', { body: { agent_id: agentId, dest: s.dest, category: s.category, data: s.data }, prefer: 'return=representation' }));
     },
+    async updateSnippet(id, s) {      // the rule "agent edits own snippets" (supabase_agent.sql) allows it
+      return one(await call('PATCH', '/rest/v1/agent_snippets?id=eq.' + encodeURIComponent(id), { body: { dest: s.dest, category: s.category, data: s.data }, prefer: 'return=representation' }));
+    },
     async deleteSnippet(id) {
       return call('DELETE', '/rest/v1/agent_snippets?id=eq.' + encodeURIComponent(id));
     },

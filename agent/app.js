@@ -1,17 +1,17 @@
 // Agent itinerary builder: the screens (PLAN.md tasks A3-A8). Plain JS, no build step.
 // State lives in S; every change to the trip goes through commit() (undo + autosave) or edit() (typing: autosave only).
-import * as M from './model.js?v=20261123a';
-import { createStore, takeSecret, forgetSecret, Conflict, NoAccess } from './store.js?v=20261123a';
-import { buildPdfHtml, buildQuoteHtml, loadPack } from './pdf.js?v=20261123a';
+import * as M from './model.js?v=20261126a';
+import { createStore, takeSecret, forgetSecret, Conflict, NoAccess } from './store.js?v=20261126a';
+import { buildPdfHtml, buildQuoteHtml, loadPack } from './pdf.js?v=20261126a';
 
 const S = {
   store: null, me: null, trips: [], filter: 'all', q: '', menuFor: null,
   row: null, t: null, priv: {}, version: 0, history: [],
-  snippets: [], libQuery: '', libAll: false,
+  snippets: [], libQuery: '', libDest: '',
   day: 0, editItem: null, side: (() => { try { return localStorage.getItem('packandboard.agent.side') || 'preview'; } catch (e) { return 'preview'; } })(),
   save: 'saved', saveTimer: null, saving: false, dirty: false, privTimer: null,
   dlg: null, conflict: false,
-  hopen: {}, mtab: 'edit', itemMenu: null, allDays: false, scrolledDay: null,
+  hopen: {}, mtab: 'edit', itemMenu: null, libMenu: null, allDays: false, scrolledDay: null,
 };
 // day and item duplication are hidden for now (Dana, 2026-11-15: confusing). Whole-trip cloning in the trips list stays.
 const SHOW_DUPLICATE = false;
@@ -686,18 +686,21 @@ function viewDays() {
         ${groups[p].map((it) => itemCard(it, d)).join('')}
         <button class="addq" type="button" data-act="item-add" data-v="${p}">${ic('plus', 16)}הוספה ל${p}</button>
       </div></section>`).join('');
-  const lib = M.librarySubset(S.snippets, t, d, { query: S.libQuery, allDests: S.libAll });
-  const libDests = [info.dest, info.dest2].filter(Boolean).map(destName).join(' + ');
+  // which destinations the library shows: the open day's by default, or the one the agent picked (general items always come along)
+  const dayDests = [info.dest, info.dest2].filter(Boolean);
+  const pick = S.libDest === 'all' ? null : S.libDest ? [S.libDest] : dayDests;
+  const lib = M.librarySubset(S.snippets, t, d, { query: S.libQuery, allDests: true }).filter((x) => !pick || x.dest === 'all' || pick.includes(x.dest));
+  const libChip = (v, label, on, dot) => `<button class="chip" type="button" data-act="lib-dest" data-v="${esc(v)}" aria-pressed="${on}">${dot ? `<span class="dot" style="${dot}"></span>` : ''}${esc(label)} <span class="num" style="opacity:.7">${S.snippets.filter((x) => v === 'all' || x.dest === v).length}</span></button>`;
   const mPressed = (v) => (v === 'edit' ? S.mtab === 'edit' : S.mtab === 'side' && (v === 'lib') === (S.side === 'lib'));
   const sideBody = S.side === 'lib' ? `
       <button class="btn ghost sm block" type="button" data-act="lib-new">${ic('plus')}קטע חדש לספרייה</button>
       <label class="inp-ic" style="margin-top:10px"><span class="sr">חיפוש בספרייה</span><input id="lq" class="inp" type="search" placeholder="חיפוש בספרייה" value="${esc(S.libQuery)}" data-f="libq">${ic('search')}</label>
       <div class="libfilter" role="group" aria-label="סינון הספרייה">
-        <button class="chip" type="button" data-act="lib-all" data-v="0" aria-pressed="${!S.libAll}"><span class="dot" style="${paint(info.dest)}"></span>${esc(libDests)} + כללי</button>
-        <button class="chip" type="button" data-act="lib-all" data-v="1" aria-pressed="${S.libAll}">כל היעדים</button>
+        ${uniq.map((x) => libChip(x.dest, he(x.label), !!pick && pick.includes(x.dest), paint(x.dest))).join('')}
+        ${libChip('all', 'כל היעדים', !pick)}
       </div>
-      ${lib.length ? `<ul class="lib">${lib.map((s) => `<li><div><div class="mt">${esc(s.dest === 'all' ? 'כללי' : destName(s.dest))} · ${esc(s.data.part || '')} · ${esc(KIND_HE[s.data.kind] || '')}</div><div class="tt">${esc(he(s.data.title))}</div>${he(s.data.text) ? `<p>${esc(he(s.data.text))}</p>` : ''}</div>
-        <div style="display:flex;flex-direction:column;gap:4px"><button class="plus" type="button" data-act="lib-add" data-id="${s.id}" aria-label="הוספת ${esc(he(s.data.title))} ל${esc(s.data.part || 'בוקר')}">${ic('plus')}</button><button class="mini" type="button" data-act="lib-del" data-id="${s.id}" aria-label="מחיקת ${esc(he(s.data.title))} מהספרייה">${ic('trash')}</button></div></li>`).join('')}</ul>`
+      ${lib.length ? `<p class="xs muted" style="margin:0 0 8px">גוררים קטע לחלק ביום, או לוחצים + ובוחרים מתי.</p><ul class="lib">${lib.map((s) => `<li draggable="true" data-drag-snip="${s.id}"><div><div class="mt">${esc(s.dest === 'all' ? 'כללי' : destName(s.dest))} · ${esc(KIND_HE[s.data.kind] || '')}</div><div class="tt">${esc(he(s.data.title))}</div>${he(s.data.text) ? `<p>${esc(he(s.data.text))}</p>` : ''}</div>
+        <button class="plus" type="button" data-act="lib-pick" data-id="${s.id}" aria-label="הוספת ${esc(he(s.data.title))} ליום ${S.day + 1}" aria-expanded="${S.libMenu === s.id}">${ic('plus')}</button>${S.libMenu === s.id ? `<div class="menu" role="menu" aria-label="מתי ביום ${S.day + 1}">${M.PARTS.map((p) => `<button role="menuitem" type="button" data-act="lib-add" data-id="${s.id}" data-v="${p}">${ic(PART_IC[p])}ל${p}</button>`).join('')}</div>` : ''}<div class="libacts"><button class="mini" type="button" data-act="lib-edit" data-id="${s.id}" aria-label="עריכת ${esc(he(s.data.title))} בספרייה">${ic('pencil')}</button><button class="mini" type="button" data-act="lib-del" data-id="${s.id}" aria-label="מחיקת ${esc(he(s.data.title))} מהספרייה">${ic('trash')}</button></div></li>`).join('')}</ul>`
         : `<p class="small muted">${S.snippets.length ? 'אין כאן קטעים שמתאימים.' : 'הספרייה ריקה. מוסיפים כאן קטע חדש, או "שמירה לספרייה" מתוך קטע ביום.'}</p>`}`
     : `<div id="preview">${previewDay(d)}</div><p class="xs muted" style="margin-top:8px;text-align:center">כך המטיילים יראו את היום באפליקציה. מתעדכן תוך כדי כתיבה.</p>`;
   const prev = d > 0 ? `<button class="btn ghost sm" type="button" data-act="day" data-v="${d - 1}">${ic('chev-r', 16)}<span class="t">יום ${d} · ${esc(dayName(d - 1))}</span></button>` : '<span></span>';
@@ -932,22 +935,22 @@ function viewDialog() {
   }
   if (g.type === 'lib-new') {
     const info = M.dayInfo(S.t, S.day);
+    const sn = g.editId ? S.snippets.find((x) => x.id === g.editId) : null, sd = (sn && sn.data) || {};
     const dests = [...new Map(S.t.stays.map((x) => [x.dest, he(x.label) || x.dest])).entries()];
-    const def = info.dest2 || info.dest;
-    return dialogShell('dl-h', 'קטע חדש לספרייה', `
+    if (sn && sn.dest !== 'all' && !dests.some(([k]) => k === sn.dest)) dests.push([sn.dest, sn.dest]);   // a destination from another trip stays as it was
+    const def = sn ? sn.dest : info.dest2 || info.dest;
+    const kind = sn && M.KINDS.includes(sd.kind) ? sd.kind : M.KINDS[0];
+    return dialogShell('dl-h', sn ? 'עריכת קטע בספרייה' : 'קטע חדש לספרייה', `
+      <div class="field"><label for="ln-dest">יעד</label><select id="ln-dest" name="dest" class="inp">${dests.map(([k, l]) => `<option value="${esc(k)}"${k === def ? ' selected' : ''}>${esc(l)}</option>`).join('')}<option value="all"${def === 'all' ? ' selected' : ''}>כללי (לכל היעדים)</option></select></div>
+      <fieldset class="field"><legend>סוג</legend><div class="seg">${M.KINDS.map((k, i) => `<label style="display:inline-flex"><input class="sr" type="radio" name="kind" value="${k}"${k === kind ? ' checked' : ''}><span class="seg-opt">${KIND_HE[k]}</span></label>`).join('')}</div></fieldset>
+      <div class="field"><label for="ln-title">כותרת <span class="req" aria-hidden="true">*</span></label><input id="ln-title" name="title" class="inp" required placeholder="למשל שוק צוקיג'י" value="${esc(he(sd.title))}" data-autofocus></div>
+      <div class="field"><label for="ln-text">טקסט</label><textarea id="ln-text" name="text" class="inp" placeholder="מה חשוב לדעת">${esc(he(sd.text))}</textarea></div>
       <div class="g2">
-        <div class="field"><label for="ln-dest">יעד</label><select id="ln-dest" name="dest" class="inp">${dests.map(([k, l]) => `<option value="${esc(k)}"${k === def ? ' selected' : ''}>${esc(l)}</option>`).join('')}<option value="all">כללי (לכל היעדים)</option></select></div>
-        <div class="field"><label for="ln-part">חלק ביום</label><select id="ln-part" name="part" class="inp">${M.PARTS.map((p) => `<option>${p}</option>`).join('')}</select></div>
-      </div>
-      <fieldset class="field"><legend>סוג</legend><div class="seg">${M.KINDS.map((k, i) => `<label style="display:inline-flex"><input class="sr" type="radio" name="kind" value="${k}"${i === 0 ? ' checked' : ''}><span class="seg-opt">${KIND_HE[k]}</span></label>`).join('')}</div></fieldset>
-      <div class="field"><label for="ln-title">כותרת <span class="req" aria-hidden="true">*</span></label><input id="ln-title" name="title" class="inp" required placeholder="למשל שוק צוקיג'י" data-autofocus></div>
-      <div class="field"><label for="ln-text">טקסט</label><textarea id="ln-text" name="text" class="inp" placeholder="מה חשוב לדעת"></textarea></div>
-      <div class="g2">
-        <div class="field"><label for="ln-place">מיקום במפות (שם המקום או קישור)</label><input id="ln-place" name="place" class="inp ltr"></div>
-        <div class="field"><label for="ln-url">קישור (רשות)</label><input id="ln-url" name="url" class="inp ltr" placeholder="https://"></div>
+        <div class="field"><label for="ln-place">מיקום במפות (שם המקום או קישור)</label><input id="ln-place" name="place" class="inp ltr" value="${esc(sd.place || '')}"></div>
+        <div class="field"><label for="ln-url">קישור (רשות)</label><input id="ln-url" name="url" class="inp ltr" placeholder="https://" value="${esc(sd.url || '')}"></div>
       </div>
       ${g.error ? `<div class="err-box" role="alert">${esc(g.error)}</div>` : ''}`,
-      `<button class="btn" type="submit">שמירה לספרייה</button>`);
+      `<button class="btn" type="submit">${sn ? 'שמירת השינויים' : 'שמירה לספרייה'}</button>`);
   }
   if (g.type === 'stay-del') {
     const s = S.t.stays.find((x) => x.id === g.id);
@@ -1037,7 +1040,7 @@ const ACT = {
   },
   prices: () => commit(Object.assign({}, S.t, { showPrices: !S.t.showPrices })),
   // days
-  day: (el) => { S.day = Number(el.dataset.v); S.editItem = null; S.itemMenu = null; history.replaceState(null, '', '#/t/' + S.row.id + '/days/' + S.day); render(); if (window.innerWidth < 1100 && el.closest('.daynav')) { const h = $('.dayhero'); if (h) h.scrollIntoView({ block: 'start' }); } },
+  day: (el) => { S.day = Number(el.dataset.v); S.editItem = null; S.itemMenu = null; S.libDest = ''; S.libMenu = null; history.replaceState(null, '', '#/t/' + S.row.id + '/days/' + S.day); render(); if (window.innerWidth < 1100 && el.closest('.daynav')) { const h = $('.dayhero'); if (h) h.scrollIntoView({ block: 'start' }); } },
   'day-add': () => tryCommit((t) => M.insertDayAfter(t, t.days.length - 1), 'נוסף יום בסוף הטיול (עוד לילה ביעד האחרון)'),
   'day-dup': (el) => { const d = Number(el.dataset.v); tryCommit((t) => M.duplicateDay(t, d, { target: 'after' }), `יום ${d + 1} שוכפל. העותק אחריו, ונוסף לילה`); S.day = d + 1; render(); },
   'day-dup-opts': () => { S.dlg = { type: 'dup' }; render(); },
@@ -1106,11 +1109,10 @@ const ACT = {
   },
   side: (el) => { S.side = el.dataset.v; try { localStorage.setItem('packandboard.agent.side', S.side); } catch (e) {} render(); },
   'lib-new': () => { S.dlg = { type: 'lib-new' }; render(); },
-  'lib-all': (el) => { S.libAll = el.dataset.v === '1'; render(); },
-  'lib-add': (el) => {
-    const s = S.snippets.find((x) => x.id === el.dataset.id);
-    commit(M.addItem(S.t, S.day, M.itemFromSnippet(s, s.id)), `"${he(s.data.title)}" נוסף ל${s.data.part || 'בוקר'}`);
-  },
+  'lib-edit': (el) => { S.dlg = { type: 'lib-new', editId: el.dataset.id }; render(); },
+  'lib-dest': (el) => { S.libDest = el.dataset.v; render(); },
+  'lib-pick': (el) => { S.libMenu = S.libMenu === el.dataset.id ? null : el.dataset.id; render(); const f = $('.lib .menu button'); if (f) f.focus(); },
+  'lib-add': (el) => { S.libMenu = null; addFromLibrary(el.dataset.id, el.dataset.v); },
   'lib-del': async (el) => {
     const s = S.snippets.find((x) => x.id === el.dataset.id);
     try { await S.store.deleteSnippet(s.id); } catch (e) { toast('לא נמחק. כדאי לנסות שוב.'); return; }
@@ -1151,13 +1153,14 @@ function moveStay(id, dir) {
 document.addEventListener('click', (e) => {
   if (e.target.classList && e.target.classList.contains('scrim')) { closeDlg(); return; }
   const el = e.target.closest('[data-act]');
-  if (!el || el.disabled) { if ((S.menuFor || S.itemMenu) && !e.target.closest('.menu')) { S.menuFor = null; S.itemMenu = null; render(); } return; }
+  if (!el || el.disabled) { if ((S.menuFor || S.itemMenu || S.libMenu) && !e.target.closest('.menu')) { S.menuFor = null; S.itemMenu = null; S.libMenu = null; render(); } return; }
+  if (S.libMenu && el.dataset.act !== 'lib-pick' && !el.closest('.menu')) S.libMenu = null;
   if (S.itemMenu && el.dataset.act !== 'item-menu' && !el.closest('.menu')) S.itemMenu = null;
   const fn = ACT[el.dataset.act];
   if (fn) { if (el.tagName === 'A') return; e.preventDefault(); fn(el, e); }
 });
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') { if (S.dlg) closeDlg(); else if (S.menuFor || S.itemMenu) { S.menuFor = null; S.itemMenu = null; render(); } else if (S.editItem) { S.editItem = null; render(); } }
+  if (e.key === 'Escape') { if (S.dlg) closeDlg(); else if (S.menuFor || S.itemMenu || S.libMenu) { S.menuFor = null; S.itemMenu = null; S.libMenu = null; render(); } else if (S.editItem) { S.editItem = null; render(); } }
   if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.target.closest('input,textarea') && toastUndo) { e.preventDefault(); $('#toast-undo').click(); }
 });
 
@@ -1268,12 +1271,26 @@ document.addEventListener('submit', async (e) => {
     const title = String(fd.get('title') || '').trim();
     if (!title) { fail('חסרה כותרת.'); return; }
     const k = M.KINDS.includes(fd.get('kind')) ? fd.get('kind') : 'activity';
-    const data = { kind: k, part: M.PARTS.includes(fd.get('part')) ? fd.get('part') : M.PARTS[0], title: { he: title }, text: { he: String(fd.get('text') || '').trim() } };
+    const data = { kind: k, title: { he: title }, text: { he: String(fd.get('text') || '').trim() } };
     const place = String(fd.get('place') || '').trim(), url = String(fd.get('url') || '').trim();
     if (place) data.place = place;
     if (url) { if (!M.safeUrl(url)) { fail('הקישור צריך להתחיל ב-https://'); return; } data.url = M.safeUrl(url); }
-    if (k === 'transfer') data.transfer = { from: '', to: '', mode: 'other' };
+    const old = S.dlg.editId ? S.snippets.find((x) => x.id === S.dlg.editId) : null;
+    if (k === 'transfer') data.transfer = (old && old.data.transfer) || { from: '', to: '', mode: 'other' };
     const dest = String(fd.get('dest') || 'all');
+    if (old) {                                                // editing: the fields in the form change, everything else in the item stays
+      const merged = Object.assign({}, old.data, data);
+      delete merged.part;                                     // library items no longer carry a part of the day
+      if (!place) delete merged.place;
+      if (!url) delete merged.url;
+      if (k !== 'transfer') delete merged.transfer;
+      try {
+        const row = await S.store.updateSnippet(old.id, { dest, category: k, data: merged });
+        S.snippets = S.snippets.map((x) => (x.id === old.id ? row || Object.assign({}, old, { dest, category: k, data: merged }) : x));
+        closeDlg(); render(); toast('השינויים נשמרו בספרייה');
+      } catch (err) { fail('לא נשמר. כדאי לנסות שוב.'); }
+      return;
+    }
     try {
       const row = await S.store.addSnippet(S.me.id, { dest, category: k, data });
       S.snippets.unshift(row); closeDlg(); S.side = 'lib'; render();
@@ -1299,19 +1316,26 @@ document.addEventListener('submit', async (e) => {
   if (kind === 'move') { const id = S.dlg.id, d = Number(fd.get('day')), p = fd.get('part'); closeDlg(); tryCommit((t) => M.moveItem(t, id, d, p), `הקטע הועבר ליום ${d + 1}, ${p}`); return; }
 });
 
-// drag and drop: items between parts and days, stays to a new order
+// a library item into the open day, at the part of the day the agent chose (and before an item, when dropped on one)
+function addFromLibrary(snipId, part, beforeId) {
+  const s = S.snippets.find((x) => x.id === snipId); if (!s) return;
+  const it = M.itemFromSnippet(s, s.id, part);
+  tryCommit((t) => { const n = M.addItem(t, S.day, it); return beforeId ? M.moveItem(n, it.id, S.day, it.when.part, beforeId) : n; }, `"${he(s.data.title)}" נוסף ל${it.when.part}, יום ${S.day + 1}`);
+}
+// drag and drop: items between parts and days, library items into the day, stays to a new order
 let drag = null;
 document.addEventListener('dragstart', (e) => {
-  const it = e.target.closest('[data-drag-item]'), st = e.target.closest('[data-drag-stay]');
+  const it = e.target.closest('[data-drag-item]'), st = e.target.closest('[data-drag-stay]'), sn = e.target.closest('[data-drag-snip]');
   if (e.target.closest('input,textarea,select')) { e.preventDefault(); return; }
-  if (it) drag = { item: it.dataset.dragItem }; else if (st) drag = { stay: st.dataset.dragStay }; else return;
-  e.dataTransfer.effectAllowed = 'move';
+  if (it) drag = { item: it.dataset.dragItem }; else if (st) drag = { stay: st.dataset.dragStay }; else if (sn) drag = { snip: sn.dataset.dragSnip }; else return;
+  e.dataTransfer.effectAllowed = sn ? 'copy' : 'move';
   e.dataTransfer.setData('text/plain', 'pab');
 });
 function dropTarget(e) {
   if (!drag) return null;
   if (drag.item) return e.target.closest('[data-drop-part],[data-drop-day]');
   if (drag.stay) return e.target.closest('[data-drag-stay]');
+  if (drag.snip) return e.target.closest('[data-drop-part]');
   return null;
 }
 document.addEventListener('dragover', (e) => { const t = dropTarget(e); if (!t) return; e.preventDefault(); document.querySelectorAll('.drag-over').forEach((x) => x.classList.remove('drag-over')); t.classList.add('drag-over'); });
@@ -1320,6 +1344,8 @@ document.addEventListener('drop', (e) => {
   const t = dropTarget(e); if (!t) return;
   e.preventDefault();
   const dr = drag; drag = null;
+  document.querySelectorAll('.drag-over').forEach((x) => x.classList.remove('drag-over'));
+  if (dr.snip) { const before = e.target.closest('[data-drag-item]'); addFromLibrary(dr.snip, t.dataset.dropPart, before ? before.dataset.dragItem : undefined); return; }
   if (dr.item) {
     const it = findItem(dr.item);
     if (t.dataset.dropPart) {

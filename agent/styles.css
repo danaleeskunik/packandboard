@@ -189,6 +189,8 @@ legend{margin-bottom:6px;padding:0}
   .rail .saved.err{color:#FFB4AB}
   .rail .saved.busy{color:var(--board-ink)}
 }
+/* nothing in the side column shrinks: on a short screen the column scrolls instead of cutting the trip card */
+.rail > *{flex-shrink:0}
 .tpass{background:#FCFDFB;color:var(--ink);border-radius:12px;overflow:hidden;position:relative}
 .tpass .band,.bp .cbar{display:flex}
 .tpass .band{height:6px}
@@ -360,6 +362,10 @@ legend{margin-bottom:6px;padding:0}
 .libfilter .chip{min-height:40px;font-size:13px}
 .lib{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
 .lib li{border:1px solid var(--hair);border-radius:10px;padding:10px 12px;padding-inline-end:6px;display:grid;grid-template-columns:minmax(0,1fr) 44px;gap:8px;align-items:start;background:var(--stock)}
+.lib li{position:relative;cursor:grab}
+.lib li .menu{top:52px;min-width:180px}
+.lib li[draggable]:active{cursor:grabbing}
+.lib .libacts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:2px;margin:-4px 0 -6px}
 .lib .tt{font-weight:700;font-size:14px}
 .lib .mt{font-size:12px;color:var(--muted)}
 .lib p{font-size:13px;color:var(--ink-2);margin-top:2px}

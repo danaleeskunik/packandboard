@@ -387,14 +387,15 @@ export function applySuggestion(trip, s) {
 // ---------- library ----------
 export function snippetFromItem(item, dest) {
   const it = copyItem(item, { newId: false });
-  const data = { kind: it.kind, part: itemPart(it), title: it.title, text: it.text };
+  const data = { kind: it.kind, title: it.title, text: it.text };       // no part of the day: the agent picks it each time the item is used
   ['place', 'url', 'transfer'].forEach((k) => { if (it[k] !== undefined) data[k] = it[k]; });
   if (data.transfer) { delete data.transfer.ref; delete data.transfer.provider; }
   return { dest: dest || 'all', category: it.kind, data };
 }
-export function itemFromSnippet(snip, libraryId) {
+export function itemFromSnippet(snip, libraryId, part) {
   const d = clone(snip.data);
-  const it = { id: uid('i'), kind: d.kind, when: { part: PARTS.includes(d.part) ? d.part : PARTS[0] }, title: d.title, text: d.text, src: 'library' };
+  const p = PARTS.includes(part) ? part : PARTS.includes(d.part) ? d.part : PARTS[0];   // the part chosen now; old items may still carry one
+  const it = { id: uid('i'), kind: d.kind, when: { part: p }, title: d.title, text: d.text, src: 'library' };
   ['place', 'url', 'transfer'].forEach((k) => { if (d[k] !== undefined) it[k] = d[k]; });
   if (libraryId) it.libraryId = libraryId;
   return it;
