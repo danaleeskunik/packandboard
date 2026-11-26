@@ -1,8 +1,8 @@
 // Agent itinerary builder: the screens (PLAN.md tasks A3-A8). Plain JS, no build step.
 // State lives in S; every change to the trip goes through commit() (undo + autosave) or edit() (typing: autosave only).
-import * as M from './model.js?v=20261126e';
-import { createStore, takeSecret, forgetSecret, Conflict, NoAccess } from './store.js?v=20261126e';
-import { buildPdfHtml, buildQuoteHtml, loadPack } from './pdf.js?v=20261126e';
+import * as M from './model.js?v=20261126f';
+import { createStore, takeSecret, forgetSecret, Conflict, NoAccess } from './store.js?v=20261126f';
+import { buildPdfHtml, buildQuoteHtml, loadPack } from './pdf.js?v=20261126f';
 
 const S = {
   store: null, me: null, trips: [], filter: 'all', q: '', menuFor: null,
@@ -18,7 +18,7 @@ const SHOW_DUPLICATE = false;
 const PALETTE = ['#C02436', '#2F6B4F', '#6B3FA0', '#1F5F8B', '#1F7A73', '#8E3B6B', '#4A5C36', '#3B5BA0'];
 const WEEKDAY = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
 const STATUS = { draft: ['טיוטה', 'draft'], submitted: ['אצל דנה', 'dana'], published: ['פורסם', 'pub'], archived: ['בארכיון', 'draft'] };
-const KIND_HE = { activity: 'פעילות', meal: 'ארוחה', tip: 'טיפ', transfer: 'הגעה' };
+const KIND_HE = { activity: 'פעילות', meal: 'ארוחה', cafe: 'קפה', tip: 'טיפ', transfer: 'הגעה' };
 const MODE_HE = { flight: 'טיסה', train: 'רכבת', shinkansen: 'שינקנסן', driver: 'נהג פרטי', taxi: 'מונית', car: 'רכב שכור', transit: 'תחבורה ציבורית', walk: 'הליכה', other: 'אחר' };
 const PART_RANGE = { 'בוקר': 'עד <span class="ltr">11:30</span>', 'צהריים': '<span class="ltr">11:30–16:00</span>', 'ערב': '<span class="ltr">16:00–21:00</span>', 'לילה': 'מ-<span class="ltr">21:00</span>' };
 const CURRENCIES = ['ILS', 'USD', 'EUR', 'JPY', 'GBP', 'THB'];
@@ -590,7 +590,7 @@ function viewTransfers() {
 }
 
 // ---------- days ----------
-const KIND_IC = { activity: ['flag', 'act'], meal: ['meal', 'meal'], tip: ['bulb', 'tip'], transfer: ['train', 'go'] };
+const KIND_IC = { activity: ['flag', 'act'], meal: ['meal', 'meal'], cafe: ['cup', 'cafe'], tip: ['bulb', 'tip'], transfer: ['train', 'go'] };
 const PART_IC = { 'בוקר': 'sun', 'צהריים': 'meal', 'ערב': 'clock', 'לילה': 'moon' };
 function itemCard(it, d) {
   if (S.editItem === it.id) return itemEditor(it, d);

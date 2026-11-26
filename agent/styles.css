@@ -334,7 +334,7 @@ legend{margin-bottom:6px;padding:0}
 .ti .tt{font-size:17px;font-weight:700;line-height:1.35}
 .ti p{color:var(--ink-2);font-size:15px;margin-top:2px}
 .ti .k{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;margin-bottom:4px;flex-wrap:wrap}
-.ti .k.act{color:var(--brand)}.ti .k.tip{color:#1F4F73}.ti .k.meal{color:var(--accent-deep)}.ti .k.go{color:var(--ink-2)}
+.ti .k.act{color:var(--brand)}.ti .k.tip{color:#1F4F73}.ti .k.meal{color:var(--accent-deep)}.ti .k.cafe{color:var(--d-4)}.ti .k.go{color:var(--ink-2)}
 .ti .k .mt{font-weight:500;color:var(--muted)}
 .ti .tools{display:flex;opacity:0}
 .ti:hover .tools,.ti:focus-within .tools{opacity:1}

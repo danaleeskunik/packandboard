@@ -12,7 +12,7 @@
 export const PARTS = ['בוקר', 'צהריים', 'ערב', 'לילה'];
 const PART_ENDS = [[11, 30], [16, 0], [21, 0]];           // בוקר until 11:30, צהריים until 16:00, ערב until 21:00, then לילה
 
-export const KINDS = ['activity', 'meal', 'tip', 'transfer'];
+export const KINDS = ['activity', 'meal', 'cafe', 'tip', 'transfer'];
 export const MODES = ['flight', 'train', 'shinkansen', 'driver', 'taxi', 'car', 'transit', 'walk', 'other'];
 const TRAVELMODE = { train: 'transit', shinkansen: 'transit', transit: 'transit', driver: 'driving', taxi: 'driving', car: 'driving', walk: 'walking' };
 
