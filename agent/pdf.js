@@ -1,7 +1,7 @@
 // The client PDF, made in the browser from the trip as it is now (PLAN.md A10). The same layout and rules as
 // scripts/agent_trip_to_pdf.py (Dana's publish step makes the final file there); here the agent sees it any time and can
 // print or "save as PDF". Rules: every agent text escaped, prices only when showPrices is on, no booking numbers (never in the trip file).
-import * as M from './model.js?v=20261126c';
+import * as M from './model.js?v=20261126d';
 
 const WD = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
 const MONTHS = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];

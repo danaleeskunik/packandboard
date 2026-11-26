@@ -1,8 +1,8 @@
 // Agent itinerary builder: the screens (PLAN.md tasks A3-A8). Plain JS, no build step.
 // State lives in S; every change to the trip goes through commit() (undo + autosave) or edit() (typing: autosave only).
-import * as M from './model.js?v=20261126c';
-import { createStore, takeSecret, forgetSecret, Conflict, NoAccess } from './store.js?v=20261126c';
-import { buildPdfHtml, buildQuoteHtml, loadPack } from './pdf.js?v=20261126c';
+import * as M from './model.js?v=20261126d';
+import { createStore, takeSecret, forgetSecret, Conflict, NoAccess } from './store.js?v=20261126d';
+import { buildPdfHtml, buildQuoteHtml, loadPack } from './pdf.js?v=20261126d';
 
 const S = {
   store: null, me: null, trips: [], filter: 'all', q: '', menuFor: null,
@@ -669,17 +669,37 @@ function itemEditor(it) {
   </div>`;
 }
 
+// the library belongs to a country: a trip to Paris does not show the Tokyo items.
+// An item keeps its country in data.country ('' = every country). Older items have none: their country comes from a trip that has their destination.
+const normC = (c) => String(c || '').trim().toLowerCase();
+function snipCountry(x) {
+  if (x.data && typeof x.data.country === 'string') return x.data.country.trim();
+  if (x.dest === 'all') return '';
+  const tr = [S.t, ...S.trips.map((r) => r.data)].find((d) => d && d.stays && d.stays.some((st) => st.dest === x.dest));
+  return tr ? String(tr.country || '').trim() : null;           // null: no trip knows it
+}
+function countrySnips() {
+  const mine = normC(S.t && S.t.country);
+  return S.snippets.filter((x) => { const c = snipCountry(x); return c === '' || !mine || (c !== null && normC(c) === mine); });
+}
+function knownCountries() {
+  const set = new Map();
+  [S.t, ...S.trips.map((r) => r.data)].forEach((d) => { const c = d && String(d.country || '').trim(); if (c && !set.has(normC(c))) set.set(normC(c), c); });
+  S.snippets.forEach((x) => { const c = x.data && typeof x.data.country === 'string' ? x.data.country.trim() : ''; if (c && !set.has(normC(c))) set.set(normC(c), c); });
+  return [...set.values()];
+}
 // "+ add to <part>": a new item, or one from the library (the open day's destinations and general items first)
 function addPicker(p, d) {
   const t = S.t, info = M.dayInfo(t, d);
   const dests = [info.dest, info.dest2].filter(Boolean);
-  const all = M.librarySubset(S.snippets, t, d, { query: S.pickQ, allDests: true });
+  const lib0 = countrySnips();
+  const all = M.librarySubset(lib0, t, d, { query: S.pickQ, allDests: true });
   const mine = all.filter((x) => x.dest === 'all' || dests.includes(x.dest)), other = all.filter((x) => !mine.includes(x));
   const row = (x) => `<button class="pickrow" type="button" data-act="lib-add" data-id="${x.id}" data-v="${p}"><span class="dot" style="${x.dest === 'all' ? 'background:var(--line)' : paint(x.dest)}"></span><span class="grow"><b>${esc(he(x.data.title))}</b><span class="xs muted" style="display:block">${esc(x.dest === 'all' ? 'כללי' : destName(x.dest))} · ${esc(KIND_HE[x.data.kind] || '')}</span></span>${ic('plus', 16)}</button>`;
   return `<div class="addpick" role="group" aria-label="הוספה ל${p}">
     <div class="row between" style="gap:8px"><button class="btn sm" type="button" data-act="item-add" data-v="${p}">${ic('pencil', 16)}קטע חדש</button><button class="mini" type="button" data-act="add-close" aria-label="סגירה">${ic('x')}</button></div>
     <p class="lbl" style="margin-top:12px">או מהספרייה שלי</p>
-    ${S.snippets.length ? `<label class="inp-ic" style="margin-top:6px"><span class="sr">חיפוש בספרייה</span><input id="pickq" class="inp" type="search" placeholder="חיפוש בספרייה" value="${esc(S.pickQ)}" data-f="pickq">${ic('search')}</label>
+    ${lib0.length ? `<label class="inp-ic" style="margin-top:6px"><span class="sr">חיפוש בספרייה</span><input id="pickq" class="inp" type="search" placeholder="חיפוש בספרייה" value="${esc(S.pickQ)}" data-f="pickq">${ic('search')}</label>
       <div class="picklist">${mine.map(row).join('')}${other.length ? `<p class="xs muted" style="margin:8px 10px 2px">יעדים אחרים</p>${other.map(row).join('')}` : ''}${all.length ? '' : '<p class="small muted" style="padding:8px 10px">אין קטעים שמתאימים לחיפוש.</p>'}</div>`
       : '<p class="small muted" style="margin-top:4px">הספרייה עוד ריקה. כל קטע חדש אפשר לשמור בה בסיום.</p>'}
   </div>`;
@@ -708,8 +728,9 @@ function viewDays() {
   // which destinations the library shows: the open day's by default, or the one the agent picked (general items always come along)
   const dayDests = [info.dest, info.dest2].filter(Boolean);
   const pick = S.libDest === 'all' ? null : S.libDest ? [S.libDest] : dayDests;
-  const lib = M.librarySubset(S.snippets, t, d, { query: S.libQuery, allDests: true }).filter((x) => !pick || x.dest === 'all' || pick.includes(x.dest));
-  const libChip = (v, label, on, dot) => `<button class="chip" type="button" data-act="lib-dest" data-v="${esc(v)}" aria-pressed="${on}">${dot ? `<span class="dot" style="${dot}"></span>` : ''}${esc(label)} <span class="num" style="opacity:.7">${S.snippets.filter((x) => v === 'all' || x.dest === v).length}</span></button>`;
+  const libC = countrySnips();
+  const lib = M.librarySubset(libC, t, d, { query: S.libQuery, allDests: true }).filter((x) => !pick || x.dest === 'all' || pick.includes(x.dest));
+  const libChip = (v, label, on, dot) => `<button class="chip" type="button" data-act="lib-dest" data-v="${esc(v)}" aria-pressed="${on}">${dot ? `<span class="dot" style="${dot}"></span>` : ''}${esc(label)} <span class="num" style="opacity:.7">${libC.filter((x) => v === 'all' || x.dest === v).length}</span></button>`;
   const mPressed = (v) => (v === 'edit' ? S.mtab === 'edit' : S.mtab === 'side' && (v === 'lib') === (S.side === 'lib'));
   const sideBody = S.side === 'lib' ? `
       <button class="btn ghost sm block" type="button" data-act="lib-new">${ic('plus')}קטע חדש לספרייה</button>
@@ -720,7 +741,7 @@ function viewDays() {
       </div>
       ${lib.length ? `<p class="xs muted" style="margin:0 0 8px">גוררים קטע לחלק ביום, או לוחצים + ובוחרים מתי.</p><ul class="lib">${lib.map((s) => `<li draggable="true" data-drag-snip="${s.id}"><div><div class="mt">${esc(s.dest === 'all' ? 'כללי' : destName(s.dest))} · ${esc(KIND_HE[s.data.kind] || '')}</div><div class="tt">${esc(he(s.data.title))}</div>${he(s.data.text) ? `<p dir="auto">${esc(he(s.data.text))}</p>` : ''}</div>
         <button class="plus" type="button" data-act="lib-pick" data-id="${s.id}" aria-label="הוספת ${esc(he(s.data.title))} ליום ${S.day + 1}" aria-expanded="${S.libMenu === s.id}">${ic('plus')}</button>${S.libMenu === s.id ? `<div class="menu" role="menu" aria-label="מתי ביום ${S.day + 1}">${M.PARTS.map((p) => `<button role="menuitem" type="button" data-act="lib-add" data-id="${s.id}" data-v="${p}">${ic(PART_IC[p])}ל${p}</button>`).join('')}</div>` : ''}<div class="libacts"><button class="mini" type="button" data-act="lib-edit" data-id="${s.id}" aria-label="עריכת ${esc(he(s.data.title))} בספרייה">${ic('pencil')}</button><button class="mini" type="button" data-act="lib-del" data-id="${s.id}" aria-label="מחיקת ${esc(he(s.data.title))} מהספרייה">${ic('trash')}</button></div></li>`).join('')}</ul>`
-        : `<p class="small muted">${S.snippets.length ? 'אין כאן קטעים שמתאימים.' : 'הספרייה ריקה. מוסיפים כאן קטע חדש, או "שמירה לספרייה" מתוך קטע ביום.'}</p>`}`
+        : `<p class="small muted">${libC.length ? 'אין כאן קטעים שמתאימים.' : 'הספרייה ריקה. מוסיפים כאן קטע חדש, או "שמירה לספרייה" מתוך קטע ביום.'}</p>`}`
     : `<div id="preview">${previewDay(d)}</div><p class="xs muted" style="margin-top:8px;text-align:center">כך המטיילים יראו את היום באפליקציה. מתעדכן תוך כדי כתיבה.</p>`;
   const prev = d > 0 ? `<button class="btn ghost sm" type="button" data-act="day" data-v="${d - 1}">${ic('chev-r', 16)}<span class="t">יום ${d} · ${esc(dayName(d - 1))}</span></button>` : '<span></span>';
   const next = d < t.days.length - 1 ? `<button class="btn sm" type="button" data-act="day" data-v="${d + 1}"><span class="t">יום ${d + 2} · ${esc(dayName(d + 1))}</span>${ic('chev-l', 16)}</button>` : `<a class="btn sm" href="#/t/${S.row.id}/transfers">להגעה ותחבורה${ic('chev-l', 16)}</a>`;
@@ -750,7 +771,7 @@ function viewDays() {
       <aside class="dside" aria-label="${S.side === 'lib' ? 'הספרייה שלי' : 'היום באפליקציה'}">
         <div class="ptabs" role="tablist" aria-label="מה להציג בצד">
           <button type="button" role="tab" data-act="side" data-v="preview" aria-selected="${S.side !== 'lib'}">${ic('phone', 16)}באפליקציה</button>
-          <button type="button" role="tab" data-act="side" data-v="lib" aria-selected="${S.side === 'lib'}">${ic('book', 16)}הספרייה שלי <span class="num">${S.snippets.length}</span></button>
+          <button type="button" role="tab" data-act="side" data-v="lib" aria-selected="${S.side === 'lib'}">${ic('book', 16)}הספרייה שלי <span class="num">${countrySnips().length}</span></button>
         </div>
         ${sideBody}
       </aside>
@@ -960,6 +981,8 @@ function viewDialog() {
     const def = sn ? sn.dest : info.dest2 || info.dest;
     const kind = sn && M.KINDS.includes(sd.kind) ? sd.kind : M.KINDS[0];
     return dialogShell('dl-h', sn ? 'עריכת קטע בספרייה' : 'קטע חדש לספרייה', `
+      ${(() => { const cs = knownCountries(), cur = sn ? snipCountry(sn) : String(S.t.country || '').trim(); const sel = cur === null ? String(S.t.country || '').trim() : cur;
+        return `<div class="field"><label for="ln-country">מדינה</label><select id="ln-country" name="country" class="inp">${cs.map((c) => `<option value="${esc(c)}"${normC(c) === normC(sel) && sel ? ' selected' : ''}>${esc(c)}</option>`).join('')}<option value=""${sel ? '' : ' selected'}>כל המדינות</option></select></div>`; })()}
       <div class="field"><label for="ln-dest">יעד</label><select id="ln-dest" name="dest" class="inp">${dests.map(([k, l]) => `<option value="${esc(k)}"${k === def ? ' selected' : ''}>${esc(l)}</option>`).join('')}<option value="all"${def === 'all' ? ' selected' : ''}>כללי (לכל היעדים)</option></select></div>
       <fieldset class="field"><legend>סוג</legend><div class="seg">${M.KINDS.map((k, i) => `<label style="display:inline-flex"><input class="sr" type="radio" name="kind" value="${k}"${k === kind ? ' checked' : ''}><span class="seg-opt">${KIND_HE[k]}</span></label>`).join('')}</div></fieldset>
       <div class="field"><label for="ln-title">כותרת <span class="req" aria-hidden="true">*</span></label><input id="ln-title" name="title" class="inp" required placeholder="למשל שוק צוקיג'י" value="${esc(he(sd.title))}" data-autofocus></div>
@@ -1103,6 +1126,7 @@ const ACT = {
     const it = findItem(el.dataset.id), d = findItemDay(it.id);
     const info = M.dayInfo(S.t, d);
     const snip = M.snippetFromItem(it, info.dest);
+    snip.data.country = String(S.t.country || '').trim();
     try { const row = await S.store.addSnippet(S.me.id, snip); S.snippets.unshift(row); if (S.askLib === it.id) S.askLib = null; render(); toast('נשמר בספרייה של ' + destName(info.dest)); }
     catch (e) { toast('לא נשמר בספרייה. כדאי לנסות שוב.'); }
   },
@@ -1305,6 +1329,7 @@ document.addEventListener('submit', async (e) => {
     const old = S.dlg.editId ? S.snippets.find((x) => x.id === S.dlg.editId) : null;
     if (k === 'transfer') data.transfer = (old && old.data.transfer) || { from: '', to: '', mode: 'other' };
     const dest = String(fd.get('dest') || 'all');
+    data.country = String(fd.get('country') || '').trim();       // '' = shown in every country
     if (old) {                                                // editing: the fields in the form change, everything else in the item stays
       const merged = Object.assign({}, old.data, data);
       delete merged.part;                                     // library items no longer carry a part of the day
@@ -1402,6 +1427,7 @@ document.addEventListener('drop', (e) => {
     return gate('wifi-off', 'אין חיבור כרגע', 'כדאי לנסות שוב בעוד רגע.');
   }
   S.snippets = await S.store.listSnippets().catch(() => []);
+  if (!/^#\/?$/.test(location.hash || '#')) S.trips = await S.store.listTrips().catch(() => []);   // the library needs to know which country each destination is in
   if (!location.hash || location.hash === '#') history.replaceState(null, '', '#/');
   await load();
 })();
