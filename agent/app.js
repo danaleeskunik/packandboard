@@ -1,8 +1,8 @@
 // Agent itinerary builder: the screens (PLAN.md tasks A3-A8). Plain JS, no build step.
 // State lives in S; every change to the trip goes through commit() (undo + autosave) or edit() (typing: autosave only).
-import * as M from './model.js?v=20261126d';
-import { createStore, takeSecret, forgetSecret, Conflict, NoAccess } from './store.js?v=20261126d';
-import { buildPdfHtml, buildQuoteHtml, loadPack } from './pdf.js?v=20261126d';
+import * as M from './model.js?v=20261126e';
+import { createStore, takeSecret, forgetSecret, Conflict, NoAccess } from './store.js?v=20261126e';
+import { buildPdfHtml, buildQuoteHtml, loadPack } from './pdf.js?v=20261126e';
 
 const S = {
   store: null, me: null, trips: [], filter: 'all', q: '', menuFor: null,
@@ -404,7 +404,7 @@ function viewStructure() {
       <div class="card-h"><h2 id="h-st">יעדים</h2>${t.stays.length > 1 ? '<span class="small muted">גוררים או משתמשים בחיצים כדי לשנות סדר</span>' : ''}</div>
       ${rows ? `<ol class="stays">${rows}</ol>` : '<p class="muted" style="padding:16px 20px">עוד אין יעדים. מתחילים מהיעד הראשון.</p>'}
       <form class="add-row" data-form="add-stay">
-        <label class="inp-ic"><span class="sr">יעד חדש</span><input id="newdest" class="inp" placeholder="הוספת יעד, למשל טוקיו" required>${ic('pin')}</label>
+        <label class="inp-ic"><span class="sr">יעד חדש</span><input id="newdest" class="inp" placeholder="הוספת יעד: עיר או אזור" required>${ic('pin')}</label>
         <div class="stepper" role="group" aria-label="לילות ביעד החדש"><button type="button" data-act="nn-minus" aria-label="פחות לילה">${ic('minus')}</button><label class="sr" for="newnights">לילות</label><input id="newnights" class="num" type="number" min="1" max="60" value="2"><span class="small muted" style="padding-inline-end:4px">לילות</span><button type="button" data-act="nn-plus" aria-label="עוד לילה">${ic('plus')}</button></div>
         <button class="btn ghost sm" type="submit">${ic('plus')}הוספה</button>
       </form>
@@ -489,7 +489,7 @@ function viewQuote() {
         <div class="qtot" id="q-tot" aria-live="polite">${totText(t)}</div></div>
     </section>
     <div class="g2" style="margin-top:16px">
-      <div class="field"><label for="q-inc">המחיר כולל (שורה לכל דבר)</label><textarea id="q-inc" class="inp" data-f="quote" data-k="includes" placeholder="טיסות ומיסים&#10;מלונות עם ארוחת בוקר&#10;JR Pass ל-7 ימים">${esc(q.includes.join('\n'))}</textarea></div>
+      <div class="field"><label for="q-inc">המחיר כולל (שורה לכל דבר)</label><textarea id="q-inc" class="inp" data-f="quote" data-k="includes" placeholder="טיסות ומיסים&#10;מלונות עם ארוחת בוקר&#10;כרטיס תחבורה ל-7 ימים">${esc(q.includes.join('\n'))}</textarea></div>
       <div class="field"><label for="q-exc">המחיר לא כולל (שורה לכל דבר)</label><textarea id="q-exc" class="inp" data-f="quote" data-k="excludes" placeholder="ביטוח נסיעות&#10;ארוחות צהריים וערב">${esc(q.excludes.join('\n'))}</textarea></div>
     </div>
     <div class="field" style="margin-top:14px"><label for="q-notes">תנאים והערות (רשות)</label><textarea id="q-notes" class="inp" data-f="quote" data-k="notes" placeholder="למשל מקדמה של 30% באישור, ויתרה עד 30 יום לפני היציאה">${esc(q.notes)}</textarea></div>
@@ -558,13 +558,13 @@ function viewTransfers() {
         ${f(it, 'title', 'מה', he(it.title), { ph: 'למשל מהשדה למלון' })}
         <div class="field"><label for="xm-${it.id}">אמצעי</label><select id="xm-${it.id}" class="inp" data-f="item" data-k="tr.mode" data-id="${it.id}">${M.MODES.map((m) => `<option value="${m}"${(tr.mode || 'other') === m ? ' selected' : ''}>${MODE_HE[m]}</option>`).join('')}</select></div>
         ${f(it, 'from', 'שעת יציאה', it.when && it.when.from, { ltr: 1, ph: '09:30' })}
-        ${f(it, 'tr.from', 'מאיפה', tr.from, { ltr: 1, ph: 'Narita Airport' })}${f(it, 'tr.to', 'לאן', tr.to, { ltr: 1, ph: 'Hotel, Tokyo' })}
+        ${f(it, 'tr.from', 'מאיפה', tr.from, { ltr: 1, ph: 'Airport' })}${f(it, 'tr.to', 'לאן', tr.to, { ltr: 1, ph: 'Hotel' })}
         ${f(it, 'tr.duration', 'משך', tr.duration, { ph: 'שעה' })}
-        ${f(it, 'tr.provider', 'ספק', tr.provider, { ph: 'למשל Narita Express' })}
+        ${f(it, 'tr.provider', 'ספק', tr.provider, { ph: 'למשל חברת הרכבת או ההסעה' })}
         <div class="field"><label for="xp-${it.id}">מחיר (רשות)</label><div class="row" style="flex-wrap:nowrap;gap:8px"><input id="xp-${it.id}" class="inp ltr num" value="${esc(it.price == null ? '' : it.price)}" data-f="item" data-k="price" data-id="${it.id}"><label class="sr" for="xc-${it.id}">מטבע</label><select id="xc-${it.id}" class="inp" style="flex:0 0 104px" data-f="item" data-k="currency" data-id="${it.id}">${CURRENCIES.map((c) => `<option value="${c}"${(it.currency || 'ILS') === c ? ' selected' : ''}>${c}</option>`).join('')}</select></div></div>
         ${f(it, 'tr.distanceKm', 'מרחק בק״מ', tr.distanceKm, { ltr: 1 })}
         <div class="field"><span class="lbl">ניווט</span>${nav ? `<a class="btn ghost sm" style="align-self:flex-start" href="${esc(nav)}" target="_blank" rel="noopener">${ic('nav', 16)}ניווט במפות</a>` : '<span class="small muted">מופיע כשממלאים מאיפה ולאן</span>'}</div>
-        <div class="field full"><label for="xn-${it.id}">הערות</label><textarea id="xn-${it.id}" class="inp" style="min-height:64px" data-f="item" data-k="text" data-id="${it.id}" placeholder="למשל לשבת בצד ימין כדי לראות את פוג׳י">${esc(he(it.text))}</textarea></div>
+        <div class="field full"><label for="xn-${it.id}">הערות</label><textarea id="xn-${it.id}" class="inp" style="min-height:64px" data-f="item" data-k="text" data-id="${it.id}" placeholder="למשל לשבת בצד ימין בשביל הנוף">${esc(he(it.text))}</textarea></div>
       </div></section>`;
   }).join('');
   const side = sugg.length ? `<section class="card sugg" aria-labelledby="sg-h">
@@ -654,11 +654,11 @@ function itemEditor(it) {
     <div style="margin-top:14px">${inp('it-' + it.id, 'כותרת', he(it.title), 'title')}</div>
     <div class="field" style="margin-top:14px"><label for="ix-${it.id}">טקסט</label><textarea id="ix-${it.id}" class="inp" data-f="item" data-k="text" data-id="${it.id}">${esc(he(it.text))}</textarea></div>
     ${it.kind === 'transfer' ? `<div class="g2" style="margin-top:14px">
-        ${inp('tf-' + it.id, 'מאיפה', tr.from, 'tr.from', { ltr: 1, ph: 'Narita Airport' })}${inp('tt-' + it.id, 'לאן', tr.to, 'tr.to', { ltr: 1, ph: 'Hotel, Tokyo' })}
+        ${inp('tf-' + it.id, 'מאיפה', tr.from, 'tr.from', { ltr: 1, ph: 'Airport' })}${inp('tt-' + it.id, 'לאן', tr.to, 'tr.to', { ltr: 1, ph: 'Hotel' })}
         <div class="field"><label for="tm-${it.id}">אמצעי</label><select id="tm-${it.id}" class="inp" data-f="item" data-k="tr.mode" data-id="${it.id}">${M.MODES.map((m) => `<option value="${m}"${(tr.mode || 'other') === m ? ' selected' : ''}>${MODE_HE[m]}</option>`).join('')}</select></div>
         ${inp('tdu-' + it.id, 'משך', tr.duration, 'tr.duration', { ph: 'שעה' })}
         ${inp('tkm-' + it.id, 'מרחק בק״מ', tr.distanceKm, 'tr.distanceKm', { ltr: 1 })}
-        ${inp('tpr-' + it.id, 'ספק', tr.provider, 'tr.provider', { ph: 'למשל Narita Express' })}
+        ${inp('tpr-' + it.id, 'ספק', tr.provider, 'tr.provider', { ph: 'למשל חברת הרכבת או ההסעה' })}
       </div>` : ''}
     <div class="g2" style="margin-top:14px">
       ${inp('ip-' + it.id, 'מיקום במפות (שם המקום או קישור מגוגל מפות)', it.place, 'place', { ltr: 1 })}
@@ -759,7 +759,7 @@ function viewDays() {
     <div class="dgrid" data-mtab="${S.mtab}">
       <div class="deditor" style="min-width:0">
         <div class="dayhero"><div class="grow" style="min-width:min(300px,100%)"><p class="kicker"><span class="dot" style="${info.transition ? paint2(info.dest, info.dest2) : paint(info.dest)}"></span><span class="num">יום ${d + 1} · ${longDay(info.date)} · ${esc(info.transition ? destName(info.dest) + ' ← ' + destName(info.dest2) : destName(info.dest))}</span></p>
-          <label class="sr" for="day-title">שם היום</label><input id="day-title" class="ttl" value="${esc(he(day.title))}" placeholder="שם היום, למשל אסאקוסה ואואנו" data-f="day-title"></div>
+          <label class="sr" for="day-title">שם היום</label><input id="day-title" class="ttl" value="${esc(he(day.title))}" placeholder="שם היום, למשל סיור ב${esc(destName(info.dest2 || info.dest))}" data-f="day-title"></div>
           <div class="row" style="gap:6px">
             ${SHOW_DUPLICATE ? `<button class="btn ghost sm" type="button" data-act="day-dup" data-v="${d}">${ic('copy', 16)}שכפול יום</button><button class="icon-btn" type="button" data-act="day-dup-opts" aria-label="אפשרויות שכפול">${ic('chev-d')}</button>` : ''}
             <button class="icon-btn" type="button" data-act="day-del" aria-label="מחיקת יום ${d + 1}"${M.totalNights(t) <= 1 ? ' disabled' : ''}>${ic('trash')}</button>
@@ -985,7 +985,7 @@ function viewDialog() {
         return `<div class="field"><label for="ln-country">מדינה</label><select id="ln-country" name="country" class="inp">${cs.map((c) => `<option value="${esc(c)}"${normC(c) === normC(sel) && sel ? ' selected' : ''}>${esc(c)}</option>`).join('')}<option value=""${sel ? '' : ' selected'}>כל המדינות</option></select></div>`; })()}
       <div class="field"><label for="ln-dest">יעד</label><select id="ln-dest" name="dest" class="inp">${dests.map(([k, l]) => `<option value="${esc(k)}"${k === def ? ' selected' : ''}>${esc(l)}</option>`).join('')}<option value="all"${def === 'all' ? ' selected' : ''}>כללי (לכל היעדים)</option></select></div>
       <fieldset class="field"><legend>סוג</legend><div class="seg">${M.KINDS.map((k, i) => `<label style="display:inline-flex"><input class="sr" type="radio" name="kind" value="${k}"${k === kind ? ' checked' : ''}><span class="seg-opt">${KIND_HE[k]}</span></label>`).join('')}</div></fieldset>
-      <div class="field"><label for="ln-title">כותרת <span class="req" aria-hidden="true">*</span></label><input id="ln-title" name="title" class="inp" required placeholder="למשל שוק צוקיג'י" value="${esc(he(sd.title))}" data-autofocus></div>
+      <div class="field"><label for="ln-title">כותרת <span class="req" aria-hidden="true">*</span></label><input id="ln-title" name="title" class="inp" required placeholder="למשל שוק מקומי" value="${esc(he(sd.title))}" data-autofocus></div>
       <div class="field"><label for="ln-text">טקסט</label><textarea id="ln-text" name="text" class="inp" placeholder="מה חשוב לדעת">${esc(he(sd.text))}</textarea></div>
       <div class="g2">
         <div class="field"><label for="ln-place">מיקום במפות (שם המקום או קישור)</label><input id="ln-place" name="place" class="inp ltr" value="${esc(sd.place || '')}"></div>
